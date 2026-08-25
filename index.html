@@ -7,7 +7,7 @@
      pestaña el nombre entra justo: todo lo que se agregue lo empuja fuera. -->
 <title>ArrangeLab</title>
 <meta name="author" content="@tmochetti">
-<!-- build: 2026-08-25 04:27 · 7cf190a -->
+<!-- build: 2026-08-25 04:37 · 7cf190a -->
 <!-- La versión no se muestra en la interfaz a propósito. Si hace falta saber qué copia
      tiene alguien, está en la línea de arriba: se abre el archivo con cualquier editor. -->
 <link rel="icon" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20x%3D%2210%22%20y%3D%2212%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FF3636%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2234%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%2236%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%231AFF2F%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2248%22%20width%3D%2212%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3Crect%20x%3D%2226%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3C%2Fsvg%3E%0A" type="image/svg+xml">
@@ -329,7 +329,7 @@
     min-width:0;flex-wrap:wrap}
   .toolbar-tools{justify-content:flex-end}
   .toolbar-file-save{justify-content:flex-end}
-  .livebridge{display:none;align-items:center;gap:6px;min-width:0}
+  .livebridge{display:none;align-items:center;gap:6px;min-width:0;flex-wrap:wrap}
   .livebridge.on{display:inline-flex}
   .livepill{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 10px;
     border:1px solid var(--line);border-radius:var(--radio2);background:var(--campo);
@@ -347,6 +347,7 @@
   .livebridge-msg{max-width:260px;color:var(--dim);font-size:11px;line-height:1.25}
   .livebridge-msg.ok{color:var(--ok)}
   .livebridge-msg.err{color:var(--bad)}
+  .livebridge-help{flex:1 1 100%;max-width:560px;color:var(--dim);font-size:11px;line-height:1.25}
   .toolbar-round{display:inline-flex;align-items:center;gap:5px;padding:0 2px 0 0}
   .toolbar-round .rotulo{margin-right:1px}
   .toolbar-round .redondeo{min-width:28px;text-align:center;font-variant-numeric:tabular-nums}
@@ -1335,6 +1336,7 @@
           <button id="btnLiveTest" class="ghost btn-sec" type="button"
             data-i18n="live.aplicar">APPLY TEST TO LIVE</button>
           <span id="liveResult" class="livebridge-msg"></span>
+          <span id="liveHelp" class="livebridge-help" data-i18n="live.ayuda">Sin botón de conectar: si ves LIVE CONNECTED, ya está unido a Max. Para probar: dejá un clip en el track 1, slot 1 de Session, y tocá APPLY TEST TO LIVE.</span>
         </div>
         <button id="btnHelp" class="ghost btn-sec" data-i18n="btn.ayuda"
           data-i18n-title="btn.guia.ay">GUÍA</button>
@@ -1860,6 +1862,7 @@
       'live.aplicando': 'ENVIANDO A LIVE…',
       'live.ok': 'Live bridge: OK',
       'live.err': 'Live bridge: error — {detalle}',
+      'live.ayuda': 'Sin botón de conectar: si ves LIVE CONNECTED, ya está unido a Max. Para probar: dejá un clip en el track 1, slot 1 de Session, y tocá APPLY TEST TO LIVE.',
       'track.actual': 'PISTA ACTUAL',
       'track.vacia': 'NINGUNA PISTA CARGADA',
       'btn.ayuda.ay': 'qué hace este panel',
@@ -2151,6 +2154,7 @@
       'live.aplicando': 'SENDING TO LIVE…',
       'live.ok': 'Live bridge: OK',
       'live.err': 'Live bridge: error — {detalle}',
+      'live.ayuda': 'No connect button: if you see LIVE CONNECTED, the page is already attached to Max. To test it, leave a clip in Session track 1, slot 1, then press APPLY TEST TO LIVE.',
       'guide.titulo': 'MIDI GUIDE tracks (MVP)',
       'guide.ayuda': 'They are created only when saving, next to each checked audio track. The main view stays unchanged here.',
       'guide.fallback': 'This Set has no Session loops. The grid stays editable with synthetic 4-bar GUIDE blocks. On save, those rows are written only to checked GUIDE tracks.',
