@@ -7,7 +7,7 @@
      pestaña el nombre entra justo: todo lo que se agregue lo empuja fuera. -->
 <title>ArrangeLab</title>
 <meta name="author" content="@tmochetti">
-<!-- build: 2026-08-25 02:58 · 7cf190a -->
+<!-- build: 2026-08-25 04:27 · 7cf190a -->
 <!-- La versión no se muestra en la interfaz a propósito. Si hace falta saber qué copia
      tiene alguien, está en la línea de arriba: se abre el archivo con cualquier editor. -->
 <link rel="icon" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20x%3D%2210%22%20y%3D%2212%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FF3636%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2234%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%2236%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%231AFF2F%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2248%22%20width%3D%2212%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3Crect%20x%3D%2226%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3C%2Fsvg%3E%0A" type="image/svg+xml">
@@ -329,6 +329,24 @@
     min-width:0;flex-wrap:wrap}
   .toolbar-tools{justify-content:flex-end}
   .toolbar-file-save{justify-content:flex-end}
+  .livebridge{display:none;align-items:center;gap:6px;min-width:0}
+  .livebridge.on{display:inline-flex}
+  .livepill{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 10px;
+    border:1px solid var(--line);border-radius:var(--radio2);background:var(--campo);
+    color:var(--hw-label-green);font:11px/1 var(--fuentetit);letter-spacing:.09em;
+    text-transform:uppercase;text-shadow:0 0 3px var(--hw-label-green-glow);white-space:nowrap}
+  .livepill::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor;
+    box-shadow:0 0 7px currentColor}
+  #btnLiveTest{min-height:44px;padding:6px 10px;border:1px solid var(--line);
+    border-radius:var(--radio2);background:var(--campo);color:var(--hw-label-green);
+    font:11px/1 var(--fuentetit);letter-spacing:.09em;text-transform:uppercase;
+    text-shadow:0 0 3px var(--hw-label-green-glow)}
+  #btnLiveTest:hover{border-color:currentColor}
+  #btnLiveTest:disabled{color:var(--hw-label-green-dim);text-shadow:none}
+  #btnLiveTest:focus-visible{outline:2px solid var(--hw-label-green);outline-offset:2px}
+  .livebridge-msg{max-width:260px;color:var(--dim);font-size:11px;line-height:1.25}
+  .livebridge-msg.ok{color:var(--ok)}
+  .livebridge-msg.err{color:var(--bad)}
   .toolbar-round{display:inline-flex;align-items:center;gap:5px;padding:0 2px 0 0}
   .toolbar-round .rotulo{margin-right:1px}
   .toolbar-round .redondeo{min-width:28px;text-align:center;font-variant-numeric:tabular-nums}
@@ -1312,6 +1330,12 @@
            segunda tenia un ▾ al lado con el nombre de salida adentro, y el nombre de salida
            no es una «opcion»: es parte de guardar. Ahora cada una abre su propio dialogo. -->
       <div class="toolbar-file-save">
+        <div id="livebridge" class="livebridge" hidden aria-live="polite">
+          <span id="liveStatus" class="livepill" data-i18n="live.estado">LIVE CONNECTED</span>
+          <button id="btnLiveTest" class="ghost btn-sec" type="button"
+            data-i18n="live.aplicar">APPLY TEST TO LIVE</button>
+          <span id="liveResult" class="livebridge-msg"></span>
+        </div>
         <button id="btnHelp" class="ghost btn-sec" data-i18n="btn.ayuda"
           data-i18n-title="btn.guia.ay">GUÍA</button>
         <button id="btnSaveStructure" class="ghost btn-sec" data-i18n="btn.saveestructura"
@@ -1831,6 +1855,11 @@
 
       'btn.releer': 'Releer',
       'btn.releer.ay': 'volver a leerlo del disco',
+      'live.estado': 'LIVE CONNECTED',
+      'live.aplicar': 'APPLY TEST TO LIVE',
+      'live.aplicando': 'ENVIANDO A LIVE…',
+      'live.ok': 'Live bridge: OK',
+      'live.err': 'Live bridge: error — {detalle}',
       'track.actual': 'PISTA ACTUAL',
       'track.vacia': 'NINGUNA PISTA CARGADA',
       'btn.ayuda.ay': 'qué hace este panel',
@@ -2117,6 +2146,11 @@
       'btn.cerrar.corto': 'CLOSE',
       'btn.guardar.corto': 'SAVE',
       'btn.cerrar': 'close',
+      'live.estado': 'LIVE CONNECTED',
+      'live.aplicar': 'APPLY TEST TO LIVE',
+      'live.aplicando': 'SENDING TO LIVE…',
+      'live.ok': 'Live bridge: OK',
+      'live.err': 'Live bridge: error — {detalle}',
       'guide.titulo': 'MIDI GUIDE tracks (MVP)',
       'guide.ayuda': 'They are created only when saving, next to each checked audio track. The main view stays unchanged here.',
       'guide.fallback': 'This Set has no Session loops. The grid stays editable with synthetic 4-bar GUIDE blocks. On save, those rows are written only to checked GUIDE tracks.',
@@ -7697,6 +7731,67 @@ const bpm = () => Math.max(1, Number($('bpm').value) || 138);
 const secsPerBar = () => 4 * 60 / bpm();
 const total = () => secs.reduce((a,s) => a + s.bars, 0);
 const mmss = t => Math.floor(t/60) + ':' + String(Math.round(t%60)).padStart(2,'0');
+var liveBridge = { disponible: false, pendiente: false, ultimo: null };
+
+function tieneMaxBridge(){
+  return typeof window !== 'undefined' &&
+    !!(window.max && typeof window.max.outlet === 'function' && typeof window.max.bindInlet === 'function');
+}
+function pintarLiveBridge(){
+  const box = $('livebridge'), btn = $('btnLiveTest'), out = $('liveResult');
+  if (!box || !btn || !out) return;
+  liveBridge.disponible = tieneMaxBridge();
+  box.hidden = !liveBridge.disponible;
+  box.className = 'livebridge' + (liveBridge.disponible ? ' on' : '');
+  if (!liveBridge.disponible) return;
+  btn.disabled = !!liveBridge.pendiente;
+  btn.textContent = liveBridge.pendiente ? msg('live.aplicando') : msg('live.aplicar');
+  if (!liveBridge.ultimo){
+    out.textContent = '';
+    out.className = 'livebridge-msg';
+    return;
+  }
+  if (liveBridge.ultimo.ok){
+    out.textContent = msg('live.ok');
+    out.className = 'livebridge-msg ok';
+  } else {
+    out.textContent = msg('live.err', { detalle: liveBridge.ultimo.detalle || 'unknown' });
+    out.className = 'livebridge-msg err';
+  }
+}
+function enviarLiveBridgeTest(){
+  if (!tieneMaxBridge() || liveBridge.pendiente) return;
+  liveBridge.pendiente = true;
+  liveBridge.ultimo = null;
+  pintarLiveBridge();
+  window.max.outlet('live_bridge_apply', JSON.stringify({
+    op: 'place_session_clip',
+    trackIndex: 0,
+    slotIndex: 0,
+    destinationBeat: 16
+  }));
+}
+function setupLiveBridge(){
+  if (!tieneMaxBridge()) return;
+  if (setupLiveBridge.hecho){ pintarLiveBridge(); return; }
+  setupLiveBridge.hecho = true;
+  window.max.bindInlet('live_bridge_state', function () {
+    liveBridge.disponible = true;
+    pintarLiveBridge();
+  });
+  window.max.bindInlet('live_bridge_result', function (json) {
+    let payload = null;
+    try { payload = JSON.parse(json); }
+    catch (err) { payload = { status: 'error', message: err.message }; }
+    liveBridge.pendiente = false;
+    liveBridge.ultimo = payload && payload.status === 'ok'
+      ? { ok: true }
+      : { ok: false, detalle: (payload && payload.message) || 'unknown' };
+    pintarLiveBridge();
+  });
+  window.max.outlet('live_bridge_ready');
+  pintarLiveBridge();
+}
 
 function renderEnvList(){
   const box = $('envlist');
@@ -10677,6 +10772,7 @@ async function elegirAls(){
 document.addEventListener('click', e => {
   const el = e.target;
   if (el.id === 'btnload'){ abrirExploradorAls(); return; }
+  if (el.id === 'btnLiveTest'){ enviarLiveBridgeTest(); return; }
   if (el.id === 'btnHelp'){ abrirDlg('dlgHelp'); return; }
   if (el.id === 'btnChooseSaveStructure'){ abrirDlg('dlgStructure'); return; }
   if (el.id === 'btnChooseSaveTrack'){ if (!$('gen').disabled) abrirDlg('dlgTrack'); return; }
@@ -10886,6 +10982,7 @@ function aplicarIdioma(){
   // redibuja entera desde los datos guardados, que es para lo que se guardan.
   if (typeof pintarInfoAls === 'function' && infoAls) pintarInfoAls();
   else if (typeof verDetalleAls === 'function' && $('tpldetbtn')) verDetalleAls(verDetalle);
+  pintarLiveBridge();
   render();                       // los textos que arma el JS se rehacen acá
 }
 
@@ -10912,6 +11009,8 @@ function cambiarIdioma(){
 render();
 aplicarIdioma();
 aplicarAyudas();
+setupLiveBridge();
+pintarLiveBridge();
 fillPicker('base:A');
 
 // ------------------------------------------------------------------ generar el .als
