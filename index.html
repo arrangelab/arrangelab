@@ -7,7 +7,7 @@
      pestaña el nombre entra justo: todo lo que se agregue lo empuja fuera. -->
 <title>ArrangeLab</title>
 <meta name="author" content="@tmochetti">
-<!-- build: 2026-08-25 04:37 · 7cf190a -->
+<!-- build: 2026-08-31 01:19 · 7cf190a -->
 <!-- La versión no se muestra en la interfaz a propósito. Si hace falta saber qué copia
      tiene alguien, está en la línea de arriba: se abre el archivo con cualquier editor. -->
 <link rel="icon" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20x%3D%2210%22%20y%3D%2212%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FF3636%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2234%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%2236%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%231AFF2F%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2248%22%20width%3D%2212%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3Crect%20x%3D%2226%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3C%2Fsvg%3E%0A" type="image/svg+xml">
@@ -1332,11 +1332,11 @@
            no es una «opcion»: es parte de guardar. Ahora cada una abre su propio dialogo. -->
       <div class="toolbar-file-save">
         <div id="livebridge" class="livebridge" hidden aria-live="polite">
-          <span id="liveStatus" class="livepill" data-i18n="live.estado">LIVE CONNECTED</span>
+          <span id="liveStatus" class="livepill" data-i18n="live.estado">MAX BRIDGE READY</span>
           <button id="btnLiveTest" class="ghost btn-sec" type="button"
-            data-i18n="live.aplicar">APPLY TEST TO LIVE</button>
+            data-i18n="live.aplicar">TEST CLIP TO LIVE</button>
           <span id="liveResult" class="livebridge-msg"></span>
-          <span id="liveHelp" class="livebridge-help" data-i18n="live.ayuda">Sin botón de conectar: si ves LIVE CONNECTED, ya está unido a Max. Para probar: dejá un clip en el track 1, slot 1 de Session, y tocá APPLY TEST TO LIVE.</span>
+          <span id="liveHelp" class="livebridge-help" data-i18n="live.ayuda">Esto no carga ni sincroniza el Set abierto. Sólo prueba el puente con Max: si ves MAX BRIDGE READY, la página ya habla con el device. Para probar, dejá un clip en Session track 1, slot 1, y tocá TEST CLIP TO LIVE.</span>
         </div>
         <button id="btnHelp" class="ghost btn-sec" data-i18n="btn.ayuda"
           data-i18n-title="btn.guia.ay">GUÍA</button>
@@ -1857,12 +1857,12 @@
 
       'btn.releer': 'Releer',
       'btn.releer.ay': 'volver a leerlo del disco',
-      'live.estado': 'LIVE CONNECTED',
-      'live.aplicar': 'APPLY TEST TO LIVE',
+      'live.estado': 'MAX BRIDGE READY',
+      'live.aplicar': 'TEST CLIP TO LIVE',
       'live.aplicando': 'ENVIANDO A LIVE…',
-      'live.ok': 'Live bridge: OK',
-      'live.err': 'Live bridge: error — {detalle}',
-      'live.ayuda': 'Sin botón de conectar: si ves LIVE CONNECTED, ya está unido a Max. Para probar: dejá un clip en el track 1, slot 1 de Session, y tocá APPLY TEST TO LIVE.',
+      'live.ok': 'Max bridge: OK',
+      'live.err': 'Max bridge: error — {detalle}',
+      'live.ayuda': 'Esto no carga ni sincroniza el Set abierto. Sólo prueba el puente con Max: si ves MAX BRIDGE READY, la página ya habla con el device. Para probar, dejá un clip en Session track 1, slot 1, y tocá TEST CLIP TO LIVE.',
       'track.actual': 'PISTA ACTUAL',
       'track.vacia': 'NINGUNA PISTA CARGADA',
       'btn.ayuda.ay': 'qué hace este panel',
@@ -2149,12 +2149,12 @@
       'btn.cerrar.corto': 'CLOSE',
       'btn.guardar.corto': 'SAVE',
       'btn.cerrar': 'close',
-      'live.estado': 'LIVE CONNECTED',
-      'live.aplicar': 'APPLY TEST TO LIVE',
+      'live.estado': 'MAX BRIDGE READY',
+      'live.aplicar': 'TEST CLIP TO LIVE',
       'live.aplicando': 'SENDING TO LIVE…',
-      'live.ok': 'Live bridge: OK',
-      'live.err': 'Live bridge: error — {detalle}',
-      'live.ayuda': 'No connect button: if you see LIVE CONNECTED, the page is already attached to Max. To test it, leave a clip in Session track 1, slot 1, then press APPLY TEST TO LIVE.',
+      'live.ok': 'Max bridge: OK',
+      'live.err': 'Max bridge: error — {detalle}',
+      'live.ayuda': 'This does not load or sync the open Set. It only tests the bridge through Max: if you see MAX BRIDGE READY, the page is already talking to the device. To test it, leave a clip in Session track 1, slot 1, then press TEST CLIP TO LIVE.',
       'guide.titulo': 'MIDI GUIDE tracks (MVP)',
       'guide.ayuda': 'They are created only when saving, next to each checked audio track. The main view stays unchanged here.',
       'guide.fallback': 'This Set has no Session loops. The grid stays editable with synthetic 4-bar GUIDE blocks. On save, those rows are written only to checked GUIDE tracks.',
@@ -4646,11 +4646,13 @@
   // ---------------------------------------------------------------- leer lo que ya hay
   // Los locators de un Set, convertidos en secciones: cada tramo entre un locator y el
   // siguiente es una seccion. El ultimo locator solo marca el final y no genera ninguna.
-  // Devuelve null si no hay con que armar secciones (0 o 1 locator).
+  // Si falta el inicio o el final, se sintetizan desde el beat 0 y/o el fin real del
+  // Arrangement para no dejar material afuera al releer un .als incompleto.
   function seccionesDeLocators(xml, ALS, bpb) {
     bpb = bpb || 4;
     var locs = ALS.readLocators(xml).slice().sort(function (a, b) { return a.beat - b.beat; });
     var fin = finDelArrangement(xml, ALS);
+    if (locs.length && locs[0].beat > 1e-6) locs.unshift({ beat: 0, name: '__START__' });
     // Un archivo hecho fuera de ArrangeLab puede traer sólo los inicios de sección. Si el
     // Arrangement sigue más allá del último locator, ese final real se usa como cierre
     // sintético para no perder la última sección.
@@ -4665,7 +4667,9 @@
       if (!(bars > 0)) continue;                       // dos locators en el mismo lugar
       // el sketch numera los locators al escribirlos ("01 INTRO"); se saca el prefijo
       // para no ir acumulando numeros cada vez que se reimporta
-      var nombre = String(locs[i].name).replace(/^\d+\s+/, '') || ('SECCION ' + (i + 1));
+      var nombre = String(locs[i].name).replace(/^\d+\s+/, '');
+      if (nombre === '__START__' || nombre === '__END__') nombre = '';
+      nombre = nombre || ('SECCION ' + (i + 1));
       var fila = {
         name: nombre,
         bars: Math.round(bars * 1000) / 1000,
@@ -4768,6 +4772,74 @@
       // nunca a la grilla —«nothing painted yet» con 110 clips adentro del .als— porque
       // las claves no coincidian con nada.
       out[t.id || t.name] = patron;
+    });
+    return hubo ? out : null;
+  }
+
+  // Los clips reales del Arrangement, reconstruidos como bloques. Se usa al releer un .als
+  // escrito por la herramienta para no perder las vueltas recortadas -por ejemplo el 7
+  // bars antes de un fill de 1- que la maqueta vieja por seccion no podia representar.
+  function bloquesDelArrangement(xml, ALS, secciones, loops, bpb) {
+    bpb = bpb || 4;
+    var porCanal = {};
+    (loops || []).forEach(function (l) { porCanal[l.clave || l.canal] = l; });
+    (loops || []).forEach(function (l) { if (l.canal && !porCanal[l.canal]) porCanal[l.canal] = l; });
+
+    var out = {}, hubo = false, serie = 0;
+    ALS.trackNames(xml).forEach(function (t) {
+      if (t.type === 'ReturnTrack') return;
+      var clave = t.id || t.name;
+      var info = porCanal[clave];
+      var ls = loopsDe(info);
+      if (!ls.length) return;
+      var pos = bloqueDe(xml, clave, ALS);
+      if (!pos) return;
+      var blk = xml.slice(pos[0], pos[1]);
+      var clips = [];
+      if (t.type === 'MidiTrack') {
+        var midiArr = contenedorMidiArrangement(blk);
+        if (!midiArr || !midiArr.arr) return;
+        clips = bloques('MidiClip', midiArr.arr.text);
+      } else {
+        var arr = bloques('ArrangerAutomation', blk)[0];
+        if (!arr) return;
+        clips = bloques('AudioClip', arr.text).concat(bloques('MidiClip', arr.text));
+      }
+      if (!clips.length) return;
+
+      var fila = [];
+      clips.sort(function (a, b) { return a.start - b.start; }).forEach(function (c) {
+        var m = /^<(?:Audio|Midi)Clip[^>]*\sTime="([^"]*)"/.exec(c.text);
+        var t0 = m ? parseFloat(m[1]) : parseFloat(val(c.text, 'CurrentStart'));
+        var t1 = parseFloat(val(c.text, 'CurrentEnd'));
+        if (isNaN(t0) || isNaN(t1) || !(t1 > t0)) return;
+
+        var nombre = val(c.text, 'Name') || '';
+        var loopStart = parseFloat(val(c.text, 'LoopStart'));
+        var loopEnd = parseFloat(val(c.text, 'LoopEnd'));
+        var region = (!isNaN(loopStart) && !isNaN(loopEnd) && loopEnd > loopStart)
+          ? (loopEnd - loopStart) : null;
+        var dur = t1 - t0;
+        var elegidos = [], i;
+
+        for (i = 0; i < ls.length; i++) if (ls[i].nombre === nombre) elegidos.push(i + 1);
+        if (elegidos.length !== 1) {
+          var mejor = 1, mejorScore = -Infinity;
+          for (i = 0; i < ls.length; i++) {
+            var loop = ls[i], score = 0;
+            if (nombre && loop.nombre === nombre) score += 1000;
+            if (region !== null && Math.abs(loop.beats - region) < 1e-6) score += 100;
+            if (Math.abs(loop.beats - dur) < 1e-6) score += 20;
+            score -= Math.abs(loop.beats - (region !== null ? region : dur)) / bpb;
+            if (score > mejorScore) { mejorScore = score; mejor = i + 1; }
+          }
+          elegidos = [mejor];
+        }
+
+        fila.push({ id: 'r' + (++serie), loop: elegidos[0], beat: t0, beats: dur });
+        hubo = true;
+      });
+      if (fila.length) out[clave] = { b: fila };
     });
     return hubo ? out : null;
   }
@@ -5175,7 +5247,17 @@
         var loop = ls[n - 1];
         var poli = !cierraElCiclo(loop.bars);
         var sec = seccionEn(mapa, b.beat);
-        var med = medirVuelta(loop, sec, poli, mapa, b.beat);
+        var med;
+        if (Number(b.beats) > 0) {
+          med = {
+            beats: Number(b.beats),
+            fill: !!(sec && sec.fill),
+            desdeElFinal: !!b.desdeElFinal,
+            cierraEnFill: !!b.cierraEnFill
+          };
+        } else {
+          med = medirVuelta(loop, sec, poli, mapa, b.beat);
+        }
         var fin = b.beat + med.beats;
 
         var bl = {
@@ -5368,7 +5450,7 @@
     colorDeIndice: colorDeIndice, colorDelTrack: colorDelTrack, PALETA: PALETA,
     clipRecortado: clipRecortado, clipDesdeElFinal: clipDesdeElFinal, conFundido: conFundido,
     seccionesDeLocators: seccionesDeLocators, seccionesDelArrangement: seccionesDelArrangement,
-    maquetaDelArrangement: maquetaDelArrangement,
+    maquetaDelArrangement: maquetaDelArrangement, bloquesDelArrangement: bloquesDelArrangement,
     // el modelo de bloques: una vuelta real de un loop por bloque
     cierraElCiclo: cierraElCiclo, mapaSecciones: mapaSecciones, seccionEn: seccionEn,
     seccionesEntre: seccionesEntre, fillQueCruza: fillQueCruza, medirVuelta: medirVuelta,
@@ -11193,21 +11275,27 @@ async function cargarAls(f){
     if (secsDelSet){
       // sólo se puede leer la maqueta si las secciones salen del propio Set: contra una
       // grilla inventada, los clips caerían en cualquier lado y se perdería lo que se pasa
-      const yaHay = MAQ.maquetaDelArrangement(tplXml, ALS, secs, 4);
-      if (yaHay){
+      const yaHayBloques = MAQ.bloquesDelArrangement(tplXml, ALS, secs, loops, 4);
+      if (yaHayBloques){
+        Object.keys(yaHayBloques).forEach(c => { if (maq[c]) maq[c] = yaHayBloques[c]; });
+        clipsLeidos = Object.keys(yaHayBloques).reduce((a, c) => a + yaHayBloques[c].b.length, 0);
+      } else {
+        const yaHay = MAQ.maquetaDelArrangement(tplXml, ALS, secs, 4);
+        if (yaHay){
         // MIGRACION. maquetaDelArrangement() lee lo que el .als YA tiene y lo devuelve en
         // el formato viejo -un valor por seccion-, porque eso es lo que se puede deducir
         // mirando donde empieza cada clip. Se convierte a vueltas antes de tocar el
         // estado: por cada seccion pintada, las vueltas ENTERAS que entran. Para los loops
         // normales el resultado es el mismo de siempre (8 en 16 = dos vueltas); el
         // sobrante que antes se tapaba con una vuelta cortada se avisa y queda como hueco.
-        const soloEditables = {};
-        Object.keys(yaHay).forEach(c => { if (maq[c]) soloEditables[c] = yaHay[c].slice(0, secs.length); });
-        const mig = MAQ.migrarMaqueta(soloEditables, secs, loops, 4);
-        Object.keys(mig.bloques).forEach(c => { maq[c] = mig.bloques[c]; });
-        if (mig.avisos.length) avisar(mig.avisos[0].texto +
-          (mig.avisos.length > 1 ? ' (+' + (mig.avisos.length - 1) + ')' : ''));
-        clipsLeidos = clipsQueHay;
+          const soloEditables = {};
+          Object.keys(yaHay).forEach(c => { if (maq[c]) soloEditables[c] = yaHay[c].slice(0, secs.length); });
+          const mig = MAQ.migrarMaqueta(soloEditables, secs, loops, 4);
+          Object.keys(mig.bloques).forEach(c => { maq[c] = mig.bloques[c]; });
+          if (mig.avisos.length) avisar(mig.avisos[0].texto +
+            (mig.avisos.length > 1 ? ' (+' + (mig.avisos.length - 1) + ')' : ''));
+          clipsLeidos = clipsQueHay;
+        }
       }
     } else if (clipsQueHay){
       leido = 'clipsSinMarcadores';
