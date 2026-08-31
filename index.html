@@ -7,7 +7,7 @@
      pestaña el nombre entra justo: todo lo que se agregue lo empuja fuera. -->
 <title>ArrangeLab</title>
 <meta name="author" content="@tmochetti">
-<!-- build: 2026-08-31 01:19 · 7cf190a -->
+<!-- build: 2026-08-31 23:37 · 7cf190a -->
 <!-- La versión no se muestra en la interfaz a propósito. Si hace falta saber qué copia
      tiene alguien, está en la línea de arriba: se abre el archivo con cualquier editor. -->
 <link rel="icon" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20x%3D%2210%22%20y%3D%2212%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FF3636%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2234%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%2236%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%231AFF2F%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2248%22%20width%3D%2212%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3Crect%20x%3D%2226%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3C%2Fsvg%3E%0A" type="image/svg+xml">
@@ -1665,6 +1665,9 @@
       'env.sendA': 'Send A · reverb',
       'env.sendB': 'Send B · delay 1/16',
       'env.sendC': 'Send C · delay 1/8',
+      'env.speaker': 'Speaker on/off',
+      'env.on': 'ON',
+      'env.off': 'OFF',
       'env.sincargar': '(cargá un .als base)',
       'env.plegar': 'plegar este carril',
       'env.desplegar': 'desplegar',
@@ -2114,6 +2117,9 @@
       'env.sendA': 'Send A · reverb',
       'env.sendB': 'Send B · delay 1/16',
       'env.sendC': 'Send C · delay 1/8',
+      'env.speaker': 'Speaker on/off',
+      'env.on': 'ON',
+      'env.off': 'OFF',
       'env.sincargar': '(load an .als first)',
       'env.plegar': 'collapse this lane',
       'env.desplegar': 'expand',
@@ -3173,8 +3179,9 @@
     var block = xml.slice(pos[0], pos[1]);
 
     var mixer = [];
-    ['Volume', 'Pan'].forEach(function (p) {
-      if (paramInfo(block, p)) mixer.push({ clave: p, nombre: p, tipo: 'float' });
+    ['Volume', 'Pan', 'Speaker'].forEach(function (p) {
+      var info = paramInfo(block, p);
+      if (info) mixer.push({ clave: p, nombre: p, tipo: info.tipo });
     });
     var envios = (block.match(/<TrackSendHolder\b[^>]*>/g) || []).length;
     for (var s = 0; s < envios && s < 12; s++) {
@@ -3235,6 +3242,12 @@
     var info = paramInfo(block, param);
     if (!info) throw new Error('El canal ' + trackName + ' no tiene parametro ' + param);
     var pid = info.pid;
+    if (info.tipo === 'bool') {
+      if (param !== 'Speaker') {
+        throw new Error('El parametro ' + param + ' es de tipo bool y todavia no se escribe');
+      }
+      return setBoolEnvelope(xml, pos, block, trackName, param, info, secs, shapes, beatsPerBar);
+    }
     if (info.tipo !== 'float') {
       throw new Error('El parametro ' + param + ' es de tipo ' + info.tipo +
                       ' y todavia no se escribe con FloatEvent');
@@ -3311,6 +3324,53 @@
              rango: [info.min, info.max], base: info.base, tipo: info.tipo };
   }
 
+  // Los interruptores de Live no tienen valores intermedios: cada sección resuelve a
+  // true/false y se escribe con BoolEvent. Un null conserva el estado manual del canal.
+  function setBoolEnvelope(xml, pos, block, trackName, param, info, secs, estados, beatsPerBar) {
+    var elegidos = estados && !Array.isArray(estados) ? (estados.bools || []) : [];
+    var valores = [], beat = 0;
+    for (var i = 0; i < secs.length; i++) {
+      var puesto = elegidos[i];
+      var valor = (puesto === true || puesto === false) ? puesto : info.base;
+      valores.push([beat, valor]);
+      beat += secs[i].bars * beatsPerBar;
+    }
+    if (!valores.length) throw new Error('No hay secciones para automatizar ' + param);
+
+    var id = maxId(xml) + 1;
+    var ev = ['<BoolEvent Id="' + (id++) + '" Time="-63072000" Value="' + valores[0][1] + '" />'];
+    valores.forEach(function (p) {
+      ev.push('<BoolEvent Id="' + (id++) + '" Time="' + round6(p[0]) + '" Value="' + p[1] + '" />');
+    });
+    var env = '<AutomationEnvelope Id="' + (id++) + '">' +
+      '<EnvelopeTarget><PointeeId Value="' + info.pid + '" /></EnvelopeTarget>' +
+      '<Automation><Events>' + ev.join('') + '</Events>' +
+      '<AutomationTransformViewState><IsTransformPending Value="false" />' +
+      '<TimeAndValueTransforms /></AutomationTransformViewState></Automation>' +
+      '</AutomationEnvelope>';
+
+    var vacio = /<AutomationEnvelopes>\s*<Envelopes\s*\/>\s*<\/AutomationEnvelopes>/;
+    var lleno = /(<AutomationEnvelopes>\s*<Envelopes>)([\s\S]*?)(<\/Envelopes>\s*<\/AutomationEnvelopes>)/;
+    var nuevo, reemplazadas = 0;
+    if (vacio.test(block)) {
+      nuevo = block.replace(vacio, '<AutomationEnvelopes><Envelopes>' + env + '</Envelopes></AutomationEnvelopes>');
+    } else if (lleno.test(block)) {
+      nuevo = block.replace(lleno, function (all, open, body, close) {
+        var limpio = body.replace(/<AutomationEnvelope\b[^>]*>[\s\S]*?<\/AutomationEnvelope>/g, function (bloque) {
+          var p = /<PointeeId Value="(\d+)"/.exec(bloque);
+          if (p && p[1] === info.pid) { reemplazadas++; return ''; }
+          return bloque;
+        });
+        return open + limpio + env + close;
+      });
+    } else {
+      throw new Error('El canal ' + trackName + ' no tiene contenedor de envolventes');
+    }
+    var out = xml.slice(0, pos[0]) + nuevo + xml.slice(pos[1]);
+    return { xml: fixNextPointeeId(out), points: valores.length, pointee: info.pid,
+             reemplazadas: reemplazadas, base: info.base, tipo: info.tipo };
+  }
+
   function round6(n) { return String(Math.round(n * 1e6) / 1e6); }
 
   // Las automatizaciones que el .als YA tiene en un canal.
@@ -3321,7 +3381,7 @@
   //
   // Se usa para avisar antes de pisar algo que el usuario dibujó a mano en Live: escribir
   // una automatización sobre el mismo parámetro reemplaza la que había.
-  var PARAMS_MIXER = ['Volume', 'Pan', 'SendA', 'SendB', 'SendC'];
+  var PARAMS_MIXER = ['Volume', 'Pan', 'SendA', 'SendB', 'SendC', 'Speaker'];
 
   function readEnvelopes(xml, trackName) {
     var pos = bloqueDePista(xml, trackName);
@@ -3408,6 +3468,32 @@
     return pts;
   }
 
+  function boolsDeEnvolvente(xml, trackName, param, secs, beatsPerBar) {
+    var pos = bloqueDePista(xml, trackName);
+    if (!pos) return null;
+    var blk = xml.slice(pos[0], pos[1]);
+    var info = paramInfo(blk, param);
+    if (!info || info.tipo !== 'bool') return null;
+    var env = null, m, re = /<AutomationEnvelope\b[^>]*>[\s\S]*?<\/AutomationEnvelope>/g;
+    while ((m = re.exec(blk))) {
+      var p = /<PointeeId Value="(\d+)"/.exec(m[0]);
+      if (p && p[1] === info.pid) { env = m[0]; break; }
+    }
+    if (!env) return null;
+
+    var eventos = [], mm, rp = /<BoolEvent\b[^>]*\sTime="([-\d.eE+]+)"[^>]*\sValue="(true|false)"/g;
+    while ((mm = rp.exec(env))) eventos.push([parseFloat(mm[1]), mm[2] === 'true']);
+    if (!eventos.length) return null;
+    eventos.sort(function (a, b) { return a[0] - b[0]; });
+    var out = [], beat = 0, ei = 0, actual = info.base;
+    secs.forEach(function (s) {
+      while (ei < eventos.length && eventos[ei][0] <= beat + 1e-9) actual = eventos[ei++][1];
+      out.push(actual);
+      beat += s.bars * beatsPerBar;
+    });
+    return out;
+  }
+
   // De los puntos de una seccion, ¿que forma del catalogo se le parece mas?
   //
   // Esto se apoya en que las envolventes que se leen las escribio esta misma herramienta,
@@ -3468,6 +3554,14 @@
   // Una envolvente del archivo, traida al modelo de la herramienta: una forma por seccion.
   // Devuelve null si no se puede leer.
   function envolventeComoFormas(xml, trackName, param, secs, beatsPerBar) {
+    var pos = bloqueDePista(xml, trackName);
+    if (!pos) return null;
+    var info = paramInfo(xml.slice(pos[0], pos[1]), param);
+    if (info && info.tipo === 'bool') {
+      var bools = boolsDeEnvolvente(xml, trackName, param, secs, beatsPerBar || 4);
+      return bools ? { track: trackName, param: param, tipo: 'bool', shapes: secs.map(function () { return ''; }),
+                       points: secs.map(function () { return null; }), bools: bools, on: true } : null;
+    }
     var pts = puntosDeEnvolvente(xml, trackName, param);
     if (!pts || !pts.length) return null;
     var bpb = beatsPerBar || 4;
@@ -4259,7 +4353,7 @@
     setEnvelope: setEnvelope, shapePoints: shapePoints, trackNames: trackNames, gruposDe: gruposDe, rutaDeGrupo: rutaDeGrupo,
     trackBlockById: trackBlockById,
     trackBlock: trackBlock, automationTargetId: automationTargetId, readEnvelopes: readEnvelopes, readAllEnvelopes: readAllEnvelopes,
-    puntosDeEnvolvente: puntosDeEnvolvente, envolventeComoFormas: envolventeComoFormas,
+    puntosDeEnvolvente: puntosDeEnvolvente, boolsDeEnvolvente: boolsDeEnvolvente, envolventeComoFormas: envolventeComoFormas,
     formaDeSeccion: formaDeSeccion,
     sendCount: sendCount,
     paramInfo: paramInfo, nodoDeParam: nodoDeParam,
@@ -5718,7 +5812,7 @@ let secs = asegurarColoresSecciones(secsDePreset('A'));
 // falta, un trazo libre también por sección. Las formas siguen existiendo como atajo y
 // compatibilidad; el dibujo directo vive en `points`.
 const ENVCOLORS = ['#ff7a1a','#3ddc84','#5aa9ff','#ffcc33','#ff6b9d','#a78bfa'];
-let envs = [];        // [{track, param, shapes:[], points:[], on:true}]
+let envs = [];        // [{track, param, shapes:[], points:[], bools:[], on:true}]
 let envActive = 0;
 
 // ------------------------------------------------------------------ maqueta
@@ -5863,6 +5957,7 @@ function listasParalelas(){
   envs.forEach(e => {
     out.push(e.shapes);
     if (Array.isArray(e.points)) out.push(e.points);
+    if (Array.isArray(e.bools)) out.push(e.bools);
   });
   return out;
 }
@@ -6804,7 +6899,8 @@ const PARAMS = [
 // SendA— pero a la vista tiene que decir «Volumen» o «Send A · reverb», y cambiar de
 // idioma como todo lo demás.
 const PARAM_CLAVE = { Volume: 'env.volumen', Pan: 'env.pan',
-                      SendA: 'env.sendA', SendB: 'env.sendB', SendC: 'env.sendC' };
+                      SendA: 'env.sendA', SendB: 'env.sendB', SendC: 'env.sendC',
+                      Speaker: 'env.speaker' };
 function limpiarNombreVisibleParam(txt){
   return String(txt || '')
     .replace(/^\s*\d+\s*[-.:)]?\s*/u, '')
@@ -7014,8 +7110,8 @@ function catalogoDe(track){
 // Llena el desplegable de parametros con lo que ese canal tiene de verdad: el mixer
 // primero y despues un <optgroup> por device.
 //
-// Solo los parametros FLOAT. Un boton de on/off es un <BoolEvent> y todavia no se escribe;
-// ofrecerlo seria ofrecer algo que despues falla.
+// Los parámetros continuos y el Speaker del mixer. Otros botones de devices siguen fuera:
+// el soporte booleano se limita al Speaker, que es el flujo decidido de la herramienta.
 function llenarParams(track){
   const sel = $('envparam');
   if (!sel) return;
@@ -7054,8 +7150,7 @@ function llenarParams(track){
 // de llegar a "Freq" sin recorrer la lista entera. Se enfoca solo al abrir, asi que se
 // escribe directo, y si no escribis nada el menu se comporta como siempre.
 //
-// Solo los parametros FLOAT. Un boton de on/off es un <BoolEvent> y todavia no se escribe:
-// ofrecerlo seria ofrecer algo que despues falla al generar.
+// Los parámetros continuos y el Speaker del mixer. Otros botones de devices siguen fuera.
 function abrirEnvMenu(canal, boton){
   cerrarEnvMenu();
   const puestos = envs.filter(e => e.track === canal).map(e => e.param);
@@ -7137,7 +7232,10 @@ function agregarEnv(canal, param){
   if (envs.length >= ENV_MAX){ alert(msg('env.max', { n: ENV_MAX })); return false; }
   if (envs.some(e => e.track === canal && e.param === param)) return false;
   guardar();
-  envs.push({ track: canal, param: param, shapes: secs.map(() => ''), points: secs.map(() => null), on: true });
+  const cat = catalogoDe(canal);
+  const mixer = cat && cat.mixer ? cat.mixer.filter(p => p.clave === param)[0] : null;
+  envs.push({ track: canal, param: param, tipo: mixer ? mixer.tipo : (param === 'Speaker' ? 'bool' : 'float'),
+    shapes: secs.map(() => ''), points: secs.map(() => null), bools: secs.map(() => null), on: true });
   envActive = envs.length - 1;
   render();
   return true;
@@ -7173,6 +7271,7 @@ function insertarSeccion(i, lado){
       asegurarEnv(e);
       e.shapes.splice(j, 0, '');
       e.points.splice(j, 0, null);
+      e.bools.splice(j, 0, null);
     });
     orden.splice(j, 0, null);            // sección nueva: no viene de ninguna vieja
   });
@@ -7248,7 +7347,8 @@ document.addEventListener('mousemove', e => {
   if (ie !== undefined && envs[+ie]){
     const e = envs[+ie];
     asegurarEnv(e);
-    const forma = (e.points[i] && e.points[i].length) ? msg('env.dibujo') : nombreForma(e.shapes[i]);
+    const forma = esEnvBool(e) ? msg(estadoBoolEnv(e, i) ? 'env.on' : 'env.off')
+      : ((e.points[i] && e.points[i].length) ? msg('env.dibujo') : nombreForma(e.shapes[i]));
     txt = e.track + '  ·  ' + nombreParam(e.param) + '  ·  ' + forma + '  ·  ' + s.name;
   }
 
@@ -7965,11 +8065,29 @@ function asegurarEnv(e){
   if (!Array.isArray(e.points)) e.points = [];
   while (e.points.length < secs.length) e.points.push(null);
   if (e.points.length > secs.length) e.points.length = secs.length;
+  if (!Array.isArray(e.bools)) e.bools = [];
+  while (e.bools.length < secs.length) e.bools.push(null);
+  if (e.bools.length > secs.length) e.bools.length = secs.length;
   return e;
+}
+
+function esEnvBool(e){ return !!e && (e.tipo === 'bool' || e.param === 'Speaker'); }
+function baseBoolDeEnv(e){
+  if (!tplXml || !ALS.paramInfo) return true;
+  try {
+    const pos = ALS.trackBlockById(tplXml, e.track) || ALS.trackBlock(tplXml, e.track);
+    const info = pos && ALS.paramInfo(tplXml.slice(pos[0], pos[1]), e.param);
+    return info && info.tipo === 'bool' ? !!info.base : true;
+  } catch(err){ return true; }
+}
+function estadoBoolEnv(e, i){
+  asegurarEnv(e);
+  return e.bools[i] === true || e.bools[i] === false ? e.bools[i] : baseBoolDeEnv(e);
 }
 
 function envTieneAlgo(e){
   asegurarEnv(e);
+  if (esEnvBool(e)) return e.bools.some(x => x === true || x === false);
   return e.shapes.some(x => !!x) || e.points.some(x => x && x.length);
 }
 
@@ -7977,6 +8095,11 @@ function limpiarSeccionEnv(ie, is){
   const e = envs[ie];
   if (!e) return false;
   asegurarEnv(e);
+  if (esEnvBool(e)){
+    const habiaBool = e.bools[is] === true || e.bools[is] === false;
+    e.bools[is] = null;
+    return habiaBool;
+  }
   const habia = !!e.shapes[is] || !!(e.points[is] && e.points[is].length);
   e.shapes[is] = '';
   e.points[is] = null;
@@ -8136,6 +8259,22 @@ function carrilDeEnv(e, idx){
   const ley = leyendaEnv(e);
   const canalLey = nombreVisibleCanalEnv(e) || ley.principal;
   const paramLey = nombreParamCorto(e.param);
+
+  if (esEnvBool(e)){
+    const celdasBool = secs.map((sec, i) => {
+      const activo = estadoBoolEnv(e, i);
+      return `<div class="ecell bool ${activo ? 'on' : 'off'}" style="flex-grow:${sec.bars};display:grid;place-items:center;font-size:10px;font-weight:800;letter-spacing:.08em;background:${activo ? color : 'transparent'};color:${activo ? '#050606' : color};border-color:${color}"
+        data-env="${idx}" data-esec="${i}">${esc(msg(activo ? 'env.on' : 'env.off'))}</div>`;
+    }).join('');
+    return `<div class="mrow erow${idx === envActive ? ' activa' : ''}">
+      <div class="mlabel elabel" style="--cc:${color}" data-envfold="${idx}" data-i18n-title="env.plegar">
+        <button class="efold" data-envfold="${idx}" data-i18n-title="env.plegar">▾</button>
+        <span class="pnom">${esc(canalLey)}</span>
+        <small class="ppar" style="color:${color};opacity:${opacidad}">${esc(paramLey)}</small>
+        <span class="botones"><button class="bcanal borra" data-envdel="${idx}" title="${esc(msg('env.eliminar', { canal: canalLey, param: paramLey }))}">${ICONO_TACHO}</button>
+        <button class="bcanal vaciaenv" data-envvacia="${idx}" ${envTieneAlgo(e) ? '' : 'disabled'} title="${esc(msg('env.vaciar', { canal: canalLey, param: paramLey }))}">&#10005;</button></span></div>
+      <div class="mcells">${celdasBool}</div></div>`;
+  }
 
   // Las formas «sigue…» arrancan donde quedó la sección anterior, así que el dibujo tiene
   // que ir arrastrando ese valor igual que lo hace als.js al escribir. Si no, el carril
@@ -10061,6 +10200,17 @@ document.addEventListener('mousedown', e => {
   if (!ec) return;
   const ie = Number(ec.dataset.env);
   const m = muestraEnvDeCelda(ec, e.clientX, e.clientY);
+  if (esEnvBool(envs[ie])){
+    if (e.detail > 1) return;
+    guardar();
+    asegurarEnv(envs[ie]);
+    envs[ie].bools[m.is] = e.shiftKey ? null : !estadoBoolEnv(envs[ie], m.is);
+    envActive = ie;
+    envPinto = true;
+    render();
+    e.preventDefault();
+    return;
+  }
   envPintando = {
     ie, is: m.is, guardo: false,
     modo: e.shiftKey ? 'clear' : 'decidir',
@@ -10179,6 +10329,7 @@ document.addEventListener('dblclick', e => {
   const ec = e.target && e.target.closest ? e.target.closest('[data-esec]') : null;
   if (!ec) return;
   const ie = Number(ec.dataset.env);
+  if (esEnvBool(envs[ie])) return;
   const m = muestraEnvDeCelda(ec, e.clientX, e.clientY);
   guardar();
   if (togglePuntoEnv(ie, m.is, m.beat, m.valor)){
@@ -10269,6 +10420,7 @@ document.addEventListener('click', e => {
     asegurarEnv(envs[i]);
     envs[i].shapes = envs[i].shapes.map(() => '');
     envs[i].points = envs[i].points.map(() => null);
+    envs[i].bools = envs[i].bools.map(() => null);
     envActive = i;
     render();
     return;
@@ -10495,6 +10647,7 @@ document.addEventListener('click', e => {
         asegurarEnv(e);
         e.shapes.splice(donde, 0, '');
         e.points.splice(donde, 0, null);
+        e.bools.splice(donde, 0, null);
       });
       orden.splice(donde, 0, null);        // sección nueva: no viene de ninguna vieja
     });
@@ -10783,9 +10936,12 @@ function envsDeEstructura(guardadas, cantSecs){
     if (hay.length && hay.indexOf(e.track) < 0){ fuera.push(e.track + ' ' + e.param); return; }
     const sh = (e.shapes || []).slice(0, cantSecs);
     const pt = (e.points || []).slice(0, cantSecs);
+    const bo = (e.bools || []).slice(0, cantSecs);
     while (sh.length < cantSecs) sh.push('');
     while (pt.length < cantSecs) pt.push(null);
-    dentro.push({ track: e.track, param: e.param, shapes: sh, points: pt, on: e.on !== false });
+    while (bo.length < cantSecs) bo.push(null);
+    dentro.push({ track: e.track, param: e.param, tipo: e.tipo,
+                  shapes: sh, points: pt, bools: bo, on: e.on !== false });
   });
   return { envs: dentro.slice(0, ENV_MAX), fuera: fuera };
 }
@@ -10820,8 +10976,10 @@ function saveCurrent(){
                     asegurarEnv(e);
                     return {
                       track: e.track, param: e.param,
+                      tipo: e.tipo,
                       shapes: e.shapes.slice(),
                       points: e.points.map(x => x ? JSON.parse(JSON.stringify(x)) : null),
+                      bools: e.bools.slice(),
                       on: e.on
                     };
                   }),
@@ -11263,7 +11421,9 @@ async function cargarAls(f){
       ALS.readAllEnvelopes(tplXml).forEach(e => {
         if (!e.param || envs.length >= ENV_MAX) return;      // los de un device no se saben leer
         const conv = ALS.envolventeComoFormas(tplXml, e.track, e.param, secs, 4);
-        if (conv && conv.shapes.some(x => x)){ conv.points = secs.map(() => null); envs.push(conv); leidas++; }
+        if (conv && (conv.shapes.some(x => x) || (conv.bools && conv.bools.some(x => x === true || x === false)))){
+          conv.points = conv.points || secs.map(() => null); envs.push(conv); leidas++;
+        }
       });
     }
 
@@ -11483,7 +11643,8 @@ $('gen').addEventListener('click', async () => {
       // tu nivel- pero para el Pan escribia Value="1", o sea el canal tirado del todo a
       // la derecha en las secciones que nunca tocaste, y para un Send el envio al maximo.
       // Callar no puede significar ni bajar el volumen ni mover el panorama.
-      const r = ALS.setEnvelope(xml, e.track, e.param, secs, { shapes: e.shapes, points: e.points }, 4);
+      const r = ALS.setEnvelope(xml, e.track, e.param, secs,
+                                { shapes: e.shapes, points: e.points, bools: e.bools }, 4);
       xml = r.xml;
     });
     if (aplicar.length){
