@@ -7,7 +7,7 @@
      pestaña el nombre entra justo: todo lo que se agregue lo empuja fuera. -->
 <title>ArrangeLab</title>
 <meta name="author" content="@tmochetti">
-<!-- build: 2026-09-01 13:56 · 57094ed -->
+<!-- build: 2026-09-01 23:12 · a00aac9 -->
 <!-- La versión no se muestra en la interfaz a propósito. Si hace falta saber qué copia
      tiene alguien, está en la línea de arriba: se abre el archivo con cualquier editor. -->
 <link rel="icon" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20x%3D%2210%22%20y%3D%2212%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FF3636%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2234%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%2236%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%231AFF2F%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2248%22%20width%3D%2212%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3Crect%20x%3D%2226%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3C%2Fsvg%3E%0A" type="image/svg+xml">
@@ -8712,10 +8712,36 @@ function ubicarSecBar(){
 // Las claves de `maq` son el Id de la pista, que no cambia al renombrar ni al mover, así
 // que lo pintado se conserva solo. Las envolventes NO: apuntan al canal por NOMBRE, y por
 // eso renombrar las remapea a mano.
+
+// UN SET SIN LOOPS DE SESSION IGUAL SE PUEDE DIBUJAR.
+//
+// Si ningun canal tiene loops usables -un template de grabacion, con los ruteos puestos y
+// todavia nada grabado-, se les da un loop sintetico de 4 compases para que la matriz
+// exista igual. `canalEditableEnMatriz` mira `usable || guideFallbackEditable`: sin esta
+// marca, esos canales quedan filtrados y la matriz se ve VACIA.
+//
+// VIVIA ADENTRO DE cargarAls, y ese fue el bug: renombrar un canal llama a
+// recargarCanales(), que vuelve a pedir los loops al engine y devuelve objetos NUEVOS, sin
+// la marca. En un Set sin loops, renombrar hacia desaparecer todos los canales.
+// Por eso ahora es una funcion y la llaman los dos.
+function aplicarFallbackGuide(){
+  if (loops.some(l => l && l.usable)) return;
+  loops.forEach(l => {
+    if (!l || l.tipo !== 'audio' || l.usable) return;
+    l.guideFallbackEditable = true;
+    l.loopBeats = 16;
+    l.loopBars = 4;
+    if (!Array.isArray(l.loops) || !l.loops.length){
+      l.loops = [{ nombre: l.canal + ' GUIDE', beats: 16, bars: 4, indice: 0, sintetico: true }];
+    }
+  });
+}
+
 function recargarCanales(){
   baseCache = {};        // los valores base se miden sobre el XML, que acaba de cambiar
   catalogoCache = {};
   loops = activeEngine().getLoops(tplXml);
+  aplicarFallbackGuide();
   maqAjustar();
   const sel = $('envtrack');
   if (sel){
@@ -11556,18 +11582,7 @@ async function cargarAls(f){
     // los loops de Session: es lo que alimenta la matriz
     loops = activeEngine().getLoops(tplXml);
     actualizarPaletaSecciones(loops);
-    const conLoop = loops.filter(l => l.usable);
-    if (!conLoop.length){
-      loops.forEach(l => {
-        if (!l || l.tipo !== 'audio' || l.usable) return;
-        l.guideFallbackEditable = true;
-        l.loopBeats = 16;
-        l.loopBars = 4;
-        if (!Array.isArray(l.loops) || !l.loops.length){
-          l.loops = [{ nombre: l.canal + ' GUIDE', beats: 16, bars: 4, indice: 0, sintetico: true }];
-        }
-      });
-    }
+    aplicarFallbackGuide();
     const editables = loops.filter(canalEditableEnMatriz);
 
     // Si el Set ya viene armado, se muestra tal como está: sus locators pasan a ser
