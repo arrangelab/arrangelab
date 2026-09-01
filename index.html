@@ -7,7 +7,7 @@
      pestaña el nombre entra justo: todo lo que se agregue lo empuja fuera. -->
 <title>ArrangeLab</title>
 <meta name="author" content="@tmochetti">
-<!-- build: 2026-08-31 23:51 · 4ad60a2 -->
+<!-- build: 2026-09-01 00:21 · 83e4a7d -->
 <!-- La versión no se muestra en la interfaz a propósito. Si hace falta saber qué copia
      tiene alguien, está en la línea de arriba: se abre el archivo con cualquier editor. -->
 <link rel="icon" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20x%3D%2210%22%20y%3D%2212%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FF3636%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2234%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%2236%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%231AFF2F%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2248%22%20width%3D%2212%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3Crect%20x%3D%2226%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3C%2Fsvg%3E%0A" type="image/svg+xml">
@@ -3912,6 +3912,18 @@
     return null;
   }
 
+  function loopsSessionEnBloque(blk) {
+    var zona = (/<ClipSlotList>[\s\S]*?<\/ClipSlotList>/.exec(blk) || [''])[0];
+    var out = [], re = /<(AudioClip|MidiClip)\b[\s\S]*?<\/\1>/g, m;
+    while ((m = re.exec(zona))) {
+      var ini = /<CurrentStart Value="([-\d.eE]+)"/.exec(m[0]);
+      var fin = /<CurrentEnd Value="([-\d.eE]+)"/.exec(m[0]);
+      var largo = ini && fin ? parseFloat(fin[1]) - parseFloat(ini[1]) : 0;
+      if (largo > 0) out.push({ beats: largo });
+    }
+    return out;
+  }
+
   function addGuideMidiTracks(xml, trackIds, opts) {
     opts = opts || {};
     var elegidos = {}, i;
@@ -3934,6 +3946,8 @@
       if (!src) continue;
       var nombreSrc = nombreDeTrackEnBloque(src) || t.nombre || t.id;
       var color = colorDeTrackEnBloque(src);
+      var loopsFuente = loopsSessionEnBloque(src);
+      if (!loopsFuente.length) loopsFuente = [{ beats: 16 }];
       var nombreGuide = (opts.nameOf ? opts.nameOf(nombreSrc, t) : (nombreSrc + ' — GUIDE'));
       if (!nombreGuide) nombreGuide = nombreSrc + ' — GUIDE';
       var baseGuide = nombreGuide, suf = 2;
@@ -3959,8 +3973,8 @@
       }
       if (idx < 0) throw new Error('la pista GUIDE no quedó escrita: ' + nombreGuide);
       var guia = listaNueva[idx];
-      var seeded = seedGuideMidiLoop(xml, guia.id, {
-        largo: 16,
+      var seeded = seedGuideMidiLoops(xml, guia.id, {
+        loops: loopsFuente,
         nombre: nombreLoop,
         colorIndice: color
       });
@@ -3972,6 +3986,8 @@
         if (listaNueva[q].nombre === nombreGuide && listaNueva[q].tipo === 'MidiTrack') idx = q;
       }
       guia = listaNueva[idx];
+      nextId = maxId(xml) + 1;
+      nextP = maxPointeeId(xml) + 1;
       logs.push({ tipo: 'guide-created', trackId: guia.id, nombre: nombreGuide });
       guias.push({
         sourceId: String(t.id),
@@ -3979,6 +3995,7 @@
         guideId: String(guia.id),
         guideName: nombreGuide,
         colorIndice: color,
+        loopBeats: loopsFuente.map(function (l) { return l.beats; }),
         ordenEsperado: idx
       });
     }
@@ -4012,8 +4029,16 @@
         problemas.push(g.guideName + ': el MIDI out no quedó en None');
       if (/<AudioClip\b/.test((/<ArrangerAutomation>[\s\S]*?<\/ArrangerAutomation>/.exec(blk) || [''])[0]))
         problemas.push(g.guideName + ': apareció un AudioClip en Arrangement');
-      if (!/<MidiClip\b/.test((/<ClipSlotList>[\s\S]*?<\/ClipSlotList>/.exec(blk) || [''])[0]))
+      var loopsGuide = loopsSessionEnBloque(blk);
+      if (!loopsGuide.length)
         problemas.push(g.guideName + ': no quedó el loop base GUIDE en Session');
+      if (g.loopBeats && loopsGuide.length !== g.loopBeats.length)
+        problemas.push(g.guideName + ': no quedó un loop GUIDE por cada loop fuente');
+      (g.loopBeats || []).forEach(function (largo, i) {
+        if (loopsGuide[i] && Math.abs(loopsGuide[i].beats - largo) > 1e-6)
+          problemas.push(g.guideName + ': el loop GUIDE ' + (i + 1) + ' dura ' +
+            loopsGuide[i].beats + ' beats y el fuente dura ' + largo);
+      });
       if (!/<Devices\s*\/>/.test(blk))
         problemas.push(g.guideName + ': la cadena de devices no quedó vacía');
     });
@@ -4203,18 +4228,26 @@
     '</MidiClip>';
   }
 
-  function seedGuideMidiLoop(xml, trackId, opts) {
+  function seedGuideMidiLoops(xml, trackId, opts) {
     opts = opts || {};
     var blk = bloqueCompletoTrackById(xml, trackId);
     if (!blk) return null;
-    var clipId = maxId(blk) + 1;
-    var largo = Number(opts.largo || 16);
-    var clipXml = buildGuideSessionMidiClip(largo, clipId, opts.nombre || 'GUIDE LOOP', opts.colorIndice);
-    var re = /(<ClipSlot\b[\s\S]*?<ClipSlot>\s*)(<Value\s*\/>)(\s*<\/ClipSlot>[\s\S]*?<\/ClipSlot>)/;
-    if (!re.test(blk)) return null;
-    var blk2 = blk.replace(re, function (_, a, _empty, c) {
+    var largos = (opts.loops || []).map(function (l) {
+      return Number(typeof l === 'number' ? l : (l && (l.beats || l.largo)));
+    }).filter(function (l) { return l > 0; });
+    if (!largos.length) largos = [16];
+
+    var clipId = maxId(xml) + 1, indice = 0;
+    var re = /(<ClipSlot\b[\s\S]*?<ClipSlot>\s*)(<Value\s*\/>)(\s*<\/ClipSlot>[\s\S]*?<\/ClipSlot>)/g;
+    var blk2 = blk.replace(re, function (todo, a, _empty, c) {
+      if (indice >= largos.length) return todo;
+      var nombre = opts.nombre || 'GUIDE LOOP';
+      if (indice > 0) nombre += ' ' + (indice + 1);
+      var clipXml = buildGuideSessionMidiClip(largos[indice], clipId++, nombre, opts.colorIndice);
+      indice++;
       return a + '<Value>' + clipXml + '</Value>' + c;
     });
+    if (indice !== largos.length) return null;
     return reemplazarTrackCompletoById(xml, trackId, blk2);
   }
 
@@ -5905,6 +5938,8 @@ function clipsGuideEnArrangement(xml, id){
     name: (/<Name Value="([^"]*)"/.exec(c) || [, ''])[1],
     time: parseFloat((/Time="([^"]*)"/.exec(c) || [, '0'])[1]),
     end: parseFloat((/<CurrentEnd Value="([^"]*)"/.exec(c) || [, '0'])[1]),
+    beats: parseFloat((/<CurrentEnd Value="([^"]*)"/.exec(c) || [, '0'])[1]) -
+           parseFloat((/<CurrentStart Value="([^"]*)"/.exec(c) || [, '0'])[1]),
     disabled: /<Disabled Value="true" \/>/.test(c)
   }));
 }
@@ -5925,6 +5960,36 @@ function bloquesDe(c){
 }
 function tieneAlgo(c){ return !!(maq[c] && maq[c].b && maq[c].b.length); }
 function infoDeCanal(c){ return loops.filter(l => claveDe(l) === c)[0] || null; }
+function prepararGuideCanal(sourceId, guide, entrada){
+  const fuente = infoDeCanal(sourceId);
+  const originales = fuente && Array.isArray(fuente.loops) ? fuente.loops : [];
+  const largos = originales.map((l, i) => ({
+    nombre: guide.guideName + (i ? ` ${i + 1}` : ''),
+    beats: Number(l.beats),
+    bars: Number(l.bars || (Number(l.beats) / 4)),
+    indice: i
+  })).filter(l => l.beats > 0);
+  if (!largos.length) largos.push({ nombre:guide.guideName, beats:16, bars:4, indice:0 });
+
+  const bloques = ((entrada && entrada.b) || []).map(x => {
+    const copia = { id:x.id, loop:Number(x.loop) || 1, beat:x.beat };
+    ['beats', 'desdeElFinal', 'cierraEnFill'].forEach(k => {
+      if (x[k] !== undefined) copia[k] = x[k];
+    });
+    return copia;
+  });
+  return {
+    maqueta: { b: bloques },
+    loopInfo: {
+      clave: guide.guideId,
+      canal: guide.guideName,
+      loops: largos,
+      loopBeats: largos[0].beats,
+      loopBars: largos[0].bars,
+      usable: true
+    }
+  };
+}
 function canalEditableEnMatriz(l){ return !!(l && (l.usable || l.guideFallbackEditable)); }
 function loopsDeCanal(c){ const i = infoDeCanal(c); return (i && i.loops) || []; }
 function totalBeats(){ return secs.reduce((a,s) => a + s.bars * 4, 0); }
@@ -11590,15 +11655,9 @@ $('gen').addEventListener('click', async () => {
         Object.keys(subGuide).forEach(sourceId => {
           const g = guideBySource[String(sourceId)];
           if (!g) return;
-          maqGuide[g.guideId] = { b: (subGuide[sourceId].b || []).map(x => ({ id: x.id, loop: 1, beat: x.beat })) };
-          loopsGuide.push({
-            clave: g.guideId,
-            canal: g.guideName,
-            loops: [{ nombre: g.guideName, beats: 16, bars: 4, indice: 0 }],
-            loopBeats: 16,
-            loopBars: 4,
-            usable: true
-          });
+          const preparado = prepararGuideCanal(sourceId, g, subGuide[sourceId]);
+          maqGuide[g.guideId] = preparado.maqueta;
+          loopsGuide.push(preparado.loopInfo);
         });
         const rGuide = MAQ.construirBloques(xml, { bpb:4, secciones:secs, bloques:maqGuide }, ALS,
                                             { reemplazar:true, loops: loopsGuide });
@@ -11606,7 +11665,9 @@ $('gen').addEventListener('click', async () => {
         xml = rGuide.xml;
         guideClipCount = rGuide.reporte.totalClips;
         rGuide.reporte.canales.forEach(f => {
-          guideEsperados[String(f.canal)] = f.clips || 0;
+          guideEsperados[String(f.canal)] = (f.detalle || []).map(d => ({
+            beat: Number(d.beat), beats: Number(d.bars) * 4
+          }));
           const g = (guideReporte && guideReporte.guides || []).find(x => String(x.guideId) === String(f.canal));
           if (!g || !f.detalle) return;
           f.detalle.forEach(d => {
@@ -11670,8 +11731,18 @@ $('gen').addEventListener('click', async () => {
     if (guideReporte){
       guideReporte.guides.forEach(g => {
         const clips = clipsGuideEnArrangement(back, g.guideId);
-        const esperados = guideEsperados[String(g.guideId)] || 0;
-        if (esperados > 0 && !clips.length) guideChecks.push(g.guideName + ': no quedaron clips GUIDE en Arrangement');
+        const esperados = guideEsperados[String(g.guideId)] || [];
+        if (clips.length !== esperados.length){
+          guideChecks.push(g.guideName + ': se esperaban ' + esperados.length +
+            ' clips GUIDE y quedaron ' + clips.length);
+          return;
+        }
+        esperados.forEach((e, i) => {
+          const r = clips[i];
+          if (!r || Math.abs(r.time - e.beat) > 1e-6 || Math.abs(r.beats - e.beats) > 1e-6)
+            guideChecks.push(g.guideName + ': el clip ' + (i + 1) +
+              ' no conserva posición y duración (' + e.beat + ', ' + e.beats + ' beats)');
+        });
       });
     }
 
