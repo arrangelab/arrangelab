@@ -7,7 +7,7 @@
      pestaña el nombre entra justo: todo lo que se agregue lo empuja fuera. -->
 <title>ArrangeLab</title>
 <meta name="author" content="@tmochetti">
-<!-- build: 2026-09-01 00:21 · 83e4a7d -->
+<!-- build: 2026-09-01 13:56 · 57094ed -->
 <!-- La versión no se muestra en la interfaz a propósito. Si hace falta saber qué copia
      tiene alguien, está en la línea de arriba: se abre el archivo con cualquier editor. -->
 <link rel="icon" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20x%3D%2210%22%20y%3D%2212%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FF3636%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2234%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%2236%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%231AFF2F%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2248%22%20width%3D%2212%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3Crect%20x%3D%2226%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3C%2Fsvg%3E%0A" type="image/svg+xml">
@@ -164,10 +164,10 @@
        TIENEN que coincidir o las columnas del encabezado no caen sobre las celdas. */
     --gapfila:14px;
     --gapsec:3px;    /* el hueco entre dos secciones. Lo usa el CSS Y el JS: ver GAPSEC */
-    /* EL PISO DE ANCHO DE UNA COLUMNA. El ancho sale de flex-grow:bars, así que un fill de
-       1 compás dentro de un track de 128 daba seis píxeles: no se podía ni apuntar. Lo
-       usan las TRES filas que comparten columnas —.useg arriba, .mcell en el medio,
-       .ecell en las envolventes—. Si cambia, cambia acá o las tres dejan de alinear. */
+    /* EL PISO DE ANCHO DE UNA COLUMNA. El ancho sale de flex-grow:bars, asi que un fill de
+       1 compas dentro de un track de 128 daria seis pixeles: no se podria ni apuntar. Lo
+       usan las CUATRO filas que comparten columnas —.useg y .udur arriba, .mcell en el
+       medio, .ecell en las envolventes—. Si cambia, cambia aca o dejan de alinear. */
     --minseg:34px;
     /* los colores de sección son semánticos y no cambian entre temas, salvo que un tema
        necesite apagarlos, como hace Retro por tener el fondo claro */
@@ -1068,7 +1068,7 @@
   .mhead .mastertoggle .chevcanal::after{width:28px;height:28px}
   .mhead .mastertoggle .mtxt{display:block;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
     width:100%;margin-left:0;padding-left:18px;text-align:center}
-  .udur{flex-basis:0;min-width:0;height:15px;display:flex;align-items:center;justify-content:center;
+  .udur{flex-basis:0;min-width:var(--minseg);height:15px;display:flex;align-items:center;justify-content:center;
     position:relative;color:color-mix(in srgb,var(--udurc,var(--dim)) 84%,#f4f7fb 16%);
     font:600 9px/1 var(--fuentetit);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;
     overflow:hidden}
@@ -5591,6 +5591,117 @@
 
 </script>
 <script>
+/* ===== app_core.js (metido adentro por empaquetar.js) ===== */
+// Estado y registro de motores compartidos. No interpreta ALS ni MIDI.
+(function (root, factory) {
+  var api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.AppCore = api;
+}(typeof self !== 'undefined' ? self : this, function () {
+  var APP_MODES = { ALS: 'als', CC: 'cc' };
+
+  function createProjectState() {
+    return {
+      ui: { mode: APP_MODES.ALS },
+      workspaces: { als: {}, cc: {} }
+    };
+  }
+
+  function createEngineRegistry(state) {
+    var engines = {};
+    return {
+      register: function (mode, engine) {
+        if (!engine || engines[mode]) throw new Error('Invalid or duplicate engine: ' + mode);
+        engines[mode] = engine;
+      },
+      active: function () { return engines[state.ui.mode] || null; },
+      setMode: function (mode) {
+        if (!engines[mode]) return false;
+        state.ui.mode = mode;
+        return true;
+      },
+      has: function (mode) { return !!engines[mode]; }
+    };
+  }
+
+  function createStructure(sections, beatsPerBar) {
+    var bpb = beatsPerBar || 4;
+    var beat = 0;
+    var map = (sections || []).map(function (section, index) {
+      var bars = Number(section && section.bars) || 0;
+      // El mapa temporal conserva los metadatos (en especial `fill`) que usa ALS.
+      var entry = {};
+      Object.keys(section || {}).forEach(function (key) { entry[key] = section[key]; });
+      entry.i = index;
+      entry.section = section;
+      entry.bars = bars;
+      entry.beats = bars * bpb;
+      entry.ini = beat;
+      beat += entry.beats;
+      entry.fin = beat;
+      return entry;
+    });
+    return {
+      sections: sections || [], bpb: bpb, map: map, totalBeats: beat, totalBars: beat / bpb,
+      sectionAt: function (atBeat) {
+        for (var i = 0; i < map.length; i++)
+          if (atBeat >= map[i].ini - 1e-9 && atBeat < map[i].fin - 1e-9) return map[i];
+        return null;
+      }
+    };
+  }
+
+  function createTimelineGeometry(structure, options) {
+    options = options || {};
+    var gapPx = options.gapPx === undefined ? 3 : options.gapPx;
+    var minSectionPx = options.minSectionPx === undefined ? 34 : options.minSectionPx;
+    var total = structure.totalBeats || 1;
+    function gapsBefore(beat) {
+      return structure.map.filter(function (section) {
+        return section.ini > 1e-9 && section.ini <= beat + 1e-9;
+      }).length;
+    }
+    function gapsWithin(start, end) {
+      return structure.map.filter(function (section) {
+        return section.ini > start + 1e-9 && section.ini < end - 1e-9;
+      }).length;
+    }
+    return {
+      gapPx: gapPx, minSectionPx: minSectionPx, totalBars: structure.totalBars, totalBeats: structure.totalBeats,
+      map: structure.map,
+      flexGrow: function (index) { return structure.map[index] ? structure.map[index].bars : 0; },
+      isNarrow: function (index, ratio) {
+        var section = structure.map[index];
+        return !!section && section.bars / (structure.totalBars || 1) < ratio;
+      },
+      blockStyle: function (beat, beats) {
+        var utility = '(100% - ' + Math.max(0, structure.map.length - 1) * gapPx + 'px)';
+        var left = 'calc(' + utility + ' * ' + beat / total + ' + ' + gapsBefore(beat) * gapPx + 'px)';
+        var width = 'calc(' + utility + ' * ' + beats / total + ' + ' + gapsWithin(beat, beat + beats) * gapPx + 'px)';
+        return { left: left, width: width };
+      },
+      beatAtX: function (x, width) {
+        var utility = width - Math.max(0, structure.map.length - 1) * gapPx;
+        if (!(utility > 0)) return null;
+        var distance = x;
+        for (var i = 0; i < structure.map.length; i++) {
+          var section = structure.map[i];
+          var sectionWidth = section.beats / total * utility;
+          if (distance <= sectionWidth + 1e-9 || i === structure.map.length - 1)
+            return Math.min(section.ini + (distance / sectionWidth) * section.beats, structure.totalBeats - 1e-6);
+          distance -= sectionWidth + gapPx;
+        }
+        return null;
+      }
+    };
+  }
+
+  return { APP_MODES: APP_MODES, createProjectState: createProjectState, createEngineRegistry: createEngineRegistry,
+    createStructure: createStructure, createTimelineGeometry: createTimelineGeometry };
+}));
+
+</script>
+<script>
 // EL CATALOGO DE ESTRUCTURAS QUE VIAJA CON LA APP
 //
 // Formato: { grupo, clave, tracks, secs:[[rol, bars], ...] }
@@ -5865,6 +5976,18 @@ let guideSel = {};
 let baseOutname = '';
 let guideDefaultOutname = '';
 
+// ALS conserva su camino productivo, pero la UI ya entra por un registry de engines.
+// CC no esta registrado ni expuesto hasta que tenga su propio motor.
+const projectState = AppCore.createProjectState();
+let appMode = projectState.ui.mode;
+const engines = AppCore.createEngineRegistry(projectState);
+const alsEngine = {
+  getLoops: function (xml) { return MAQ.loopsDelSet(xml, ALS, 4); },
+  getTimelineBlocks: function (state, rows) { return MAQ.planificarBloques(state, rows); }
+};
+engines.register(AppCore.APP_MODES.ALS, alsEngine);
+function activeEngine(){ return engines.active(); }
+
 function audioTracksParaGuide(){
   return loops.filter(l => l && l.tipo === 'audio');
 }
@@ -5992,8 +6115,10 @@ function prepararGuideCanal(sourceId, guide, entrada){
 }
 function canalEditableEnMatriz(l){ return !!(l && (l.usable || l.guideFallbackEditable)); }
 function loopsDeCanal(c){ const i = infoDeCanal(c); return (i && i.loops) || []; }
-function totalBeats(){ return secs.reduce((a,s) => a + s.bars * 4, 0); }
-function mapaSecs(){ return MAQ.mapaSecciones(secs, 4); }
+function structureCore(){ return AppCore.createStructure(secs, 4); }
+function timelineGeometry(){ return AppCore.createTimelineGeometry(structureCore(), { gapPx:GAPSEC, minSectionPx:34 }); }
+function totalBeats(){ return structureCore().totalBeats; }
+function mapaSecs(){ return structureCore().map; }
 // El tramo real de una vuelta, con la regla del fill adentro. Es la MISMA cuenta que hace
 // el core al normalizar: si acá se calculara distinto, la pantalla y el .als discreparían.
 function tramoDe(c, bl, mapa){
@@ -6815,13 +6940,21 @@ function cortarFinal(i, bars, yaGuardado){
     const t = tramoDe(c, bl, mapa);
     if (!t || t.poli) continue;               // el polimétrico atraviesa el fill entero
     if (t.ini >= beatFill - 1e-9) continue;   // ya arranca ahí: se vuelve el fill solo
-    nuevas.push({ c: c, loop: bl.loop });
+    nuevas.push({ c: c, loop: bl.loop, previo: bl });
   }
 
   // las envolventes SÍ se duplican: el fill hereda la forma de su madre. La maqueta no.
   listasParalelas().forEach(a => a.splice(i+1, 0, a[i]));
   secs[i]   = clonSec(madre, { bars: madre.bars - bars });
   secs[i+1] = clonSec(madre, { name: 'FILL', bars: bars, fill: true });
+  nuevas.forEach(x => {
+    // Los bloques reabiertos del Arrangement guardan un largo explicito para conservar
+    // recortes manuales. Este deja de ser valido al insertar un fill en el medio: hay que
+    // volver a medirlo contra el nuevo limite o se superpone al compas final del fill.
+    delete x.previo.beats;
+    delete x.previo.desdeElFinal;
+    delete x.previo.cierraEnFill;
+  });
   nuevas.forEach(x => bloquesDe(x.c).push({ id: nuevoIdBloque(), loop: x.loop, beat: beatFill }));
   nuevas.forEach(x => bloquesDe(x.c).sort((a, b) => a.beat - b.beat));
   setSelSimple(i + 1);
@@ -8320,6 +8453,7 @@ function nearestEnvPoint(pts, beat, valor){
 function carrilDeEnv(e, idx){
   asegurarEnv(e);
   const bpb = 4, alto = 40;
+  const timeline = timelineGeometry();
   const { color, opacidad } = colorDeEnv(e, idx);
   const ley = leyendaEnv(e);
   const canalLey = nombreVisibleCanalEnv(e) || ley.principal;
@@ -8328,7 +8462,7 @@ function carrilDeEnv(e, idx){
   if (esEnvBool(e)){
     const celdasBool = secs.map((sec, i) => {
       const activo = estadoBoolEnv(e, i);
-      return `<div class="ecell bool ${activo ? 'on' : 'off'}" style="flex-grow:${sec.bars};display:grid;place-items:center;font-size:10px;font-weight:800;letter-spacing:.08em;background:${activo ? color : 'transparent'};color:${activo ? '#050606' : color};border-color:${color}"
+      return `<div class="ecell bool ${activo ? 'on' : 'off'}" style="flex-grow:${timeline.flexGrow(i)};display:grid;place-items:center;font-size:10px;font-weight:800;letter-spacing:.08em;background:${activo ? color : 'transparent'};color:${activo ? '#050606' : color};border-color:${color}"
         data-env="${idx}" data-esec="${i}">${esc(msg(activo ? 'env.on' : 'env.off'))}</div>`;
     }).join('');
     return `<div class="mrow erow${idx === envActive ? ' activa' : ''}">
@@ -8382,7 +8516,7 @@ function carrilDeEnv(e, idx){
         stroke="${color}" stroke-opacity="${(sh || (dib && dib.length)) ? Math.min(1, opacidad + 0.12) : opacidad * 0.6}" stroke-width="2.8"
         ${(sh || (dib && dib.length)) ? '' : 'stroke-dasharray="3 3"'}
         vector-effect="non-scaling-stroke"/>${handles}</svg>` : '';
-    return `<div class="ecell${(sh || (dib && dib.length)) ? '' : ' vacia'}" style="flex-grow:${sec.bars}"
+    return `<div class="ecell${(sh || (dib && dib.length)) ? '' : ' vacia'}" style="flex-grow:${timeline.flexGrow(i)}"
       data-env="${idx}" data-esec="${i}"
 >${svg}</div>`;
   }).join('');
@@ -8581,7 +8715,7 @@ function ubicarSecBar(){
 function recargarCanales(){
   baseCache = {};        // los valores base se miden sobre el XML, que acaba de cambiar
   catalogoCache = {};
-  loops = MAQ.loopsDelSet(tplXml, ALS, 4);
+  loops = activeEngine().getLoops(tplXml);
   maqAjustar();
   const sel = $('envtrack');
   if (sel){
@@ -9064,7 +9198,8 @@ function renderMatriz(opts){
   // estructura, y la estructura existe con o sin .als cargado. Antes no se notaba
   // porque el timeline era una fila aparte; con el merge, abrir la app sin archivo
   // dejaba la estructura dibujada en gris y se veía vacía.
-  const totalBars = secs.reduce((a,s) => a + s.bars, 0) || 1;
+  const timeline = timelineGeometry();
+  const totalBars = timeline.totalBars || 1;
   // EL ENCABEZADO ES EL TIMELINE.
   //
   // Antes eran dos filas: el timeline arriba, con el color y el arrastre, y el encabezado
@@ -9098,10 +9233,10 @@ function renderMatriz(opts){
         data-tool-popover="structure" aria-expanded="${toolAbierto === 'structure'}"
         aria-controls="structurePopover" data-i18n="btn.estructura">${esc(msg('btn.estructura'))}</button></div>` +
       '<div class="mcells">' + secs.map((s,i) => {
-      const angosto = s.bars / totalBars < 0.045;
+      const angosto = timeline.isNarrow(i, 0.045);
       accBars += s.bars;
       return `<div class="useg${s.fill ? ' esfill' : ''}${estaSelSec(i) ? ' sel' : ''}${angosto ? ' angosto' : ''}"
-        style="flex-grow:${s.bars};--secc:${colorOf(s, i)}"
+        style="flex-grow:${timeline.flexGrow(i)};--secc:${colorOf(s, i)}"
         data-secrow="${i}" data-col="${i}" draggable="false"
         >` +
         (angosto ? '' : `<span class="unom">${esc(nombreDe(s))}</span>`) +
@@ -9116,9 +9251,9 @@ function renderMatriz(opts){
     secs.map((s, i) => {
       const txt = textoDurSec(s);
       const corto = s.bars <= 3;
-      const micro = s.bars / totalBars < 0.045;
+      const micro = timeline.isNarrow(i, 0.045);
       const num = micro && (s.bars <= 4 || (s.fill && s.bars === 5));
-      return `<div class="udur${corto ? ' corto' : ''}${micro ? ' micro' : ''}${num ? ' num' : ''}" style="flex-grow:${s.bars};--udurc:${colorOf(s, i)}"
+      return `<div class="udur${corto ? ' corto' : ''}${micro ? ' micro' : ''}${num ? ' num' : ''}" style="flex-grow:${timeline.flexGrow(i)};--udurc:${colorOf(s, i)}"
         data-dursec="${i}"><i aria-hidden="true"></i><span class="udurtxt">${esc(txt)}</span></div>`;
     }).join('') + `</div></div>`;
 
@@ -9167,7 +9302,7 @@ function renderMatriz(opts){
 
   // LA MISMA LISTA que va a escribir construir(). No hay dos geometrías: la pantalla
   // dibuja los bloques normalizados y el .als escribe los mismos, uno por clip.
-  const plan = MAQ.planificarBloques({ bpb:4, secciones:secs, bloques:maq }, loops);
+  const plan = activeEngine().getTimelineBlocks({ bpb:4, secciones:secs, bloques:maq }, loops);
   ultimoPlan = plan;   // lo usa el cartel para decir qué vuelta hay bajo el mouse
   // totalBars ya se calculó arriba, con el encabezado
   const porCanal = {};
@@ -9248,10 +9383,9 @@ function renderMatriz(opts){
     // vueltas con beat propio y pueden atravesar el límite, así que viven en una capa
     // aparte, encima, posicionada en la timeline entera.
     const celdas = secs.map((s,i) =>
-      `<div class="mcell vacia${s.fill ? ' esfill' : ''}" style="flex-grow:${s.bars}"
+      `<div class="mcell vacia${s.fill ? ' esfill' : ''}" style="flex-grow:${timeline.flexGrow(i)}"
         data-canal="${esc(claveDe(l))}" data-sec="${i}"></div>`).join('');
 
-    const tot = plan.totalBeats || 1;
     const cuantos = (l.loops || []).length;
     // el POLY se dice UNA vez por tramo, no en cada vuelta: repetido doce veces seguidas
     // deja de ser un dato y pasa a ser ruido que tapa el nombre del loop
@@ -9262,11 +9396,7 @@ function renderMatriz(opts){
       // el ancho ES la duración real: un loop de 4 se ve la mitad que uno de 8, y una
       // vuelta que cruza una sección se dibuja entera, con la línea pasándole por encima.
       // Los huecos entre columnas se suman aparte, o la vuelta se despega de su sección.
-      const huecos = plan.mapa.filter(m => m.ini > 1e-9 && m.ini <= b.beat + 1e-9).length;
-      const cruza = plan.mapa.filter(m => m.ini > b.beat + 1e-9 && m.ini < b.fin - 1e-9).length;
-      const util = `(100% - ${(plan.mapa.length - 1) * GAPSEC}px)`;
-      const izq = `calc(${util} * ${b.beat / tot} + ${huecos * GAPSEC}px)`;
-      const anc = `calc(${util} * ${b.beats / tot} + ${cruza * GAPSEC}px)`;
+      const estiloBloque = timeline.blockStyle(b.beat, b.beats);
       const cls = ['vuelta'];
       if (b.loop > 1) cls.push('alt');          // trama diagonal: no es el loop base
       if (b.poli) cls.push('poli');
@@ -9289,7 +9419,7 @@ function renderMatriz(opts){
         : '';
       return `<div class="${cls.join(' ')}" data-canal="${esc(claveDe(l))}" data-bid="${esc(b.id)}"
         data-beat="${b.beat}" data-largo="${b.beats}" data-tip="${esc(tip)}"
-        style="left:${izq};width:${anc};--cc:${col}"
+        style="left:${estiloBloque.left};width:${estiloBloque.width};--cc:${col}"
         >${etiq ? `<span class="lnum">${esc(etiq)}</span>` : ''}</div>`;
     }).join('');
 
@@ -9995,21 +10125,8 @@ function beatEnX(fila, x){
   if (!(r.width > 0)) return null;
   // se descuentan los huecos entre columnas, igual que al dibujar: sin esto el beat que
   // devuelve se corre hasta 20 px sobre el final de una estructura de siete secciones
-  const util = r.width - (secs.length - 1) * GAPSEC;
-  if (!(util > 0)) return null;
-  const mapa = mapaSecs();
-  let d = x - r.left;
-  for (let k = 0; k < mapa.length; k++){
-    const anc = mapa[k].beats / (totalBeats() || 1) * util;
-    if (d <= anc + 1e-9 || k === mapa.length - 1)
-      // SIN PISO EN CERO. Arrastrando hacia atras el cursor tiene que poder pasarse del
-      // comienzo del arreglo, o la primera vuelta -que arranca justo en el beat 0- no hay
-      // forma de sacarla: haria falta un beat negativo y el piso lo volvia imposible.
-      // Nadie pinta en negativo, asi que dejarlo pasar no habilita nada raro.
-      return Math.min(mapa[k].ini + (d / anc) * mapa[k].beats, totalBeats() - 1e-6);
-    d -= anc + GAPSEC;
-  }
-  return null;
+  // La geometria conserva el margen negativo al arrastrar hacia atras: no se limita a 0.
+  return timelineGeometry().beatAtX(x - r.left, r.width);
 }
 
 // pintando: { trazos:[{c,n,puestos,ini,id}] } mientras se arrastra para agregar vueltas
@@ -11437,7 +11554,7 @@ async function cargarAls(f){
     const ver = ALS.readVersion(tplXml);
 
     // los loops de Session: es lo que alimenta la matriz
-    loops = MAQ.loopsDelSet(tplXml, ALS, 4);
+    loops = activeEngine().getLoops(tplXml);
     actualizarPaletaSecciones(loops);
     const conLoop = loops.filter(l => l.usable);
     if (!conLoop.length){
