@@ -7,7 +7,7 @@
      pestaña el nombre entra justo: todo lo que se agregue lo empuja fuera. -->
 <title>ArrangeLab</title>
 <meta name="author" content="@tmochetti">
-<!-- build: 2026-09-02 04:02 · a8e7de7 -->
+<!-- build: 2026-09-02 04:08 · b192181 -->
 <!-- La versión no se muestra en la interfaz a propósito. Si hace falta saber qué copia
      tiene alguien, está en la línea de arriba: se abre el archivo con cualquier editor. -->
 <link rel="icon" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20x%3D%2210%22%20y%3D%2212%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FF3636%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2234%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%2236%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%231AFF2F%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2248%22%20width%3D%2212%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3Crect%20x%3D%2226%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3C%2Fsvg%3E%0A" type="image/svg+xml">
@@ -1683,7 +1683,7 @@
       'als.vacio': 'No hay archivos .als en esta carpeta.',
       'als.carpeta': 'Carpeta con .als',
       'als.archivo': 'Ableton Live Set',
-      'als.bpmtuyo': 'El Set viene a {delset} BPM. Se mantiene el {tuyo} que pusiste a mano: ese es el que se escribe en el .als generado.',
+      'als.bpmpisado': 'El Set viene a {delset} BPM y el campo lo tomó. Tenías {tuyo} escrito a mano: si querés ese, volvé a ponerlo antes de generar.',
       'als.nopude': 'No pude abrir esa carpeta.',
       'als.nonav': 'Este navegador no permite explorar carpetas. Se usa el selector nativo.',
 
@@ -2135,7 +2135,7 @@
       'als.vacio': 'There are no .als files in this folder.',
       'als.carpeta': 'Folder with .als',
       'als.archivo': 'Ableton Live Set',
-      'als.bpmtuyo': 'The Set is at {delset} BPM. Keeping the {tuyo} you set by hand: that is what gets written into the generated .als.',
+      'als.bpmpisado': 'The Set is at {delset} BPM and the field took it. You had {tuyo} set by hand: if you want that one, type it again before generating.',
       'als.nopude': 'I could not open that folder.',
       'als.nonav': 'This browser cannot browse folders. The native picker is used instead.',
 
@@ -8118,11 +8118,15 @@ const bpm = () => Math.max(1, Number($('bpm').value) || 138);
 
 // ¿EL BPM LO PUSO UNA PERSONA O SALIÓ DE UN ARCHIVO?
 //
-// Cargar un .als escribe el tempo del Set en el campo. Eso está bien la primera vez —el
-// campo arranca en 138 y nadie lo miró—, pero si vos ya habías escrito 147, pisarlo te
-// borra la decisión sin decir nada, y el .als que se genera sale con el tempo viejo. Era
-// el bug: "lee el BPM pero no lo escribe". Desde que lo tocás a mano, el archivo ya no
-// manda: se avisa y se respeta lo tuyo.
+// Cargar un `.als` escribe el tempo del Set en el campo, y así tiene que ser: ese es el
+// tempo con el que se va a escribir el archivo generado. Lo que no puede pasar es que
+// pise en silencio un número que escribiste vos, que fue el bug de "lee el BPM pero no lo
+// escribe": si habías puesto 147 y cargabas un Set de 138, el campo volvía a 138 sin
+// decir nada y el archivo salía a 138.
+//
+// La marca dura hasta la próxima carga: sólo decide si hay que AVISARTE que se reemplazó
+// lo tuyo. No bloquea la lectura —eso rompía lo contrario: con la marca pegada, ningún
+// Set volvía a marcar su tempo—.
 let bpmAMano = false;
 const secsPerBar = () => 4 * 60 / bpm();
 const total = () => secs.reduce((a,s) => a + s.bars, 0);
@@ -11705,10 +11709,16 @@ async function cargarAls(f){
     verDetalle = false;
     pintarInfoAls();
     if (bpmT){
-      // Si el BPM lo escribiste vos y no coincide con el del Set, gana el tuyo y se avisa:
-      // el que se escribe en el archivo generado es el que está en el campo.
-      if (!bpmAMano || Number(bpmT) === bpm()) $('bpm').value = bpmT;
-      else if (log) log.textContent = msg('als.bpmtuyo', { delset: bpmT, tuyo: bpm() });
+      // EL CAMPO SIGUE AL SET. Cargar un `.als` muestra su tempo, siempre: es lo que se
+      // espera al abrirlo y es el tempo con el que se va a escribir el archivo generado.
+      //
+      // Lo único que no puede pasar es que un valor escrito a mano desaparezca sin que te
+      // enteres: si tenías otro, se avisa cuál era y que ahora manda el del Set.
+      var tuyo = bpm();
+      var pisaLoTuyo = bpmAMano && Number(bpmT) !== tuyo;
+      $('bpm').value = bpmT;
+      bpmAMano = false;
+      if (pisaLoTuyo && log) log.textContent = msg('als.bpmpisado', { delset: bpmT, tuyo: tuyo });
     }
     // el nombre de salida arranca igual al del archivo cargado: si lo dejás así,
     // el .als que baja se llama igual y podés sobrescribir el original

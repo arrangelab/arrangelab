@@ -873,16 +873,26 @@
         el.deletePreset.disabled = !state.selectedPresetId;
       }
 
-      // EL ESTADO NATURAL DE UNA PERILLA ES SU MINIMO. Si a un control se le fijo un
-      // rango, el preset lo guarda en el piso de ese rango -aunque el piso sea 0-: es de
-      // donde arranca la performance. Los controles sin rango fijado no se guardan con
-      // valor: no hay un "natural" que inventarles.
+      // EL PRESET GUARDA LA MESA COMO LA DEJASTE.
+      //
+      // Dos reglas, en este orden:
+      //   1. un control al que le fijaste un rango arranca en su MINIMO -aunque sea 0-:
+      //      ese es su estado natural aunque nunca lo hayas tocado en esta sesion;
+      //   2. y lo que este puesto en la pantalla gana, tal cual: si dejaste el OH en 127
+      //      y el CC en 75, eso es lo que se guarda.
+      //
+      // Un control que no tiene ni valor ni rango no se guarda: no hay nada que recordar
+      // y mostrarlo en 0 seria inventar una posicion que nadie eligio.
       function valoresNaturales() {
         var rangos = state.project.liveControls.ranges || {};
         var out = {};
         Object.keys(rangos).forEach(function (id) {
           var r = rangos[id];
           if (r && Number.isFinite(r.min)) out[id] = r.min;
+        });
+        Object.keys(state.liveControlValues || {}).forEach(function (id) {
+          var v = state.liveControlValues[id];
+          if (Number.isFinite(v)) out[id] = v;
         });
         return out;
       }
@@ -899,7 +909,9 @@
         state.selectedPresetId = preset.id;
         savePresets();
         log('PRESET SAVED → ' + preset.name +
-          (Object.keys(valores).length ? ' · ' + Object.keys(valores).length + ' controles con rango quedan en su mínimo' : ''));
+          (Object.keys(valores).length
+            ? ' · ' + Object.keys(valores).length + ' controles guardados como los dejaste'
+            : ' · ningún control tocado todavía'));
         renderAll();
       }
 
@@ -916,7 +928,8 @@
         el.presetName.value = preset.name;
         log('PRESET LOADED → ' + preset.name +
           (Object.keys(preset.values || {}).length
-            ? ' · las perillas con rango muestran su mínimo, sin enviar MIDI' : ''));
+            ? ' · ' + Object.keys(preset.values).length + ' controles vuelven a su posición, sin enviar MIDI'
+            : ''));
         renderAll();
       }
 
@@ -2034,7 +2047,10 @@
       }
 
       function exportJson() {
-        var blob = new Blob([JSON.stringify(state.project, null, 2)], { type: 'application/json' });
+        // Las posiciones viajan con el proyecto, igual que en un preset: EXPORT es un
+        // preset en un archivo. `normalizeProject` ignora la clave de mas al importar.
+        var conValores = Object.assign({}, state.project, { liveControlValues: valoresNaturales() });
+        var blob = new Blob([JSON.stringify(conValores, null, 2)], { type: 'application/json' });
         var url = URL.createObjectURL(blob);
         var a = document.createElement('a');
         a.href = url;
@@ -2048,7 +2064,10 @@
         var reader = new FileReader();
         reader.onload = function () {
           try {
-            state.project = HPM.normalizeProject(JSON.parse(String(reader.result || '')));
+            var crudo = JSON.parse(String(reader.result || ''));
+            state.project = HPM.normalizeProject(crudo);
+            state.liveControlValues = (crudo && typeof crudo.liveControlValues === 'object')
+              ? HPM.clone(crudo.liveControlValues) : {};
             state.liveSoloDeviceId = '';
             state.liveSoloRestoreValues = {};
             log('Proyecto importado.');
