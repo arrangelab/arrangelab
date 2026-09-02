@@ -396,10 +396,13 @@
       box-shadow:0 0 0 1px color-mix(in srgb,var(--secc,#34f06e) 72%,transparent),
         0 0 16px color-mix(in srgb,var(--secc,#34f06e) 22%,transparent)}
     .useg .ubar{position:absolute;left:5px;top:3px;font:9px/1 var(--fuentetit);color:var(--dim)}
+    .useg .unomedit{position:absolute;left:6px;right:6px;top:50%;transform:translateY(-50%);
+      height:24px;padding:0 6px;z-index:4;font:12px/1 var(--fuentetit);text-align:center}
     /* El tirador de la derecha estira la seccion. Es el borde, no un boton aparte: es el
        gesto de ArrangeLab. */
     .useg .ugrip{position:absolute;right:-1px;top:0;bottom:0;width:9px;cursor:ew-resize;z-index:2;
       border-radius:0 5px 5px 0}
+    .useg .ugrip.izq{left:-1px;right:auto;border-radius:5px 0 0 5px}
     .useg .ugrip:hover{background:color-mix(in srgb,var(--secc,#34f06e) 42%,transparent)}
     .useg .uplay{position:absolute;top:0;bottom:0;width:2px;background:var(--warn);
       box-shadow:0 0 9px var(--warn);pointer-events:none}
@@ -409,6 +412,20 @@
     .autodot{position:absolute;top:2px;right:3px;width:7px;height:7px;border-radius:50%;
       background:var(--bad);box-shadow:0 0 6px var(--bad);pointer-events:none}
     .autodot.vacia{background:transparent;border:1px solid var(--bad);box-shadow:none;opacity:.6}
+    /* LAS LANES, AGRUPADAS POR EL CANAL DEL SET. Cada bus de la MC-707 es un grupo:
+       es la misma division con la que se graba en Ableton, asi que la pantalla se lee
+       igual que el Set. */
+    .lane-grupo{border:1px solid var(--line);border-radius:14px;margin-bottom:14px;
+      background:rgba(255,255,255,.012)}
+    .lane-grupo-head{display:flex;align-items:center;gap:10px;padding:10px 14px;
+      border-bottom:1px solid var(--line)}
+    .lane-grupo.plegado .lane-grupo-head{border-bottom:0}
+    .lane-grupo-head .par{font:11px/1 var(--fuentetit);letter-spacing:.06em;color:var(--acc2);
+      min-width:52px}
+    .lane-grupo-head .bus{font:12px/1 var(--fuentetit);letter-spacing:.06em;color:var(--txt)}
+    .lane-grupo-head .cuantas{font:11px/1 var(--fuentetit);letter-spacing:.06em;color:var(--dim)}
+    .lane-grupo-cuerpo{padding:14px;display:grid;gap:14px}
+    .lane-grupo-cuerpo[hidden]{display:none}
     .lane-head{display:flex;align-items:center;gap:10px}
     .lane-head b{font:12px/1 var(--fuentetit);letter-spacing:.06em}
     .lane-head .lane-cc{font:11px/1 var(--fuentetit);letter-spacing:.06em;color:var(--dim)}
@@ -464,12 +481,15 @@
     .secbar input[type=text]{width:150px;height:28px;padding:0 8px}
     .secbar input[type=number]{width:74px;height:28px;padding:0 8px}
     .secbar .sbcolor{width:16px;height:16px;border-radius:5px;border:1px solid rgba(255,255,255,.28);display:block}
+    .secbar .sbsep{width:1px;height:20px;background:var(--line);margin:0 2px}
     .palsec{display:inline-flex;gap:4px;align-items:center;padding-left:6px;margin-left:2px;
       border-left:1px solid var(--line)}
     .palsec button{width:16px;height:16px;padding:0;border-radius:5px;
       border:1px solid rgba(255,255,255,.22);cursor:pointer}
     .palsec .sinluz{background:transparent;color:var(--dim)}
+    /* La fila de acciones va ARRIBA de la barra, como la del arranger. */
     .estructura-acciones{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+    .estructura-acciones.arriba{margin:0 0 12px}
     .estructura-acciones .rotulo{font:11px/1 var(--fuentetit);letter-spacing:.09em;
       text-transform:uppercase;color:var(--hw-label-green)}
     .estructura-acciones button.activo{border-color:var(--acc);color:var(--acc)}
@@ -636,13 +656,7 @@
         El largo del tema sale de sus locators y de ningún otro lado: sin Set no hay timeline,
         no hay lanes y PLAY queda apagado. Los controles CC de abajo sí funcionan: son manuales
         y no dependen del arreglo.</div>
-        <div class="estructura" id="structureBox">
-          <div class="secbarwrap"><div id="secbar" class="secbar" hidden></div></div>
-          <div class="sectimes" id="structureTimes"></div>
-          <div class="secstrip" id="structureStrip"></div>
-          <div class="secdurs" id="structureDurs"></div>
-        </div>
-        <div class="estructura-acciones" id="structureActions" hidden>
+        <div class="estructura-acciones arriba" id="structureActions" hidden>
           <span class="rotulo" title="Lleva cada sección al múltiplo más cercano">Round</span>
           <button id="round8Btn" class="secondary" title="Acomodar todo a múltiplos de 8">8</button>
           <button id="round16Btn" class="secondary" title="Acomodar todo a múltiplos de 16">16</button>
@@ -655,6 +669,13 @@
           <button id="saveStructureBtn" class="secondary">SAVE STRUCTURE</button>
           <button id="delStructureBtn" class="danger">BORRAR</button>
         </div>
+        <div class="estructura" id="structureBox">
+          <div class="secbarwrap"><div id="secbar" class="secbar" hidden></div></div>
+          <div class="sectimes" id="structureTimes"></div>
+          <div class="secstrip" id="structureStrip"></div>
+          <div class="secdurs" id="structureDurs"></div>
+        </div>
+
         <div class="help" id="structureHelp">Las secciones son los locators del Set y el último marca el final, no una sección más.
         Tocá una para elegirla: se resalta también en las automation lanes y se puede renombrar,
         estirar desde su borde derecho, mover, duplicar o borrar.
@@ -763,6 +784,7 @@
         secDrag: null,
         secMove: null,
         paletaAbierta: false,
+        gruposLanes: {},
         historia: { atras: [], adelante: [] },
         estructuras: cargarEstructuras(),
         estructuraElegida: '',
@@ -1119,7 +1141,7 @@
             (angosto ? '' : '<span class="unom">' + esc(seccion.name) + '</span>') +
             '<small>' + (seccion.fill ? 'F' : (angosto ? '' : mmss(seccion.bars))) + '</small>' +
             (activa ? '<span class="uplay" style="left:' + Math.max(0, Math.min(100, avance)) + '%"></span>' : '') +
-            '<span class="ugrip" data-secgrip="' + seccion.index + '" title="Estirar"></span>' +
+            gripsDeSeccion(seccion.index, secciones) +
             '</div>';
         }).join('');
 
@@ -1137,6 +1159,58 @@
         renderSecBar(secciones);
       }
 
+      // LOS TIRADORES, COMO EN ARRANGELAB.
+      //
+      // Un fill crece HACIA ATRAS: su borde derecho no se mueve. Por eso lleva el tirador
+      // a la IZQUIERDA -que lo estira a el, comiendole compases a su madre- y ademas un
+      // tirador a la derecha que estira A LA MADRE. Y la madre de un fill no lleva tirador
+      // propio a la derecha: ese borde ya es del fill.
+      //
+      //   estirar para adelante  -> crece la seccion cortada (la madre)
+      //   estirar para atras     -> crece el fill y se le descuenta a la madre
+      function gripsDeSeccion(i, secciones) {
+        var s = secciones[i];
+        if (!s) return '';
+        var tira = function (indice, signo, izq) {
+          return '<span class="ugrip' + (izq ? ' izq' : '') + '" data-secgrip="' + indice +
+            '" data-gripsign="' + signo + '" title="Estirar"></span>';
+        };
+        if (s.fill) {
+          return tira(i, -1, true) + (i > 0 ? tira(i - 1, 1, false) : '');
+        }
+        if (secciones[i + 1] && secciones[i + 1].fill) return tira(i, -1, true);
+        return tira(i, 1, false);
+      }
+
+      // CAMBIAR EL LARGO DE UNA SECCION. Es el `setBars` de ArrangeLab, con su regla del
+      // fill adentro, asi que el arrastre, el campo de compases y x2/div2 se comportan
+      // igual: el fill crece hacia atras y lo que crece sale de su madre, que nunca puede
+      // quedar en cero. El total del tema no cambia en ese caso, asi que los puntos de
+      // automatizacion se quedan donde estan.
+      function setBarsSeccion(i, pedido, opciones) {
+        var lista = HPM.editableSections(state.project);
+        var s = lista[i];
+        if (!s) return false;
+        var nuevo = Math.max(1, Math.min(512, Math.round(Number(pedido) || 1)));
+        if (s.fill && i > 0) {
+          var madre = lista[i - 1];
+          var disponible = madre.bars + s.bars - 1;
+          nuevo = Math.min(nuevo, disponible);
+          if (nuevo === s.bars) return false;
+          var dif = nuevo - s.bars;
+          lista[i - 1] = Object.assign({}, madre, { bars: madre.bars - dif });
+          lista[i] = Object.assign({}, s, { bars: nuevo });
+          aplicarSecciones(lista, (opciones && opciones.silencio) ? '' : (s.name + ' → ' + nuevo + ' bars'),
+            Object.assign({ conservarPuntos: true }, opciones || {}));
+          return true;
+        }
+        if (nuevo === s.bars) return false;
+        lista[i] = Object.assign({}, s, { bars: nuevo });
+        aplicarSecciones(lista, (opciones && opciones.silencio) ? '' : (s.name + ' → ' + nuevo + ' bars'),
+          opciones || {});
+        return true;
+      }
+
       // LA BARRA FLOTANTE de la seccion elegida. Son los mismos controles de ArrangeLab:
       // nombre, compases, x2, /2, color, FILL, duplicar, borrar y agregar.
       function renderSecBar(secciones) {
@@ -1146,14 +1220,26 @@
         // operaciones sobre una seccion que ya no estaba elegida.
         if (!actual) { el.secbar.innerHTML = ''; return; }
         var color = colorDeSeccion(actual.index, actual.color);
+        // EL MISMO ORDEN QUE ARRANGELAB: nombre · compases, el + de antes, los largos, el
+        // color, duplicar, borrar, FILL y el + de despues. Los largos van ANTES del color
+        // cuando la seccion estira hacia atras -un fill o la madre de un fill-, que es
+        // donde esta la seccion de la que salen esos compases.
+        var estiraHaciaAtras = actual.fill ||
+          !!(secciones[actual.index + 1] && secciones[actual.index + 1].fill);
+        var largos =
+          '<button class="sb sblarg" data-secop="x2" title="El doble de largo">×2</button>' +
+          '<button class="sb sblarg" data-secop="div2" title="La mitad de largo"' +
+          (actual.bars < 2 ? ' disabled' : '') + '>÷2</button>';
         var html = '';
         html += '<span class="sbnom" style="color:' + color + '">' + esc(actual.name) + ' · ' +
           barsLegibles(actual.bars) + ' BARS · ' + mmss(actual.bars) + '</span>';
-        html += '<input id="secName" type="text" maxlength="40" value="' + esc(actual.name) + '" aria-label="Nombre">';
-        html += '<input id="secBars" type="number" min="1" max="512" step="1" value="' + barsLegibles(actual.bars) + '" aria-label="Bars">';
-        html += '<button class="sb sblarg" data-secop="x2" title="El doble de largo">×2</button>';
-        html += '<button class="sb sblarg" data-secop="div2" title="La mitad de largo">÷2</button>';
+        html += '<input id="secBars" type="number" min="1" max="512" step="1" value="' + barsLegibles(actual.bars) + '" aria-label="Bars" title="Compases">';
+        if (!actual.fill && actual.index > 0) {
+          html += '<button class="sb sblarg" data-secop="antes" title="Insertar una sección antes">+</button>';
+        }
+        if (estiraHaciaAtras) html += largos;
         html += '<button class="sb sbcolorbtn" data-secop="color" title="Color"><span class="sbcolor" style="background:' + color + '"></span></button>';
+        if (!estiraHaciaAtras) html += largos;
         // El boton dice lo que va a hacer: sobre un fill lo saca, sobre una seccion corta
         // su ultimo compas. Apagado cuando no se puede, con el motivo en el title.
         var haySiguienteFill = !!(secciones[actual.index + 1] && secciones[actual.index + 1].fill);
@@ -1164,10 +1250,11 @@
             : haySiguienteFill ? 'Ya tiene un fill atrás'
             : actual.bars > 1 ? 'Cortar el último compás como fill'
             : 'Mide un compás: no hay qué cortar') + '">FILL</button>';
-        html += '<button class="sb" data-secop="left" title="Mover a la izquierda">←</button>';
-        html += '<button class="sb" data-secop="right" title="Mover a la derecha">→</button>';
+        html += '<button class="sb sblarg" data-secop="add" title="Insertar una sección después">+</button>';
+        html += '<span class="sbsep" aria-hidden="true"></span>';
+        html += '<button class="sb" data-secop="left" title="Mover a la izquierda (←)">←</button>';
+        html += '<button class="sb" data-secop="right" title="Mover a la derecha (→)">→</button>';
         html += '<button class="sb" data-secop="dup" title="Duplicar">⧉</button>';
-        html += '<button class="sb sblarg" data-secop="add" title="Agregar una seccion despues">+</button>';
         html += '<button class="sb sbdel" data-secop="del" title="Borrar">✕</button>';
         if (state.paletaAbierta) {
           html += '<span class="palsec">' + SECTION_PALETTE.map(function (c) {
@@ -1190,7 +1277,7 @@
         if (!(opciones && opciones.sinPaso)) anotarPaso();
         state.project = HPM.remapStructure(state.project, lista, opciones);
         if (queHizo) log('ESTRUCTURA → ' + queHizo + ' · ' + state.project.totalBars + ' bars');
-        renderAll();
+        if (!(opciones && opciones.sinRender)) renderAll();
       }
 
       // ROUND ES UNA ACCION, NO UN MODO. Acomoda las secciones que ya estan: lleva cada
@@ -1248,7 +1335,10 @@
         var i = state.selectedSectionIndex;
         if (i < 0 || !lista[i]) return;
         var nombre = lista[i].name;
-        if (op === 'add') {
+        if (op === 'antes') {
+          lista.splice(i, 0, { name: 'NUEVA', bars: 16, color: '', fill: false, from: -1 });
+          state.selectedSectionIndex = i;
+        } else if (op === 'add') {
           lista.splice(i + 1, 0, { name: 'NUEVA', bars: 16, color: '', fill: false, from: -1 });
           state.selectedSectionIndex = i + 1;
         } else if (op === 'dup') {
@@ -1268,10 +1358,12 @@
           lista.splice(i + 1, 0, lista.splice(i, 1)[0]);
           state.selectedSectionIndex = i + 1;
         } else if (op === 'x2') {
-          lista[i].bars = Math.min(512, lista[i].bars * 2);
+          setBarsSeccion(i, lista[i].bars * 2);
+          return;
         } else if (op === 'div2') {
           if (lista[i].bars <= 1) { log('ESTRUCTURA → ' + nombre + ' ya mide un compás'); return; }
-          lista[i].bars = Math.max(1, Math.round(lista[i].bars / 2));
+          setBarsSeccion(i, Math.max(1, Math.round(lista[i].bars / 2)));
+          return;
         } else if (op === 'fill') {
           opFill(lista, i);
           return;
@@ -1871,9 +1963,67 @@
         el.sceneTable.innerHTML = html;
       }
 
+      // A QUE CANAL DEL SET PERTENECE UNA LANE.
+      //
+      // La lane automatiza un control, el control es de un device, y el device esta
+      // asignado a un bus USB en «Instrumentos por canal». Ese bus es una pista del Set:
+      // la misma division con la que Tomas graba en Ableton. Agrupar por ahi es lo que
+      // hace que las dos paginas hablen del mismo tema.
+      function canalDeLane(lane) {
+        if (!lane || !lane.controlId) return '';
+        var control = HPM.controlRegistry().filter(function (c) { return c.id === lane.controlId; })[0];
+        if (!control) return '';
+        return (state.project.liveControls.deviceChannel || {})[control.deviceId] || '';
+      }
+
+      // El rotulo de un grupo sale del Set: el par USB y el nombre del bus. Si todavia no
+      // se cargo un .als, queda la clave sola.
+      function rotuloDeCanal(clave) {
+        var pista = (state.recordingTracks || []).filter(function (t) { return t.key === clave; })[0];
+        if (!pista) return { par: clave, bus: 'canal ' + clave };
+        return { par: pista.pair ? pista.pair.label : clave,
+                 bus: pista.busName || pista.name || clave };
+      }
+
       function renderLanes() {
+        // Los grupos van en el orden de las pistas del Set -por par USB- y las lanes que
+        // no cuelgan de ningun canal quedan al final, juntas.
+        var orden = [], vistos = {};
+        (state.hardwareProfile || []).forEach(function (x) { if (!vistos[x.key]) { vistos[x.key] = true; orden.push(x.key); } });
+        var porCanal = {};
+        state.project.automationLanes.forEach(function (lane, i) {
+          var clave = canalDeLane(lane) || '';
+          if (!porCanal[clave]) { porCanal[clave] = []; if (clave && !vistos[clave]) { vistos[clave] = true; orden.push(clave); } }
+          porCanal[clave].push(i);
+        });
+        var claves = orden.filter(function (k) { return porCanal[k] && porCanal[k].length; });
+        if (porCanal['']) claves.push('');
+
         var html = '';
-        state.project.automationLanes.forEach(function (lane, laneIndex) {
+        claves.forEach(function (clave) {
+          var indices = porCanal[clave];
+          var rotulo = clave ? rotuloDeCanal(clave) : { par: '—', bus: 'sin canal asignado' };
+          var plegadoGrupo = !!state.gruposLanes[clave];
+          html += '<section class="lane-grupo' + (plegadoGrupo ? ' plegado' : '') + '">';
+          html += '<div class="lane-grupo-head">';
+          html += '<button class="secondary lane-fold" data-grupo-fold="' + esc(clave) + '" aria-expanded="' +
+            (plegadoGrupo ? 'false' : 'true') + '" title="' + (plegadoGrupo ? 'Desplegar' : 'Plegar') + ' el canal">' +
+            (plegadoGrupo ? '▸' : '▾') + '</button>';
+          html += '<span class="par">' + esc(rotulo.par) + '</span>';
+          html += '<span class="bus">' + esc(rotulo.bus) + '</span>';
+          html += '<span class="cuantas">' + indices.length + (indices.length === 1 ? ' lane' : ' lanes') + '</span>';
+          html += '</div>';
+          html += '<div class="lane-grupo-cuerpo"' + (plegadoGrupo ? ' hidden' : '') + '>';
+          html += indices.map(laneCard).join('');
+          html += '</div></section>';
+        });
+        el.lanesHost.innerHTML = html || '<div class="muted">Sin lanes todavía.</div>';
+        renderLaneCharts();
+      }
+
+      function laneCard(laneIndex) {
+        var html = '';
+        [state.project.automationLanes[laneIndex]].forEach(function (lane) {
           // PLEGADA OCUPA UNA LINEA. Con ocho lanes abiertas la pantalla no entra en
           // ningun monitor, y en vivo lo que importa es la que se esta dibujando.
           var plegada = !!lane.collapsed;
@@ -1888,7 +2038,7 @@
           html += '<span class="crece"></span>';
           html += '<button class="danger" data-remove-lane="' + laneIndex + '">Remove Lane</button>';
           html += '</div>';
-          if (plegada) { html += '</article>'; return; }
+          if (plegada) { html += '</article>'; return; }  // eslint-disable-line
           html += '<div class="lane-meta">';
           html += '<label>Name<input type="text" value="' + esc(lane.name) + '" data-lane-name="' + laneIndex + '"></label>';
           html += '<label>MC-707 Track<select data-lane-mc-track="' + laneIndex + '">' + mcTrackOptions(lane.mcTrack) + '</select></label>';
@@ -1899,8 +2049,7 @@
           html += '<div class="lane-actions"><span class="muted">Click vacío agrega un punto. Arrastrá un punto para moverlo. Funciona durante PLAY: se actualiza sólo la automatización futura. Con un punto rojo: ←/↑ y →/↓ recorren puntos; Supr lo elimina.</span></div>';
           html += '</article>';
         });
-        el.lanesHost.innerHTML = html || '<div class="muted">Sin lanes todavía.</div>';
-        renderLaneCharts();
+        return html;
       }
 
       function renderLaneCharts() {
@@ -2274,6 +2423,12 @@
           renderAll();
           return;
         }
+        if (target.dataset && target.dataset.grupoFold !== undefined) {
+          var clave = target.dataset.grupoFold;
+          state.gruposLanes[clave] = !state.gruposLanes[clave];
+          renderAll();
+          return;
+        }
         if (target.dataset && target.dataset.laneFold !== undefined) {
           var laneP = state.project.automationLanes[Number(target.dataset.laneFold)];
           if (laneP) laneP.collapsed = !laneP.collapsed;
@@ -2641,6 +2796,27 @@
       document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape' && !el.ctlMenu.hidden) { cerrarCtlMenu(); return; }
         var focused = document.activeElement;
+        // CON UNA SECCION ELEGIDA, LAS TECLAS SON DE LA SECCION, como en ArrangeLab:
+        //   ↑ ↓  cambian cual esta elegida        ← →  la MUEVEN
+        // Los puntos de automatizacion tienen prioridad si hay uno rojo: es el mismo orden
+        // de alla, donde las vueltas elegidas le ganan a la seccion.
+        if (state.selectedSectionIndex >= 0 && !state.selectedLanePoint &&
+            !(focused && focused.matches('input, select, textarea')) &&
+            (event.key === 'ArrowLeft' || event.key === 'ArrowRight' ||
+             event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+          event.preventDefault();
+          var cuantas = HPM.sectionTimeline(state.project).length;
+          if (event.key === 'ArrowUp') {
+            state.selectedSectionIndex = Math.max(0, state.selectedSectionIndex - 1);
+            renderAll();
+          } else if (event.key === 'ArrowDown') {
+            state.selectedSectionIndex = Math.min(cuantas - 1, state.selectedSectionIndex + 1);
+            renderAll();
+          } else {
+            opSeccion(event.key === 'ArrowLeft' ? 'left' : 'right');
+          }
+          return;
+        }
         if (event.key === 'Escape' && state.selectedSectionIndex >= 0) {
           state.selectedSectionIndex = -1;
           state.paletaAbierta = false;
@@ -2733,22 +2909,47 @@
       // El nombre y los compases se aplican al soltar el campo, no en cada tecla: cada
       // cambio de largo mueve puntos de automatizacion. Los campos viven en la barra
       // flotante, que se redibuja entera, asi que van por delegacion.
+      // RENOMBRAR ES DOBLE CLICK SOBRE LA SECCION, como en ArrangeLab: se pone un campo
+      // encima del segmento. Enter confirma, Escape cancela, y salir del campo confirma.
+      el.structureStrip.addEventListener('dblclick', function (event) {
+        var seg = event.target.closest('[data-secrow]');
+        if (!seg) return;
+        var indice = Number(seg.dataset.secrow);
+        var seccion = HPM.sectionTimeline(state.project)[indice];
+        if (!seccion) return;
+        var campo = document.createElement('input');
+        campo.type = 'text';
+        campo.value = seccion.name;
+        campo.maxLength = 40;
+        campo.className = 'unomedit';
+        seg.appendChild(campo);
+        campo.focus();
+        campo.select();
+        var cerrado = false;
+        function cerrar(guardando) {
+          if (cerrado) return;
+          cerrado = true;
+          var texto = campo.value.trim();
+          if (guardando && texto && texto !== seccion.name) {
+            var lista = HPM.editableSections(state.project);
+            lista[indice].name = texto;
+            aplicarSecciones(lista, 'renombrada: ' + texto);
+          } else renderAll();
+        }
+        campo.addEventListener('keydown', function (e) {
+          e.stopPropagation();
+          if (e.key === 'Enter') { e.preventDefault(); cerrar(true); }
+          if (e.key === 'Escape') { e.preventDefault(); cerrar(false); }
+        });
+        campo.addEventListener('blur', function () { cerrar(true); });
+      });
+
       el.secbar.addEventListener('change', function (event) {
         var lista = HPM.editableSections(state.project);
         var i = state.selectedSectionIndex;
         if (i < 0 || !lista[i]) return;
-        if (event.target.id === 'secName') {
-          var nombre = event.target.value.trim();
-          if (!nombre || nombre === lista[i].name) { renderAll(); return; }
-          lista[i].name = nombre;
-          aplicarSecciones(lista, 'renombrada: ' + nombre);
-          return;
-        }
         if (event.target.id === 'secBars') {
-          var bars = Math.max(1, Math.min(512, Math.round(Number(event.target.value) || lista[i].bars)));
-          if (bars === lista[i].bars) { renderAll(); return; }
-          lista[i].bars = bars;
-          aplicarSecciones(lista, lista[i].name + ' → ' + bars + ' bars');
+          if (!setBarsSeccion(i, event.target.value)) renderAll();
         }
       });
 
@@ -2880,11 +3081,15 @@
           var iSec = Number(agarre.dataset.secgrip);
           var lista0 = HPM.editableSections(state.project);
           if (!lista0[iSec]) return;
-          var caja = agarre.closest('[data-secrow]').getBoundingClientRect();
+          // Los pixeles por compas se miden UNA VEZ sobre la barra entera y se congelan:
+          // si se recalcularan en cada paso, al cambiar el total cambiaria la escala y el
+          // arrastre se volveria elastico. Es la misma cuenta que `pxPorCompasDelHead`.
+          var ancho = el.structureStrip.clientWidth || 900;
           anotarPaso();
           state.secDrag = {
             index: iSec, startX: event.clientX, startBars: lista0[iSec].bars,
-            pxPorBar: Math.max(1, caja.width) / Math.max(1, lista0[iSec].bars)
+            signo: Number(agarre.dataset.gripsign) || 1,
+            pxPorBar: Math.max(2, ancho / Math.max(1, state.project.totalBars))
           };
           state.selectedSectionIndex = iSec;
           try { agarre.setPointerCapture(event.pointerId); } catch (_err) {}
@@ -2962,18 +3167,16 @@
           return;
         }
         if (state.secDrag) {
-          var lista = HPM.editableSections(state.project);
-          var actual = lista[state.secDrag.index];
-          if (!actual) return;
-          var bars = Math.max(1, Math.min(512, Math.round(
-            state.secDrag.startBars + (event.clientX - state.secDrag.startX) / state.secDrag.pxPorBar)));
-          if (bars === actual.bars) return;
-          actual.bars = bars;
-          state.project = HPM.remapStructure(state.project, lista);
-          refreshLivePlan();
-          // Sin renderAll durante el arrastre: reescribir todo el panel corta el gesto.
-          renderStructure();
-          renderLaneCharts();
+          var delta = Math.round((state.secDrag.signo * (event.clientX - state.secDrag.startX)) /
+            state.secDrag.pxPorBar);
+          var bars = Math.max(1, state.secDrag.startBars + delta);
+          // La regla del fill vive en setBarsSeccion, asi que el arrastre, el campo y
+          // x2/div2 se comportan igual. Sin renderAll: reescribir el panel corta el gesto.
+          if (setBarsSeccion(state.secDrag.index, bars, { sinPaso: true, silencio: true, sinRender: true })) {
+            refreshLivePlan();
+            renderStructure();
+            renderLaneCharts();
+          }
           return;
         }
         if (state.knobDrag) {
