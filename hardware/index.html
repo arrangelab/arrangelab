@@ -1261,9 +1261,10 @@
         var lista = HPM.editableSections(state.project);
         var i = state.selectedSectionIndex;
         if (i < 0 || !lista[i]) return;
-        // Regla copiada tal cual: una madre con fill pegado no se mueve hacia adelante
-        // desde ella misma; se mueve el grupo agarrando el fill.
-        if (delta > 0 && esMadreConFill(lista, i)) return;
+        // ArrangeLab bloquea aca el movimiento hacia adelante cuando se agarro la madre
+        // -hay que agarrar el fill-. ACA NO: el grupo se mueve entero desde cualquiera de
+        // los dos, porque si no la flecha derecha parece rota justo cuando hay un fill.
+        // Es la unica diferencia deliberada con el arranger en toda la barra.
         var j = vecinoDeGrupo(lista, i, delta);
         if (j === null) return;
         var plan = planMoverGrupo(lista, i, j);
@@ -3364,11 +3365,17 @@
             if (event.clientX >= caja.left && event.clientX <= caja.right) destino = Number(nodo.dataset.secrow);
           });
           if (destino === desde) return;
+          // SE ARRASTRA EL GRUPO, NO LA SECCION. Una madre y su fill son una sola cosa:
+          // moverla sola dejaba el fill colgado en el medio de otra seccion. Es el mismo
+          // `planMoverGrupo` que usan las flechas.
+          if (grupoDe(lista, destino).ini === grupoDe(lista, desde).ini) return;
+          var plan = planMoverGrupo(lista, desde, destino);
+          if (!plan) return;
           if (!state.secMove.arrastro) { anotarPaso(); state.secMove.arrastro = true; }
-          lista.splice(destino, 0, lista.splice(desde, 1)[0]);
-          state.secMove.index = destino;
-          state.selectedSectionIndex = destino;
-          state.project = HPM.remapStructure(state.project, lista);
+          var nueva = plan.orden.map(function (k) { return lista[k]; });
+          state.secMove.index = plan.orden.indexOf(desde);
+          state.selectedSectionIndex = state.secMove.index;
+          state.project = HPM.remapStructure(state.project, nueva);
           refreshLivePlan();
           renderStructure();
           renderLaneCharts();
