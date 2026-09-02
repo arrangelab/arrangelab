@@ -21,6 +21,52 @@
     '#f4f7fb', '#56e6ff', '#f6f1a4', '#a8d9ff', '#ffb4df', '#a8f1bf'
   ];
 
+  // EL CATALOGO DE ESTRUCTURAS, el mismo de ArrangeLab. Tres escritas a mano y diez
+  // medidas sobre 690 tracks de techno anotados a mano -el dataset Raveform-, donde
+  // `tracks` es cuantos tracks reales usan esa forma. Lo que se copia es la SECUENCIA de
+  // secciones, que es lo que se repite; los largos son los tipicos.
+  //
+  // Los nombres van resueltos: esta pagina no tiene i18n y es en español.
+  var ESTRUCTURAS_BASE = [
+    ['A', 'base', 'A — techno 128', 0,
+      [['INTRO', 16], ['DESARROLLO', 16], ['BREAK', 16], ['BUILD', 16], ['DROP', 32], ['BAJADA', 16], ['OUTRO', 16]]],
+    ['B', 'base', 'B — bajada larga 160', 0,
+      [['INTRO', 16], ['DESARROLLO', 16], ['BREAK', 16], ['BUILD', 16], ['DROP', 32], ['BAJADA', 32], ['OUTRO', 32]]],
+    ['C', 'base', 'C — DJ-friendly 224', 0,
+      [['INTRO', 32], ['DESARROLLO 1', 32], ['DESARROLLO 2', 32], ['BREAK', 32], ['BUILD', 16],
+       ['CLIMAX', 48], ['BAJADA', 16], ['OUTRO', 16]]],
+    ['T1', 'techno', 'Corta antes del primer drop', 37,
+      [['INTRO', 24], ['BUILD', 16], ['BREAK', 16], ['DROP', 32], ['BREAK', 32], ['DROP', 32], ['BAJADA', 16], ['OUTRO', 16]]],
+    ['T2', 'techno', 'Dos drops, un break grande', 30,
+      [['INTRO', 24], ['BUILD', 16], ['DROP', 32], ['BREAK', 32], ['DROP', 32], ['BAJADA', 16], ['OUTRO', 16]]],
+    ['T3', 'techno', 'Dos drops, corta y directa', 29,
+      [['INTRO', 24], ['BUILD', 16], ['DROP', 32], ['BREAK', 32], ['DROP', 32], ['OUTRO', 16]]],
+    ['T4', 'techno', 'Tres drops, sin build', 26,
+      [['INTRO', 24], ['DROP', 32], ['BREAK', 32], ['DROP', 32], ['BREAK', 16], ['DROP', 32], ['OUTRO', 16]]],
+    ['T5', 'techno', 'Tres drops', 23,
+      [['INTRO', 24], ['BUILD', 16], ['DROP', 32], ['BREAK', 32], ['DROP', 32], ['BREAK', 16], ['DROP', 32], ['OUTRO', 16]]],
+    ['T6', 'techno', 'Tres drops, cierra bajando', 23,
+      [['INTRO', 24], ['BUILD', 16], ['DROP', 32], ['BREAK', 32], ['DROP', 32], ['BREAK', 16], ['DROP', 32], ['BAJADA', 16], ['OUTRO', 16]]],
+    ['T7', 'techno', 'Tres breaks y tres drops', 23,
+      [['INTRO', 24], ['BUILD', 16], ['BREAK', 16], ['DROP', 32], ['BREAK', 32], ['DROP', 32], ['BREAK', 16], ['DROP', 32], ['BAJADA', 16], ['OUTRO', 16]]],
+    ['T8', 'techno', 'Break primero, dos drops', 22,
+      [['INTRO', 24], ['BUILD', 16], ['BREAK', 16], ['DROP', 32], ['BREAK', 32], ['DROP', 32], ['OUTRO', 16]]],
+    ['T9', 'techno', 'Dos bajadas', 20,
+      [['INTRO', 24], ['BUILD', 16], ['BREAK', 16], ['DROP', 32], ['BAJADA', 16], ['BREAK', 32], ['DROP', 32], ['BAJADA', 16], ['OUTRO', 16]]],
+    ['T10', 'techno', 'Cierra por el break', 16,
+      [['INTRO', 24], ['BUILD', 16], ['BREAK', 16], ['DROP', 32], ['BREAK', 32], ['DROP', 32], ['BREAK', 16], ['BAJADA', 16], ['OUTRO', 16]]]
+  ];
+
+  function structureCatalog() {
+    return ESTRUCTURAS_BASE.map(function (e) {
+      return {
+        id: e[0], grupo: e[1], nombre: e[2], tracks: e[3],
+        sections: e[4].map(function (s) { return { name: s[0], bars: s[1] }; }),
+        bars: e[4].reduce(function (a, s) { return a + s[1]; }, 0)
+      };
+    });
+  }
+
   var CC_CATALOGS = {
     mc707: [[1,'Modulation'],[5,'Portamento Time'],[7,'Volume'],[10,'Pan'],[11,'Expression'],[64,'Hold'],[65,'Portamento'],[66,'Sostenuto'],[67,'Soft'],[68,'Legato'],[71,'Resonance'],[72,'Release'],[73,'Attack'],[74,'Cutoff'],[75,'Decay'],[76,'Vibrato Rate'],[77,'Vibrato Depth'],[78,'Vibrato Delay'],[80,'Filter Knob'],[81,'Mod Knob'],[82,'FX Knob'],[83,'Sound Knob'],[91,'Reverb Send'],[92,'Chorus Send']],
     tr8s: [[9,'Shuffle'],[12,'External In Level'],[14,'Auto Fill In'],[15,'Master FX On'],[16,'Delay Level'],[17,'Delay Time'],[18,'Delay Feedback'],[19,'Master FX Ctrl'],[20,'BD Tune'],[23,'BD Decay'],[24,'BD Level'],[25,'SD Tune'],[28,'SD Decay'],[29,'SD Level'],[46,'LT Tune'],[47,'LT Decay'],[48,'LT Level'],[49,'MT Tune'],[50,'MT Decay'],[51,'MT Level'],[52,'HT Tune'],[53,'HT Decay'],[54,'HT Level'],[55,'RS Tune'],[56,'RS Decay'],[57,'RS Level'],[58,'HC Tune'],[59,'HC Decay'],[60,'HC Level'],[61,'CH Tune'],[62,'CH Decay'],[63,'CH Level'],[70,'Auto Fill Trigger'],[71,'Accent'],[80,'OH Tune'],[81,'OH Decay'],[82,'OH Level'],[83,'CC Tune'],[84,'CC Decay'],[85,'CC Level'],[86,'RC Tune'],[87,'RC Decay'],[88,'RC Level'],[91,'Reverb Level'],[96,'BD Ctrl'],[97,'SD Ctrl'],[102,'LT Ctrl'],[103,'MT Ctrl'],[104,'HT Ctrl'],[105,'RS Ctrl'],[106,'HC Ctrl'],[107,'CH Ctrl'],[108,'OH Ctrl'],[109,'CC Ctrl'],[110,'RC Ctrl']]
@@ -1464,6 +1510,7 @@
     MC_TRACK_DESTINATIONS: clone(MC_TRACK_DESTINATIONS),
     rolandColors: function () { return clone(ROLAND_COLORS); },
     sectionPalette: function () { return clone(SECTION_PALETTE); },
+    structureCatalog: structureCatalog,
     controlRegistry: controlRegistry,
     realtimeControls: controlRegistry,
     ccOptionsForMcTrack: ccOptionsForMcTrack,

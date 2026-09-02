@@ -836,6 +836,7 @@
         secDrag: null,
         secMove: null,
         bpmDrag: null,
+        ultimoClickSec: null,
         paletaAbierta: false,
         gruposLanes: {},
         zoomLanes: 1,
@@ -1653,15 +1654,34 @@
         localStorage.setItem(STRUCTURE_STORAGE_KEY, JSON.stringify(state.estructuras));
       }
 
+      // EL DESPLEGABLE DE ESTRUCTURAS, con el catalogo de ArrangeLab adentro y LAS TUYAS
+      // PRIMERO. Alla estaban ultimas y con trece del catalogo arriba no habia forma de
+      // verlas sin saber que hay que scrollear adentro de un menu.
       function renderEstructuras() {
-        var html = '<option value="">Estructura guardada</option>';
-        state.estructuras.forEach(function (e) {
-          html += '<option value="' + esc(e.id) + '"' + (e.id === state.estructuraElegida ? ' selected' : '') + '>' +
-            esc(e.name) + ' (' + e.sections.length + ')</option>';
+        var html = '<option value="">Elegí una estructura</option>';
+        if (state.estructuras.length) {
+          html += '<optgroup label="Mías">';
+          state.estructuras.forEach(function (e) {
+            html += '<option value="mia:' + esc(e.id) + '"' +
+              ('mia:' + e.id === state.estructuraElegida ? ' selected' : '') + '>' +
+              esc(e.name) + ' — ' + e.sections.reduce(function (a, s) { return a + s.bars; }, 0) + ' bars</option>';
+          });
+          html += '</optgroup>';
+        }
+        var catalogo = HPM.structureCatalog();
+        [['base', 'Base'], ['techno', 'Techno · medidas sobre tracks reales']].forEach(function (g) {
+          html += '<optgroup label="' + g[1] + '">';
+          catalogo.filter(function (e) { return e.grupo === g[0]; }).forEach(function (e) {
+            html += '<option value="base:' + esc(e.id) + '"' +
+              ('base:' + e.id === state.estructuraElegida ? ' selected' : '') + '>' +
+              esc(e.nombre) + ' — ' + e.bars + ' bars' + (e.tracks ? ' · ' + e.tracks + ' tracks' : '') +
+              '</option>';
+          });
+          html += '</optgroup>';
         });
         el.structurePresetSelect.innerHTML = html;
         el.loadStructureBtn.disabled = !state.estructuraElegida;
-        el.delStructureBtn.disabled = !state.estructuraElegida;
+        el.delStructureBtn.disabled = state.estructuraElegida.indexOf('mia:') !== 0;
       }
 
       function guardarEstructuraActual() {
@@ -1678,25 +1698,40 @@
         };
         if (previo) state.estructuras[state.estructuras.indexOf(previo)] = guardada;
         else state.estructuras.unshift(guardada);
-        state.estructuraElegida = guardada.id;
+        state.estructuraElegida = 'mia:' + guardada.id;
         guardarEstructuras();
         log('ESTRUCTURA → guardada como "' + nombre + '"');
         renderAll();
       }
 
+      function estructuraElegida() {
+        var v = state.estructuraElegida || '';
+        if (v.indexOf('mia:') === 0) {
+          var g = state.estructuras.filter(function (e) { return e.id === v.slice(4); })[0];
+          return g ? { nombre: g.name, sections: g.sections } : null;
+        }
+        if (v.indexOf('base:') === 0) {
+          var b = HPM.structureCatalog().filter(function (e) { return e.id === v.slice(5); })[0];
+          return b ? { nombre: b.nombre, sections: b.sections } : null;
+        }
+        return null;
+      }
+
       function aplicarEstructuraGuardada() {
-        var guardada = state.estructuras.filter(function (e) { return e.id === state.estructuraElegida; })[0];
-        if (!guardada) return;
-        // POR POSICION: la seccion 1 del preset se queda con lo que habia dibujado en la 1.
-        var lista = guardada.sections.map(function (s, i) {
-          return { name: s.name, bars: s.bars, color: s.color, fill: s.fill, from: i };
+        var elegida = estructuraElegida();
+        if (!elegida) return;
+        // POR POSICION: la seccion 1 de la estructura se queda con lo que habia dibujado
+        // en la 1, asi los bloques ya dibujados se estiran al largo nuevo.
+        var lista = elegida.sections.map(function (s, i) {
+          return { name: s.name, bars: s.bars, color: s.color || '', fill: !!s.fill, from: i };
         });
         state.selectedSectionIndex = -1;
-        aplicarSecciones(lista, 'cargada "' + guardada.name + '"');
+        aplicarSecciones(lista, 'cargada "' + elegida.nombre + '"');
       }
 
       function borrarEstructuraGuardada() {
-        var guardada = state.estructuras.filter(function (e) { return e.id === state.estructuraElegida; })[0];
+        if (state.estructuraElegida.indexOf('mia:') !== 0) { log('ESTRUCTURA → las del catálogo no se borran'); return; }
+        var guardada = state.estructuras.filter(function (e) { return e.id === state.estructuraElegida.slice(4); })[0];
         if (!guardada) return;
         state.estructuras.splice(state.estructuras.indexOf(guardada), 1);
         state.estructuraElegida = '';
@@ -3164,6 +3199,15 @@
       document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape' && !el.ctlMenu.hidden) { cerrarCtlMenu(); return; }
         var focused = document.activeElement;
+        // Ctrl+N: una seccion nueva a la derecha de donde estas, con el campo del nombre
+        // abierto. Ojo que algunos navegadores se quedan con Ctrl+N para abrir una ventana.
+        if ((event.ctrlKey || event.metaKey) && (event.key === 'n' || event.key === 'N') &&
+            state.selectedSectionIndex >= 0) {
+          event.preventDefault();
+          opSeccion('add');
+          abrirRenombrar(state.selectedSectionIndex);
+          return;
+        }
         // Ctrl+D duplica la seccion elegida, como alla.
         if ((event.ctrlKey || event.metaKey) && (event.key === 'd' || event.key === 'D') &&
             state.selectedSectionIndex >= 0) {
@@ -3296,12 +3340,13 @@
       // El nombre y los compases se aplican al soltar el campo, no en cada tecla: cada
       // cambio de largo mueve puntos de automatizacion. Los campos viven en la barra
       // flotante, que se redibuja entera, asi que van por delegacion.
-      // RENOMBRAR ES DOBLE CLICK SOBRE LA SECCION, como en ArrangeLab: se pone un campo
-      // encima del segmento. Enter confirma, Escape cancela, y salir del campo confirma.
-      el.structureStrip.addEventListener('dblclick', function (event) {
-        var seg = event.target.closest('[data-secrow]');
+      // RENOMBRAR ES DOBLE CLICK SOBRE LA SECCION, como en ArrangeLab, Y SE DETECTA A
+      // MANO: el primer click redibuja la barra, asi que el nodo que recibio el primero ya
+      // no existe cuando llega el segundo y el evento `dblclick` del navegador nunca se
+      // dispara. Alla les paso lo mismo y lo resolvieron igual.
+      function abrirRenombrar(indice) {
+        var seg = el.structureStrip.querySelector('[data-secrow="' + indice + '"]');
         if (!seg) return;
-        var indice = Number(seg.dataset.secrow);
         var seccion = HPM.sectionTimeline(state.project)[indice];
         if (!seccion) return;
         var campo = document.createElement('input');
@@ -3329,7 +3374,7 @@
           if (e.key === 'Escape') { e.preventDefault(); cerrar(false); }
         });
         campo.addEventListener('blur', function () { cerrar(true); });
-      });
+      }
 
       el.secbar.addEventListener('change', function (event) {
         var lista = HPM.editableSections(state.project);
@@ -3538,7 +3583,13 @@
           // y el pointerup vuelve a alternar sobre lo que acaba de elegir, asi que nada
           // quedaba elegido nunca.
           var cajaSeg = segmento.getBoundingClientRect();
+          var indiceSeg = Number(segmento.dataset.secrow);
+          var ahoraSeg = Date.now();
+          var esSegundo = !!(state.ultimoClickSec && state.ultimoClickSec.i === indiceSeg &&
+            ahoraSeg - state.ultimoClickSec.t < 450);
+          state.ultimoClickSec = esSegundo ? null : { i: indiceSeg, t: ahoraSeg };
           state.secMove = {
+            renombrar: esSegundo,
             index: Number(segmento.dataset.secrow), startX: event.clientX,
             arrastro: false, movio: false, dir: 0, ultX: event.clientX,
             mouseX: event.clientX, hotX: event.clientX - cajaSeg.left,
@@ -3692,10 +3743,25 @@
             renderAll();
             return;
           }
+          // Dos clicks seguidos sobre la MISMA seccion: renombrar. La ventana se mide
+          // entre los dos APRETONES, no entre las sueltas: redibujar la pagina entera se
+          // come cientos de milisegundos y el gesto quedaba afuera de la ventana.
+          if (movida.renombrar) {
+            state.selectedSectionIndex = movida.index;
+            renderAll();
+            abrirRenombrar(movida.index);
+            return;
+          }
           // No se movio: fue un click, y un click elige o suelta la seccion.
+          //
+          // NO SE REDIBUJA LA PAGINA ENTERA. Con dieciseis tarjetas de canal, `renderAll`
+          // se come cientos de milisegundos: el segundo click del doble click caia fuera
+          // de la ventana de 450ms y renombrar no se abria nunca. Elegir una seccion sólo
+          // toca la barra y las lanes.
           state.selectedSectionIndex = movida.yaEstaba === movida.index ? -1 : movida.index;
           state.paletaAbierta = false;
-          renderAll();
+          renderStructure();
+          renderLaneCharts();
           return;
         }
         if (state.secDrag) {
