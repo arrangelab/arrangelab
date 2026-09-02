@@ -904,6 +904,42 @@
     };
   }
 
+  // LA GRILLA DE BLOQUES. El paso es de CUATRO compases -una vuelta-, no uno: un compas
+  // suelto en un tema de 96 es una raya que no se puede ni apuntar, y ademas no es como se
+  // piensa la musica. Pero la grilla NO es una regla pareja tirada sobre el tema: arranca
+  // de nuevo en cada seccion, y lo que sobra al final de una seccion es una celda mas
+  // corta.
+  //
+  // De ahi sale, sola, la regla del fill de ArrangeLab: si a una madre de 16 le cortas 1
+  // compas de fill, la madre queda en 15 -4, 4, 4 y 3- y el fill es su propia celda de 1.
+  // La ultima vuelta de 4 se partio en 3 + 1, que es exactamente lo que hace `medirVuelta`
+  // alla: la vuelta que cruza a un fill se corta, y adentro del fill se toca el final del
+  // loop.
+  function blockGrid(project, paso) {
+    var p = paso > 0 ? paso : 4;
+    var out = [];
+    sectionTimeline(project).forEach(function (sec) {
+      var bar = Math.round(sec.startBar);
+      var fin = Math.round(sec.endBar);
+      while (bar < fin) {
+        var hasta = Math.min(bar + p - 1, fin - 1);
+        out.push({ desde: bar, hasta: hasta, bars: hasta - bar + 1,
+                   section: sec.index, fill: !!sec.fill,
+                   cortada: (hasta - bar + 1) < p });
+        bar = hasta + 1;
+      }
+    });
+    return out;
+  }
+
+  // La celda de la grilla donde cae un compas.
+  function gridCellAtBar(grid, bar) {
+    for (var i = 0; i < grid.length; i += 1) {
+      if (bar >= grid[i].desde && bar <= grid[i].hasta) return i;
+    }
+    return -1;
+  }
+
   // DE LOS PUNTOS A LOS TRAMOS. Un bloque no es un compas: son los compases seguidos que
   // suenan. Ocho compases prendidos son UN bloque de ocho, no ocho celdas, que es como se
   // ve en el arranger y como se lee de un vistazo cuanto dura.
@@ -1658,6 +1694,8 @@
     timelineGeometry: timelineGeometry,
     laneRuns: laneRuns,
     blocksToRuns: blocksToRuns,
+    blockGrid: blockGrid,
+    gridCellAtBar: gridCellAtBar,
     sectionAtBar: sectionAtBar,
     remapStructure: remapStructure,
     rescaleLanePoints: rescaleLanePoints,

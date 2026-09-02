@@ -493,6 +493,29 @@
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
     .mlabel .cc{font:9px/1 var(--fuentetit);color:var(--dim);white-space:nowrap}
     .mlabel .cuelga{color:var(--dim);font-size:10px;line-height:1;margin-left:-8px}
+    /* LOS BOTONES DE LA FILA, los del arranger: el check llena la linea entera y la cruz
+       la vacia. Son DOS y no uno que decide segun lo que haya: con la linea a medio pintar
+       no habria forma de adivinar cual de las dos cosas va a pasar. Estan siempre a la
+       vista -no aparecen al pasar el mouse- y cada uno lleva el color de lo que hace. */
+    /* el padding derecho es el lugar de los botones: sin el, un nombre largo se mete
+       abajo de la cruz roja, que es justo el boton que no queres tocar sin querer */
+    .mlabel.conbotones{padding-right:44px}
+    .mlabel .botones{position:absolute;right:4px;top:50%;transform:translateY(-50%);
+      display:flex;gap:2px;align-items:center}
+    .bcanal{background:linear-gradient(180deg, color-mix(in srgb, var(--campo) 78%, var(--eleva) 22%), var(--campo));
+      border:1px solid color-mix(in srgb, var(--line) 60%, transparent 40%);color:var(--dim);
+      font-size:11px;line-height:1;cursor:pointer;padding:0;width:17px;height:17px;min-height:0;
+      display:flex;align-items:center;justify-content:center;border-radius:4px;opacity:.8;
+      transition:opacity var(--motion-instant) ease, color var(--motion-instant) ease}
+    .mlabel:hover .bcanal{opacity:.9}
+    .bcanal:hover{opacity:1;color:var(--hw-label-green);border-color:var(--hw-label-green);
+      background:color-mix(in srgb, var(--campo) 70%, var(--eleva) 30%)}
+    .bcanal[disabled]{opacity:.2;cursor:default}
+    .bcanal[disabled]:hover{color:var(--dim);border-color:transparent;background:transparent}
+    .bcanal.pintafila{color:var(--ok)}
+    .bcanal.pintafila:hover{color:var(--sobreacc);background:var(--ok);border-color:var(--ok)}
+    .bcanal.borra{color:var(--bad)}
+    .bcanal.borra:hover{color:var(--sobrebloque);background:var(--bad);border-color:var(--bad)}
     .mrow.apagada{opacity:.5}
     .mlabel .mini{width:18px;min-height:18px;padding:0;border:1px solid transparent;
       background:transparent;color:var(--dim);border-radius:4px;font-size:10px;line-height:1}
@@ -509,9 +532,20 @@
     /* LA CAPA DE LOS BLOQUES. Ocupa la fila entera y no una celda: un bloque de 8 compases
        arranca donde le toca y cruza el limite de una seccion sin partirse. */
     .mlane{position:absolute;inset:2px 0;pointer-events:none;z-index:2}
+    /* la grilla de vueltas, tenue, debajo de los bloques: dice donde va a caer el proximo */
+    .mlane.rejilla{z-index:1}
+    .tramo{position:absolute;top:0;bottom:0;border-right:1px solid rgba(255,255,255,.07)}
+    .tramo.esfill{border-right-style:dashed;border-right-color:rgba(255,255,255,.16)}
+    /* CADA VUELTA TIENE QUE VERSE COMO UNA VUELTA. El borde transparente y el
+       background-clip son de ArrangeLab y no son decoracion: sin ellos el fondo se pinta
+       POR DEBAJO del borde y dos vueltas pegadas se funden en una sola barra. La costura
+       -sombra donde arranca, luz donde termina- es lo que deja contar cuatro vueltas de 4
+       en vez de leer un bloque de 16. */
     .bloque{position:absolute;top:0;bottom:0;border-radius:3px;opacity:.94;
       background:var(--cc);background-clip:padding-box;border:1px solid transparent;
       box-sizing:border-box;box-shadow:inset 1px 0 0 var(--vtaseam),inset -1px 0 0 var(--vtaluz)}
+    /* el bloque que cae en un fill: musicalmente es otra cosa, se ve como otra cosa */
+    .bloque.esfill{border-color:var(--grip);border-style:dashed}
     /* lo que se esta pintando ahora mismo, antes de soltar */
     .bloque.previo{opacity:.6;border-color:var(--txt);border-style:dashed}
     /* la fila de una envolvente: la curva vive adentro de las mismas columnas */
@@ -537,8 +571,23 @@
     /* Las tres filas comparten columnas: tiempos, secciones y duracion. Es la mhead de
        ArrangeLab, con el mismo flex-grow y el mismo piso de ancho. */
     /* El hueco de arriba es para la barra flotante: sin el, tapa el titulo del panel. */
-    .estructura{display:grid;gap:3px;margin-top:34px;
-      padding-left:calc(var(--wlabel) + var(--gapfila))}
+    .estructura{display:grid;gap:3px;margin-top:34px}
+    /* LA BARRA ARRANCA DONDE ARRANCAN LAS CELDAS. Se corre por el ancho de la etiqueta de
+       canal -no el panel entero, que ahora tambien lleva las filas- asi las columnas de
+       arriba caen justo sobre las de abajo y las dos cosas son UNA grilla. */
+    .estructura > .secbarwrap,
+    .estructura > .sectimes,
+    .estructura > .secstrip,
+    .estructura > .secdurs{margin-left:calc(var(--wlabel) + var(--gapfila))}
+    /* y las filas van pegadas a la barra: la barra es su encabezado */
+    #lanesHost{margin-top:6px}
+    /* EL CABEZAL CRUZA TODO. En la barra de secciones va adentro de su segmento, pero la
+       matriz es una sola cosa y la linea tiene que pasarla entera, por detras de los
+       bloques: mirando una fila cualquiera se ve donde esta el tema. No recibe clicks. */
+    .mtx{position:relative}
+    .cabezal{position:absolute;top:0;bottom:0;width:2px;background:var(--warn);
+      box-shadow:0 0 8px color-mix(in srgb, var(--warn) 55%, transparent);
+      pointer-events:none;z-index:3;opacity:.85}
     .sectimes,.secdurs{display:flex;gap:var(--gapsec);width:100%}
     .utime{flex-basis:0;min-width:var(--minseg);font:9px/1 var(--fuentetit);letter-spacing:.06em;
       color:var(--dim);padding-left:2px;white-space:nowrap;overflow:hidden}
@@ -728,18 +777,6 @@
         <h2>Arrangement Overview</h2>
         <div class="actions">
           <button id="addSceneBtn">+ Scene Change</button>
-          <span class="zoom-lanes"><span class="rotulo" style="font:11px/1 var(--fuentetit);letter-spacing:.09em;color:var(--hw-label-green)">ZOOM</span>
-            <button id="zoomOutBtn" class="secondary" title="Alejar">−</button>
-            <span class="factor" id="zoomFactor">1×</span>
-            <button id="zoomInBtn" class="secondary" title="Acercar">+</button></span>
-          <span class="zoom-lanes"><span class="rotulo" style="font:11px/1 var(--fuentetit);letter-spacing:.09em;color:var(--hw-label-green)">PASO</span>
-            <button class="secondary" data-paso="1" title="Un compás: 16 steps">BAR</button>
-            <button class="secondary" data-paso="0.5" title="Medio compás: 8 steps">1/2</button>
-            <button class="secondary" data-paso="0.25" title="Un cuarto: 4 steps">1/4</button>
-            <button class="secondary" data-paso="0.0625" title="Un step">STEP</button></span>
-          <button id="clipsToCcBtn" class="secondary">CLIPS → CC</button>
-          <button id="addLaneBtn">+ CC Lane</button>
-          <button id="foldLanesBtn" class="secondary">PLEGAR TODO</button>
         </div>
       </div>
       <div class="panel-body timeline-wrap">
@@ -761,11 +798,26 @@
     <!-- LA ESTRUCTURA DEL SET, LEIDA DE LOS LOCATORS. Es geometria y nada mas: dice
          donde empieza y termina cada seccion. No manda un solo mensaje MIDI, y por ahora
          tampoco dispara bloques: los bloques de performance se van a colgar de aca. -->
+    <!-- UN SOLO PANEL. La estructura y las lanes eran dos, con su titulo cada uno, y esa
+         division partia justo lo que es una sola cosa: la misma grilla, las mismas
+         columnas. Ahora la barra de secciones es el encabezado de la matriz, como en el
+         arranger, y no hay nombres en el medio. -->
     <section class="panel" id="structurePanel" hidden>
       <div class="panel-head">
-        <h2>Estructura</h2>
         <div class="actions">
           <span class="muted" id="structureSource"></span>
+          <span class="zoom-lanes"><span class="rotulo" style="font:11px/1 var(--fuentetit);letter-spacing:.09em;color:var(--hw-label-green)">ZOOM</span>
+            <button id="zoomOutBtn" class="secondary" title="Alejar">−</button>
+            <span class="factor" id="zoomFactor">1×</span>
+            <button id="zoomInBtn" class="secondary" title="Acercar">+</button></span>
+          <span class="zoom-lanes"><span class="rotulo" style="font:11px/1 var(--fuentetit);letter-spacing:.09em;color:var(--hw-label-green)">PASO</span>
+            <button class="secondary" data-paso="1" title="Un compás: 16 steps">BAR</button>
+            <button class="secondary" data-paso="0.5" title="Medio compás: 8 steps">1/2</button>
+            <button class="secondary" data-paso="0.25" title="Un cuarto: 4 steps">1/4</button>
+            <button class="secondary" data-paso="0.0625" title="Un step">STEP</button></span>
+          <button id="clipsToCcBtn" class="secondary">CLIPS → CC</button>
+          <button id="addLaneBtn">+ CC Lane</button>
+          <button id="foldLanesBtn" class="secondary">PLEGAR TODO</button>
         </div>
       </div>
       <div class="panel-body timeline-wrap">
@@ -793,17 +845,10 @@
           <div class="sectimes" id="structureTimes"></div>
           <div class="secstrip" id="structureStrip"></div>
           <div class="secdurs" id="structureDurs"></div>
+          <!-- Las filas van pegadas a la barra: la barra ES el encabezado de la matriz. -->
+          <div id="lanesHost"></div>
         </div>
-
-
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <h2>Automation Lanes</h2>
-        <div class="muted">MVP inicial: CC7 Volume, CC74 Cutoff o cualquier CC custom.</div>
       </div>
-      <div class="panel-body" id="lanesHost"></div>
     </section>
 
     <section class="panel">
@@ -2529,8 +2574,9 @@
           return laneCard(i, cuantasPorDevice[deviceDeLane(state.project.automationLanes[i])] || 0);
         }).join('');
         el.lanesHost.innerHTML = html
-          ? '<div class="mtx">' + html + '</div>'
+          ? '<div class="mtx"><div class="cabezal" hidden></div>' + html + '</div>'
           : '<div class="muted">Sin lanes todavía.</div>';
+        moverCabezal();
         renderLaneCharts();
       }
 
@@ -2565,28 +2611,62 @@
         }).join('');
       }
 
-      // LA CAPA DE LOS BLOQUES. Compases seguidos prendidos son UN bloque: ocho compases
-      // se ven como un tramo de ocho y no como ocho celdas, que es lo que permite leer de
-      // un vistazo cuanto dura. Un bloque puede cruzar el limite de una seccion.
+      // LA GRILLA DE BLOQUES: celdas de CUATRO compases, que arrancan de nuevo en cada
+      // seccion. La cuenta esta en el core, con su prueba: es la que hace que un fill de 1
+      // parta la ultima vuelta de 4 en 3 + 1.
+      function grillaDeBloques() {
+        return HPM.blockGrid(state.project, 4);
+      }
+
+      // LA CAPA DE LOS BLOQUES. Un tramo prendido se dibuja partido por la grilla: no es
+      // una barra larga sino las vueltas que la forman, separadas por la costura -sombra
+      // donde arranca, luz donde termina-. Asi un bloque de 16 se lee como cuatro vueltas
+      // de cuatro y no como una mancha, que es exactamente lo que hace el arranger.
       function capaDeBloques(prendidos, color) {
         var g = geometria();
-        return HPM.blocksToRuns(prendidos).map(function (r) {
-          var st = g.blockStyle((r.desde - 1) * g.bpb, (r.hasta - r.desde + 1) * g.bpb);
-          return '<div class="bloque" data-desde="' + r.desde + '" data-hasta="' + r.hasta +
-            '" style="left:' + st.left + ';width:' + st.width + ';--cc:' + color +
-            '" title="compases ' + r.desde + '-' + r.hasta + '"></div>';
+        var grilla = grillaDeBloques();
+        var html = '';
+        HPM.blocksToRuns(prendidos).forEach(function (r) {
+          grilla.forEach(function (celda) {
+            var desde = Math.max(r.desde, celda.desde), hasta = Math.min(r.hasta, celda.hasta);
+            if (desde > hasta) return;
+            var st = g.blockStyle((desde - 1) * g.bpb, (hasta - desde + 1) * g.bpb);
+            html += '<div class="bloque' + (celda.fill ? ' esfill' : '') +
+              '" data-desde="' + desde + '" data-hasta="' + hasta +
+              '" style="left:' + st.left + ';width:' + st.width + ';--cc:' + color +
+              '" title="compases ' + desde + '-' + hasta + '"></div>';
+          });
+        });
+        return html;
+      }
+
+      // Las divisiones de la grilla, tenues, sobre el fondo de la seccion: sin verlas hay
+      // que adivinar donde va a caer el bloque antes de pintarlo.
+      function capaDeGrilla() {
+        var g = geometria();
+        return grillaDeBloques().map(function (celda) {
+          var st = g.blockStyle((celda.desde - 1) * g.bpb, celda.bars * g.bpb);
+          return '<div class="tramo' + (celda.fill ? ' esfill' : '') +
+            '" style="left:' + st.left + ';width:' + st.width + '"></div>';
         }).join('');
       }
 
       // Los compases prendidos de una lane, con el trazo que se este pintando aplicado
       // encima: asi lo que se ve mientras arrastras es exactamente lo que se va a guardar.
+      // El trazo se guarda en CELDAS de la grilla, no en compases: se pinta de a vueltas.
       function prendidosDeLane(laneIndex) {
         var lane = state.project.automationLanes[laneIndex];
         var prendidos = HPM.laneBlocks(state.project, lane, rangoDeLane(lane));
         var trazo = state.pintando;
         if (trazo && trazo.laneIndex === laneIndex) {
+          var grilla = grillaDeBloques();
           var a = Math.min(trazo.desde, trazo.hasta), b = Math.max(trazo.desde, trazo.hasta);
-          for (var bar = a; bar <= b; bar += 1) prendidos[bar - 1] = trazo.encender;
+          for (var i = a; i <= b; i += 1) {
+            if (!grilla[i]) continue;
+            for (var bar = grilla[i].desde; bar <= grilla[i].hasta; bar += 1) {
+              prendidos[bar - 1] = trazo.encender;
+            }
+          }
         }
         return prendidos;
       }
@@ -2601,7 +2681,8 @@
         var ancho = 'width:' + (state.zoomLanes * 100) + '%';
 
         var html = '<div class="mrow' + (lane.off ? ' apagada' : '') + '">';
-        html += '<div class="mlabel" style="--cc:' + color + '" title="' + esc(lane.name) +
+        html += '<div class="mlabel' + (bloques ? ' conbotones' : '') +
+          '" style="--cc:' + color + '" title="' + esc(lane.name) +
           ' \u00b7 CH' + lane.channel + ' \u00b7 CC' + lane.cc + ' \u00b7 ' + lane.points.length + ' puntos' +
           (lane.off ? ' \u00b7 desactivada' : '') + '">';
         // El canal con automatizaciones colgando trae su chevron para plegarlas.
@@ -2622,6 +2703,20 @@
             (plegada ? 'Desplegar' : 'Plegar') + '">' + (plegada ? '\u25b8' : '\u25be') + '</button>';
           html += '<button class="mini" data-remove-lane="' + laneIndex + '" title="Sacar esta lane">\u2715</button>';
         }
+        // LLENAR O VACIAR LA LINEA ENTERA, como en el arranger: el check llena, la cruz
+        // vacia. La cruz es lo unico destructivo de la etiqueta, por eso va ultima, es
+        // roja, y queda apagada cuando la linea ya esta vacia.
+        if (bloques) {
+          var tieneAlgo = lane.points.length > 0;
+          html += '<span class="botones">';
+          html += '<button class="bcanal pintafila" data-fila-llena="' + laneIndex +
+            '" title="Llenar la l\u00ednea entera">&#10003;</button>';
+          html += '<button class="bcanal borra" data-fila-vacia="' + laneIndex + '"' +
+            (tieneAlgo ? '' : ' disabled') + ' title="' +
+            (tieneAlgo ? 'Vaciar la l\u00ednea entera' : 'La l\u00ednea ya est\u00e1 vac\u00eda') +
+            '">&#10005;</button>';
+          html += '</span>';
+        }
         html += '</div>';
 
         if (suelta && plegada) {
@@ -2630,6 +2725,7 @@
         } else if (bloques) {
           html += '<div class="lane-scroll"><div class="mcells" data-lane-blocks="' + laneIndex +
             '" style="' + ancho + '">' + celdasDeSeccion() +
+            '<div class="mlane rejilla">' + capaDeGrilla() + '</div>' +
             '<div class="mlane">' + capaDeBloques(prendidosDeLane(laneIndex), color) +
             '</div></div></div>';
         } else {
@@ -2662,7 +2758,7 @@
       // Repintar SOLO la capa de bloques de una fila. Mientras se arrastra se llama en
       // cada compas: rehacer la matriz entera ahi seria tirar el layout a cada paso.
       function repintarBloques(laneIndex) {
-        var caja = document.querySelector('[data-lane-blocks="' + laneIndex + '"] .mlane');
+        var caja = document.querySelector('[data-lane-blocks="' + laneIndex + '"] .mlane:not(.rejilla)');
         if (!caja) return;
         caja.innerHTML = capaDeBloques(prendidosDeLane(laneIndex),
           colorDeLane(state.project.automationLanes[laneIndex]));
@@ -2679,7 +2775,25 @@
         renderAll();
       }
 
+      // EL CABEZAL DE LA MATRIZ. Se coloca MIDIENDO una fila de verdad -su rectangulo
+      // contra el de la matriz-, no calculando: asi el zoom, el scroll y el ancho de la
+      // etiqueta ya estan contemplados sin repetir ninguna cuenta.
+      function moverCabezal() {
+        var linea = document.querySelector('.mtx .cabezal');
+        if (!linea) return;
+        var fila = document.querySelector('.mtx .mcells');
+        if (!fila || !state.playing || !state.transport) { linea.hidden = true; return; }
+        var mtx = linea.parentNode.getBoundingClientRect();
+        var r = fila.getBoundingClientRect();
+        if (!(r.width > 0)) { linea.hidden = true; return; }
+        var playBar = HPM.beatToBarFloat(state.project, state.transport.getCurrentBeat(performance.now()));
+        var x = r.left - mtx.left + xEnLane(playBar, r.width);
+        linea.hidden = false;
+        linea.style.left = x + 'px';
+      }
+
       function renderLaneCharts() {
+        moverCabezal();
         Array.prototype.forEach.call(document.querySelectorAll('[data-lane-svg]'), function (svg) {
           var laneIndex = Number(svg.dataset.laneSvg);
           var lane = state.project.automationLanes[laneIndex];
@@ -3149,6 +3263,39 @@
           var hayAbierto = Object.keys(conAlgo).some(function (d) { return !state.filasPlegadas[d]; });
           Object.keys(conAlgo).forEach(function (d) { state.filasPlegadas[d] = hayAbierto; });
           renderAll();
+          return;
+        }
+        // LLENAR LA LINEA: todos los compases prendidos, de punta a punta. Es el ✓ del
+        // arranger, que recorre seccion por seccion poniendo vueltas hasta el final.
+        if (target.dataset && target.dataset.filaLlena !== undefined) {
+          var iLlena = Number(target.dataset.filaLlena);
+          var laneLlena = state.project.automationLanes[iLlena];
+          if (laneLlena) {
+            anotarPaso();
+            var todos = [];
+            for (var bLl = 0; bLl < state.project.totalBars; bLl += 1) todos.push(true);
+            laneLlena.points = HPM.blocksToLanePoints(state.project, todos, rangoDeLane(laneLlena));
+            state.project = HPM.normalizeProject(state.project);
+            refreshLivePlan();
+            saveProject();
+            log('BLOQUES \u2192 ' + nombreCortoDeLane(laneLlena) + ' suena de punta a punta');
+            renderAll();
+          }
+          return;
+        }
+        // Y VACIARLA. Lo unico destructivo de la etiqueta: se deshace con Ctrl+Z.
+        if (target.dataset && target.dataset.filaVacia !== undefined) {
+          var iVacia = Number(target.dataset.filaVacia);
+          var laneVacia = state.project.automationLanes[iVacia];
+          if (laneVacia && laneVacia.points.length) {
+            anotarPaso();
+            laneVacia.points = [];
+            state.project = HPM.normalizeProject(state.project);
+            refreshLivePlan();
+            saveProject();
+            log('BLOQUES \u2192 ' + nombreCortoDeLane(laneVacia) + ' vaciada');
+            renderAll();
+          }
           return;
         }
         if (target.dataset && target.dataset.filaFold !== undefined) {
@@ -3934,10 +4081,17 @@
           var iLane = Number(cajaBloques.dataset.laneBlocks);
           var barInicio = barBajoElCursor(cajaBloques, event.clientX);
           if (barInicio === null) return;
-          var yaPrendido = HPM.laneBlocks(state.project, state.project.automationLanes[iLane],
-            rangoDeLane(state.project.automationLanes[iLane]))[barInicio - 1];
+          var celdaInicio = HPM.gridCellAtBar(grillaDeBloques(), barInicio);
+          if (celdaInicio < 0) return;
+          // Prende o borra segun lo que haya en LA CELDA: si suena algo ahi, el trazo
+          // borra. Media celda prendida cuenta como prendida, o el mismo click primero
+          // completaria la vuelta y recien despues la borraria.
+          var celda = grillaDeBloques()[celdaInicio];
+          var yaSuena = HPM.laneBlocks(state.project, state.project.automationLanes[iLane],
+            rangoDeLane(state.project.automationLanes[iLane]))
+            .slice(celda.desde - 1, celda.hasta).some(Boolean);
           anotarPaso();
-          state.pintando = { laneIndex: iLane, encender: !yaPrendido, desde: barInicio, hasta: barInicio };
+          state.pintando = { laneIndex: iLane, encender: !yaSuena, desde: celdaInicio, hasta: celdaInicio };
           repintarBloques(iLane);
           event.preventDefault();
           return;
@@ -4031,8 +4185,10 @@
           var caja = document.querySelector('[data-lane-blocks="' + state.pintando.laneIndex + '"]');
           if (!caja) return;
           var bar = barBajoElCursor(caja, event.clientX);
-          if (bar === null || bar === state.pintando.hasta) return;
-          state.pintando.hasta = bar;
+          if (bar === null) return;
+          var celdaAhora = HPM.gridCellAtBar(grillaDeBloques(), bar);
+          if (celdaAhora < 0 || celdaAhora === state.pintando.hasta) return;
+          state.pintando.hasta = celdaAhora;
           repintarBloques(state.pintando.laneIndex);
           return;
         }
