@@ -836,9 +836,17 @@
       timeSignature: project.timeSignature, structure: estructura
     }));
     var destino = {};
+    // `copiaDe` es una seccion NUEVA que sale de duplicar una vieja: no hereda sus puntos
+    // -esos se quedan con el original- pero SI se le copian, escalados a su propio largo.
+    // Duplicar una seccion tiene que traer su envolvente; si no, la copia suena distinta.
+    var copias = [];
     (nuevas || []).forEach(function (s, i) {
       var from = Number(s.from);
       if (Number.isFinite(from) && from >= 0 && nuevos[i]) destino[from] = nuevos[i];
+      var de = Number(s.copiaDe);
+      if (Number.isFinite(de) && de >= 0 && viejas[de] && nuevos[i]) {
+        copias.push({ desde: viejas[de], hacia: nuevos[i] });
+      }
     });
     var finalBar = nuevos.length ? Math.ceil(nuevos[nuevos.length - 1].endBar) - 1 : 1;
 
@@ -859,6 +867,13 @@
         var vieja = viejas[indice];
         var t = vieja.bars > 0 ? (point.bar - vieja.startBar) / vieja.bars : 0;
         puntos.push({ bar: Math.round(hacia.startBar + t * hacia.bars), value: point.value });
+      });
+      copias.forEach(function (copia) {
+        (lane.points || []).forEach(function (point) {
+          if (point.bar < copia.desde.startBar || point.bar >= copia.desde.endBar) return;
+          var t = copia.desde.bars > 0 ? (point.bar - copia.desde.startBar) / copia.desde.bars : 0;
+          puntos.push({ bar: Math.round(copia.hacia.startBar + t * copia.hacia.bars), value: point.value });
+        });
       });
       puntos.sort(sortByBar);
       return Object.assign({}, lane, { points: dedupePoints(puntos) });

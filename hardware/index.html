@@ -455,6 +455,18 @@
     .lane-grupo-head .cuantas{font:11px/1 var(--fuentetit);letter-spacing:.06em;color:var(--dim)}
     .lane-grupo-cuerpo{padding:14px;display:grid;gap:14px}
     .lane-grupo-cuerpo[hidden]{display:none}
+    /* EL ZOOM ES ANCHO, NO ESCALA. La lane se dibuja mas ancha que su caja y la caja
+       scrollea: el SVG se rehace con el ancho nuevo, asi que la grilla y los puntos
+       quedan nitidos en vez de agrandados. */
+    .lane-scroll{overflow-x:auto;overflow-y:hidden;width:100%}
+    .lane-scroll::-webkit-scrollbar{height:10px}
+    .lane-scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
+    .zoom-lanes{display:inline-flex;align-items:center;gap:6px}
+    .zoom-lanes .factor{font:11px/1 var(--fuentetit);letter-spacing:.06em;color:var(--dim);min-width:26px;text-align:center}
+    /* La seccion que se esta arrastrando se levanta, y las otras se deslizan. */
+    .useg.arrastrando{z-index:30;box-shadow:0 10px 22px rgba(0,0,0,.45),
+      0 0 0 1px color-mix(in srgb,var(--secc,#34f06e) 80%,transparent);
+      background:color-mix(in srgb,var(--secc,#34f06e) 14%,#090b0d 86%)}
     .lane-head{display:flex;align-items:center;gap:10px}
     .lane-head b{font:12px/1 var(--fuentetit);letter-spacing:.06em}
     .lane-head .lane-cc{font:11px/1 var(--fuentetit);letter-spacing:.06em;color:var(--dim)}
@@ -654,6 +666,10 @@
         <h2>Arrangement Overview</h2>
         <div class="actions">
           <button id="addSceneBtn">+ Scene Change</button>
+          <span class="zoom-lanes"><span class="rotulo" style="font:11px/1 var(--fuentetit);letter-spacing:.09em;color:var(--hw-label-green)">ZOOM</span>
+            <button id="zoomOutBtn" class="secondary" title="Alejar">−</button>
+            <span class="factor" id="zoomFactor">1×</span>
+            <button id="zoomInBtn" class="secondary" title="Acercar">+</button></span>
           <button id="clipsToCcBtn" class="secondary">CLIPS → CC</button>
           <button id="addLaneBtn">+ CC Lane</button>
           <button id="foldLanesBtn" class="secondary">PLEGAR TODO</button>
@@ -816,6 +832,7 @@
         bpmDrag: null,
         paletaAbierta: false,
         gruposLanes: {},
+        zoomLanes: 1,
         historia: { atras: [], adelante: [] },
         estructuras: cargarEstructuras(),
         estructuraElegida: '',
@@ -879,6 +896,9 @@
         addSceneBtn: document.getElementById('addSceneBtn'),
         addLaneBtn: document.getElementById('addLaneBtn'),
         clipsToCcBtn: document.getElementById('clipsToCcBtn'),
+        zoomOutBtn: document.getElementById('zoomOutBtn'),
+        zoomInBtn: document.getElementById('zoomInBtn'),
+        zoomFactor: document.getElementById('zoomFactor'),
         foldLanesBtn: document.getElementById('foldLanesBtn'),
         clearLogBtn: document.getElementById('clearLogBtn')
       };
@@ -1257,6 +1277,50 @@
         return { orden: orden };
       }
 
+      // EL DESLIZAMIENTO AL REORDENAR, como el `animarReorden` de ArrangeLab: se miden
+      // las posiciones ANTES, se hace el cambio, y cada segmento vuelve visualmente a
+      // donde estaba para despues soltarse con una transicion. La identidad de cada
+      // segmento entre los dos dibujos sale del plan -que indice viejo ocupa cada lugar
+      // nuevo-, asi que no hace falta inventarle un id a la seccion.
+      function animarReorden(orden, cambiar) {
+        if (typeof requestAnimationFrame !== 'function') { cambiar(); return; }
+        var antes = {};
+        var medir = function (nodo, clave) { antes[clave] = nodo.getBoundingClientRect(); };
+        Array.prototype.forEach.call(el.structureStrip.querySelectorAll('[data-secrow]'), function (n) {
+          medir(n, 'sec:' + n.dataset.secrow);
+        });
+        Array.prototype.forEach.call(el.structureDurs.querySelectorAll('[data-dursec]'), function (n) {
+          medir(n, 'dur:' + n.dataset.dursec);
+        });
+
+        cambiar();
+
+        var nodos = [];
+        var reubicar = function (nodo, viejoIndice, prefijo) {
+          var a = antes[prefijo + ':' + viejoIndice];
+          if (!a) return;
+          var b = nodo.getBoundingClientRect();
+          var dx = a.left - b.left;
+          if (Math.abs(dx) < 1) return;
+          nodo.style.transition = 'none';
+          nodo.style.transform = 'translateX(' + dx.toFixed(1) + 'px)';
+          nodos.push(nodo);
+        };
+        Array.prototype.forEach.call(el.structureStrip.querySelectorAll('[data-secrow]'), function (n) {
+          reubicar(n, orden[Number(n.dataset.secrow)], 'sec');
+        });
+        Array.prototype.forEach.call(el.structureDurs.querySelectorAll('[data-dursec]'), function (n) {
+          reubicar(n, orden[Number(n.dataset.dursec)], 'dur');
+        });
+        if (!nodos.length) return;
+        requestAnimationFrame(function () {
+          nodos.forEach(function (n) {
+            n.style.transition = 'transform var(--motion-normal, 220ms) var(--ease-mechanical, cubic-bezier(.2,.8,.2,1))';
+            n.style.transform = '';
+          });
+        });
+      }
+
       function moverSeccion(delta) {
         var lista = HPM.editableSections(state.project);
         var i = state.selectedSectionIndex;
@@ -1271,7 +1335,9 @@
         if (!plan) return;
         var nueva = plan.orden.map(function (k) { return lista[k]; });
         state.selectedSectionIndex = plan.orden.indexOf(i);   // la seleccion viaja con su seccion
-        aplicarSecciones(nueva, 'movida ' + (delta > 0 ? 'a la derecha' : 'a la izquierda'));
+        animarReorden(plan.orden, function () {
+          aplicarSecciones(nueva, 'movida ' + (delta > 0 ? 'a la derecha' : 'a la izquierda'));
+        });
       }
 
       // CAMBIAR EL LARGO DE UNA SECCION. Es el `setBars` de ArrangeLab, con su regla del
@@ -1429,6 +1495,14 @@
           { conservarPuntos: true });
       }
 
+      // La seccion agarrada se levanta mientras dura el gesto.
+      function marcarArrastrando() {
+        Array.prototype.forEach.call(el.structureStrip.querySelectorAll('.useg'), function (n) {
+          n.classList.toggle('arrastrando',
+            !!state.secMove && Number(n.dataset.secrow) === state.secMove.index);
+        });
+      }
+
       function opSeccion(op, dato) {
         var lista = HPM.editableSections(state.project);
         var i = state.selectedSectionIndex;
@@ -1445,13 +1519,15 @@
           state.selectedSectionIndex = donde;
         } else if (op === 'dup') {
           // Una madre con fill se duplica CON su fill: la copia es el grupo entero.
+          // `copiaDe` dice de que seccion sale cada copia: el core le duplica tambien la
+          // envolvente, escalada a su propio largo.
           if (esMadreConFill(lista, i)) {
-            var copiaMadre = Object.assign({}, lista[i], { from: -1 });
-            var copiaFill = Object.assign({}, lista[i + 1], { from: -1 });
+            var copiaMadre = Object.assign({}, lista[i], { from: -1, copiaDe: lista[i].from });
+            var copiaFill = Object.assign({}, lista[i + 1], { from: -1, copiaDe: lista[i + 1].from });
             lista.splice(i + 2, 0, copiaMadre, copiaFill);
             state.selectedSectionIndex = i + 2;
           } else {
-            lista.splice(i + 1, 0, Object.assign({}, lista[i], { from: -1 }));
+            lista.splice(i + 1, 0, Object.assign({}, lista[i], { from: -1, copiaDe: lista[i].from }));
             state.selectedSectionIndex = i + 1;
           }
         } else if (op === 'del') {
@@ -1613,6 +1689,9 @@
         el.saveTrackBtn.title = state.alsXml
           ? 'Escribe los locators de esta estructura en un .als nuevo'
           : 'Cargá un .als primero';
+        el.zoomFactor.textContent = state.zoomLanes + '×';
+        el.zoomOutBtn.disabled = state.zoomLanes <= 1;
+        el.zoomInBtn.disabled = state.zoomLanes >= 8;
         if (el.foldLanesBtn) {
           el.foldLanesBtn.disabled = !state.project.automationLanes.length;
           el.foldLanesBtn.textContent = state.project.automationLanes.some(function (l) { return !l.collapsed; })
@@ -2158,7 +2237,9 @@
           html += '<label>MIDI Channel<input type="number" value="' + lane.channel + '" readonly></label>';
           html += '<label>CC Parameter<select data-lane-cc="' + laneIndex + '">' + ccOptions(lane.mcTrack, lane.cc) + '</select></label>';
           html += '</div>';
-          html += '<svg class="lane-svg" data-lane-svg="' + laneIndex + '" viewBox="0 0 1200 160" preserveAspectRatio="none"></svg>';
+          html += '<div class="lane-scroll"><svg class="lane-svg" data-lane-svg="' + laneIndex +
+            '" viewBox="0 0 1200 160" preserveAspectRatio="none" style="width:' +
+            (state.zoomLanes * 100) + '%"></svg></div>';
           html += '</article>';
         });
         return html;
@@ -2599,6 +2680,14 @@
           addScene(last ? Math.min(state.project.totalBars, last.bar + 16) : 8, last ? Math.min(127, last.program + 1) : 0);
           return;
         }
+        if (target.id === 'zoomInBtn' || target.id === 'zoomOutBtn') {
+          var pasos = [1, 2, 4, 8];
+          var i = pasos.indexOf(state.zoomLanes);
+          if (i < 0) i = 0;
+          state.zoomLanes = pasos[Math.max(0, Math.min(pasos.length - 1, i + (target.id === 'zoomInBtn' ? 1 : -1)))];
+          renderAll();
+          return;
+        }
         if (target.id === 'clipsToCcBtn') { lanesDesdeClips(); return; }
         if (target.id === 'addLaneBtn') { addLane(); return; }
         if (target.id === 'foldLanesBtn') {
@@ -2981,6 +3070,13 @@
       document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape' && !el.ctlMenu.hidden) { cerrarCtlMenu(); return; }
         var focused = document.activeElement;
+        // Ctrl+D duplica la seccion elegida, como alla.
+        if ((event.ctrlKey || event.metaKey) && (event.key === 'd' || event.key === 'D') &&
+            state.selectedSectionIndex >= 0) {
+          event.preventDefault();
+          opSeccion('dup');
+          return;
+        }
         // CON UNA SECCION ELEGIDA, LAS TECLAS SON DE LA SECCION, como en ArrangeLab:
         //   ↑ ↓  cambian cual esta elegida        ← →  la MUEVEN
         // Los puntos de automatizacion tienen prioridad si hay uno rojo: es el mismo orden
@@ -3302,6 +3398,7 @@
           state.selectedSectionIndex = state.secMove.index;
           state.paletaAbierta = false;
           renderStructure();
+          marcarArrastrando();
           event.preventDefault();
           return;
         }
@@ -3375,10 +3472,13 @@
           var nueva = plan.orden.map(function (k) { return lista[k]; });
           state.secMove.index = plan.orden.indexOf(desde);
           state.selectedSectionIndex = state.secMove.index;
-          state.project = HPM.remapStructure(state.project, nueva);
-          refreshLivePlan();
-          renderStructure();
-          renderLaneCharts();
+          animarReorden(plan.orden, function () {
+            state.project = HPM.remapStructure(state.project, nueva);
+            refreshLivePlan();
+            renderStructure();
+            renderLaneCharts();
+          });
+          marcarArrastrando();
           return;
         }
         if (state.secDrag) {
@@ -3423,6 +3523,7 @@
         if (state.secMove) {
           var movida = state.secMove;
           state.secMove = null;
+          marcarArrastrando();
           if (movida.arrastro) {
             log('ESTRUCTURA → movida a la posición ' + (movida.index + 1));
             saveProject();
