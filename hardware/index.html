@@ -1142,7 +1142,9 @@
       function renderSecBar(secciones) {
         var actual = secciones[state.selectedSectionIndex];
         el.secbar.hidden = !actual;
-        if (!actual) return;
+        // Vaciarla al esconderla: un boton escondido igual recibe clicks, y disparaba
+        // operaciones sobre una seccion que ya no estaba elegida.
+        if (!actual) { el.secbar.innerHTML = ''; return; }
         var color = colorDeSeccion(actual.index, actual.color);
         var html = '';
         html += '<span class="sbnom" style="color:' + color + '">' + esc(actual.name) + ' · ' +
@@ -1152,7 +1154,16 @@
         html += '<button class="sb sblarg" data-secop="x2" title="El doble de largo">×2</button>';
         html += '<button class="sb sblarg" data-secop="div2" title="La mitad de largo">÷2</button>';
         html += '<button class="sb sbcolorbtn" data-secop="color" title="Color"><span class="sbcolor" style="background:' + color + '"></span></button>';
-        html += '<button class="sb sblarg' + (actual.fill ? ' activo' : '') + '" data-secop="fill" title="Marcar como fill">FILL</button>';
+        // El boton dice lo que va a hacer: sobre un fill lo saca, sobre una seccion corta
+        // su ultimo compas. Apagado cuando no se puede, con el motivo en el title.
+        var haySiguienteFill = !!(secciones[actual.index + 1] && secciones[actual.index + 1].fill);
+        var puedeFill = actual.fill || (!haySiguienteFill && actual.bars > 1);
+        html += '<button class="sb sblarg' + (actual.fill ? ' activo' : '') + '" data-secop="fill"' +
+          (puedeFill ? '' : ' disabled') + ' title="' +
+          (actual.fill ? 'Sacar el fill y devolver sus compases'
+            : haySiguienteFill ? 'Ya tiene un fill atrás'
+            : actual.bars > 1 ? 'Cortar el último compás como fill'
+            : 'Mide un compás: no hay qué cortar') + '">FILL</button>';
         html += '<button class="sb" data-secop="left" title="Mover a la izquierda">←</button>';
         html += '<button class="sb" data-secop="right" title="Mover a la derecha">→</button>';
         html += '<button class="sb" data-secop="dup" title="Duplicar">⧉</button>';
@@ -1175,9 +1186,9 @@
 
       // TODA EDICION PASA POR ACA. El core recibe la lista nueva de secciones diciendo de
       // donde viene cada una, y mueve los puntos de las lanes con ellas.
-      function aplicarSecciones(lista, queHizo, sinPaso) {
-        if (!sinPaso) anotarPaso();
-        state.project = HPM.remapStructure(state.project, lista);
+      function aplicarSecciones(lista, queHizo, opciones) {
+        if (!(opciones && opciones.sinPaso)) anotarPaso();
+        state.project = HPM.remapStructure(state.project, lista, opciones);
         if (queHizo) log('ESTRUCTURA → ' + queHizo + ' · ' + state.project.totalBars + ' bars');
         renderAll();
       }
@@ -1195,6 +1206,41 @@
         });
         if (!cambio) { log('ROUND → ya estaban todas en múltiplos de ' + paso); return; }
         aplicarSecciones(lista, 'acomodadas a múltiplos de ' + paso);
+      }
+
+      // FILL NO ES UNA ETIQUETA: CORTA EL FINAL DE LA SECCION.
+      //
+      // Es lo que hace ArrangeLab (`cortarFinal`): los ultimos compases de la seccion se
+      // vuelven una seccion nueva pegada atras, llamada FILL. El tema NO cambia de largo
+      // -los compases salen de la madre- y por eso nada se mueve en el tiempo.
+      //
+      // Sobre un fill, el mismo boton lo saca y le devuelve sus compases a la seccion de
+      // la que salieron, igual que alla.
+      function opFill(lista, i) {
+        var seccion = lista[i];
+        if (seccion.fill) {
+          if (i === 0) { log('FILL → un fill al principio no tiene de dónde salir'); return; }
+          lista[i - 1].bars += seccion.bars;
+          var vuelveA = lista[i - 1].name;
+          var cuantos = seccion.bars;
+          lista.splice(i, 1);
+          state.selectedSectionIndex = i - 1;
+          aplicarSecciones(lista, 'fill sacado; ' + barsLegibles(cuantos) + ' bars vuelven a ' + vuelveA,
+            { conservarPuntos: true });
+          return;
+        }
+        // Uno solo por seccion: un segundo fill saldria de una seccion ya recortada.
+        if (lista[i + 1] && lista[i + 1].fill) {
+          log('FILL → ' + seccion.name + ' ya tiene un fill atrás');
+          return;
+        }
+        if (seccion.bars <= 1) { log('FILL → ' + seccion.name + ' mide un compás: no hay qué cortar'); return; }
+        var largo = 1;
+        lista[i] = Object.assign({}, seccion, { bars: seccion.bars - largo });
+        lista.splice(i + 1, 0, { name: 'FILL', bars: largo, color: seccion.color, fill: true, from: -1 });
+        state.selectedSectionIndex = i + 1;
+        aplicarSecciones(lista, 'fill de ' + largo + ' compás al final de ' + seccion.name,
+          { conservarPuntos: true });
       }
 
       function opSeccion(op, dato) {
@@ -1227,7 +1273,8 @@
           if (lista[i].bars <= 1) { log('ESTRUCTURA → ' + nombre + ' ya mide un compás'); return; }
           lista[i].bars = Math.max(1, Math.round(lista[i].bars / 2));
         } else if (op === 'fill') {
-          lista[i].fill = !lista[i].fill;
+          opFill(lista, i);
+          return;
         } else if (op === 'color') {
           state.paletaAbierta = !state.paletaAbierta;
           renderStructure();
@@ -2594,6 +2641,12 @@
       document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape' && !el.ctlMenu.hidden) { cerrarCtlMenu(); return; }
         var focused = document.activeElement;
+        if (event.key === 'Escape' && state.selectedSectionIndex >= 0) {
+          state.selectedSectionIndex = -1;
+          state.paletaAbierta = false;
+          renderAll();
+          return;
+        }
         if ((event.ctrlKey || event.metaKey) && (event.key === 'z' || event.key === 'Z')) {
           event.preventDefault();
           if (event.shiftKey) rehacer(); else deshacer();
@@ -2704,6 +2757,24 @@
         if (pintar) { opSeccion('pintar', pintar.dataset.seccolor); return; }
         var boton = event.target.closest('[data-secop]');
         if (boton) opSeccion(boton.dataset.secop);
+      });
+
+      // TOCAR AFUERA CIERRA LA BARRA, como en ArrangeLab. El guardia mira toda la caja de
+      // la estructura y no solo el segmento: durante el gesto la barra se redibuja entera,
+      // asi que para cuando llega el `click` el nodo que se toco ya no esta en el arbol y
+      // el evento cae en el contenedor.
+      document.addEventListener('click', function (event) {
+        if (state.selectedSectionIndex < 0) return;
+        var donde = event.target;
+        // UN NODO QUE YA NO ESTA EN EL ARBOL NO ES UN CLICK AFUERA. Apretar un boton de la
+        // barra la redibuja, asi que para cuando el evento llega hasta aca su target quedo
+        // desconectado y `closest` no encuentra nada: sin esto, cada boton de la barra
+        // terminaba cerrando la barra y la siguiente operacion no encontraba seleccion.
+        if (!donde.isConnected) return;
+        if (donde.closest('#structureBox') || donde.closest('#secbar')) return;
+        state.selectedSectionIndex = -1;
+        state.paletaAbierta = false;
+        renderAll();
       });
 
       document.addEventListener('click', function (event) {

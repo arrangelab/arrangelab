@@ -803,7 +803,11 @@
   //   · seccion que se mueve de lugar      -> sus puntos se van con ella
   //   · seccion que se borra               -> sus puntos se borran con ella
   //   · punto fuera de toda seccion        -> se pega al final
-  function remapStructure(project, nuevas) {
+  // `opciones.conservarPuntos` deja los puntos donde estan en el tiempo. Sirve para las
+  // operaciones que NO mueven nada: partir una seccion en dos -un fill- o volver a
+  // juntarlas. El tema dura lo mismo y los bordes de adentro son los unicos que cambian,
+  // asi que escalar los puntos los correria sin motivo.
+  function remapStructure(project, nuevas, opciones) {
     var base = project && project.structure ? project.structure : {};
     var viejas = sectionTimeline(project);
     var estructura = normalizeStructure({
@@ -827,6 +831,10 @@
       if (Number.isFinite(from) && from >= 0 && nuevos[i]) destino[from] = nuevos[i];
     });
     var finalBar = nuevos.length ? Math.ceil(nuevos[nuevos.length - 1].endBar) - 1 : 1;
+
+    if (opciones && opciones.conservarPuntos) {
+      return normalizeProject(Object.assign({}, project, { structure: estructura }));
+    }
 
     var lanes = (project.automationLanes || []).map(function (lane) {
       var puntos = [];
