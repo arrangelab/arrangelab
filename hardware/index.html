@@ -463,6 +463,7 @@
     .lane-scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
     .zoom-lanes{display:inline-flex;align-items:center;gap:6px}
     .zoom-lanes .factor{font:11px/1 var(--fuentetit);letter-spacing:.06em;color:var(--dim);min-width:26px;text-align:center}
+    .zoom-lanes button.activo{border-color:var(--acc);color:var(--acc)}
     /* La seccion que se esta arrastrando se levanta, y las otras se deslizan. */
     .useg.arrastrando{z-index:30;box-shadow:0 10px 22px rgba(0,0,0,.45),
       0 0 0 1px color-mix(in srgb,var(--secc,#34f06e) 80%,transparent);
@@ -670,6 +671,11 @@
             <button id="zoomOutBtn" class="secondary" title="Alejar">−</button>
             <span class="factor" id="zoomFactor">1×</span>
             <button id="zoomInBtn" class="secondary" title="Acercar">+</button></span>
+          <span class="zoom-lanes"><span class="rotulo" style="font:11px/1 var(--fuentetit);letter-spacing:.09em;color:var(--hw-label-green)">PASO</span>
+            <button class="secondary" data-paso="1" title="Un compás: 16 steps">BAR</button>
+            <button class="secondary" data-paso="0.5" title="Medio compás: 8 steps">1/2</button>
+            <button class="secondary" data-paso="0.25" title="Un cuarto: 4 steps">1/4</button>
+            <button class="secondary" data-paso="0.0625" title="Un step">STEP</button></span>
           <button id="clipsToCcBtn" class="secondary">CLIPS → CC</button>
           <button id="addLaneBtn">+ CC Lane</button>
           <button id="foldLanesBtn" class="secondary">PLEGAR TODO</button>
@@ -833,6 +839,7 @@
         paletaAbierta: false,
         gruposLanes: {},
         zoomLanes: 1,
+        pasoLane: 1,
         historia: { atras: [], adelante: [] },
         estructuras: cargarEstructuras(),
         estructuraElegida: '',
@@ -1035,11 +1042,17 @@
         return padL + ((bar - 1) / usable) * (width - padL - padR);
       }
 
+      // EL COMPAS QUE CAE BAJO EL CURSOR, redondeado al PASO elegido: un compas, medio,
+      // un cuarto o un step. Con zoom, el paso fino es el que hace falta para dibujar un
+      // corte adentro del compas.
       function barForX(x, totalBars, width, padL, padR) {
         var usable = width - padL - padR;
         var t = usable <= 0 ? 0 : (x - padL) / usable;
         t = Math.max(0, Math.min(1, t));
-        return Math.round(1 + t * Math.max(1, totalBars - 1));
+        var bar = 1 + t * Math.max(1, totalBars - 1);
+        var paso = state.pasoLane || 1;
+        var caido = Math.round((bar - 1) / paso) * paso + 1;
+        return Math.max(1, Math.min(totalBars, HPM.normalizeBar(caido)));
       }
 
       // EL CARRIL DE LA LANE ES EL RANGO UTIL DEL CONTROL, no 0..127.
@@ -1266,6 +1279,46 @@
         return (j < 0 || j >= grupos.length) ? null : grupos[j];
       }
 
+      function gruposActuales(lista) {
+        var out = [], k = 0;
+        while (k < lista.length) { var g = grupoDe(lista, k); out.push(g); k = g.ini + g.len; }
+        return out;
+      }
+
+      // MOVER A UN HUECO, no a la posicion de un vecino. Los huecos se cuentan sobre la
+      // lista SIN el grupo que se arrastra: asi el destino no depende de donde estaba, que
+      // es lo que hacia saltar el reordenado hacia adelante y hacia atras.
+      function planMoverGrupoASlot(lista, i, slot) {
+        var desde = grupoDe(lista, i);
+        var otros = gruposActuales(lista).filter(function (g) { return g.ini !== desde.ini; });
+        slot = Math.max(0, Math.min(slot, otros.length));
+        var orden = lista.map(function (_, k) { return k; });
+        var chunk = orden.splice(desde.ini, desde.len);
+        var donde = 0;
+        for (var n = 0; n < slot; n += 1) donde += otros[n].len;
+        orden.splice.apply(orden, [donde, 0].concat(chunk));
+        var igual = orden.every(function (v, k) { return v === k; });
+        return igual ? null : { orden: orden, insertAt: donde };
+      }
+
+      // EL HUECO BAJO EL CURSOR, con umbral direccional. Si vas hacia la derecha, el hueco
+      // cambia al 30% del bloque en el que entras; si vas hacia la izquierda, al 70%. Esa
+      // asimetria es la histeresis que evita que el reordenado oscile en el borde.
+      function slotDragEn(lista, x, seg) {
+        if (!state.secMove) return null;
+        var desde = grupoDe(lista, state.secMove.index);
+        var otros = gruposActuales(lista).filter(function (g) { return g.ini !== desde.ini; });
+        if (!otros.length) return null;
+        var g = grupoDe(lista, Number(seg.dataset.secrow));
+        var pos = -1;
+        otros.forEach(function (o, k) { if (o.ini === g.ini) pos = k; });
+        if (pos < 0) return null;                 // el cursor esta sobre lo que arrastras
+        var r = seg.getBoundingClientRect();
+        var ratio = Math.max(0, Math.min(1, (x - r.left) / Math.max(1, r.width)));
+        var umbral = state.secMove.dir > 0 ? 0.30 : (state.secMove.dir < 0 ? 0.70 : 0.50);
+        return pos + (ratio > umbral ? 1 : 0);
+      }
+
       function planMoverGrupo(lista, i, j) {
         var desde = grupoDe(lista, i), hasta = grupoDe(lista, j);
         if (desde.ini === hasta.ini) return null;
@@ -1282,7 +1335,7 @@
       // donde estaba para despues soltarse con una transicion. La identidad de cada
       // segmento entre los dos dibujos sale del plan -que indice viejo ocupa cada lugar
       // nuevo-, asi que no hace falta inventarle un id a la seccion.
-      function animarReorden(orden, cambiar) {
+      function animarReorden(orden, cambiar, saltar) {
         if (typeof requestAnimationFrame !== 'function') { cambiar(); return; }
         var antes = {};
         var medir = function (nodo, clave) { antes[clave] = nodo.getBoundingClientRect(); };
@@ -1307,6 +1360,7 @@
           nodos.push(nodo);
         };
         Array.prototype.forEach.call(el.structureStrip.querySelectorAll('[data-secrow]'), function (n) {
+          if (saltar !== undefined && Number(n.dataset.secrow) === saltar) return;
           reubicar(n, orden[Number(n.dataset.secrow)], 'sec');
         });
         Array.prototype.forEach.call(el.structureDurs.querySelectorAll('[data-dursec]'), function (n) {
@@ -1495,11 +1549,32 @@
           { conservarPuntos: true });
       }
 
-      // La seccion agarrada se levanta mientras dura el gesto.
-      function marcarArrastrando() {
+      // LA PIEZA ARRASTRADA SIGUE AL MOUSE con su propio transform, y por eso queda fuera
+      // de la animacion de reorden: las otras se deslizan, ella va pegada al cursor. Sin
+      // esto, la que cede el lugar pega un salto seco cuando la cruzas.
+      function pintarDrag() {
+        var arrastrando = state.secMove && state.secMove.movio ? state.secMove.index : -1;
+        var elegido = null;
         Array.prototype.forEach.call(el.structureStrip.querySelectorAll('.useg'), function (n) {
-          n.classList.toggle('arrastrando',
-            !!state.secMove && Number(n.dataset.secrow) === state.secMove.index);
+          var mio = Number(n.dataset.secrow) === arrastrando;
+          n.classList.toggle('arrastrando', mio);
+          if (mio) elegido = n; else { n.style.transform = ''; n.style.transition = ''; }
+        });
+        if (!elegido || !state.secMove) return;
+        // Se limpia el transform ANTES de medir: hace falta la posicion natural, no la
+        // que tiene puesta de la vuelta anterior.
+        elegido.style.transition = 'none';
+        elegido.style.transform = '';
+        var r = elegido.getBoundingClientRect();
+        var dx = state.secMove.mouseX - state.secMove.hotX - r.left;
+        elegido.style.transform = 'translateX(' + dx.toFixed(1) + 'px)';
+      }
+
+      function limpiarDrag() {
+        Array.prototype.forEach.call(el.structureStrip.querySelectorAll('.useg'), function (n) {
+          n.classList.remove('arrastrando');
+          n.style.transform = '';
+          n.style.transition = '';
         });
       }
 
@@ -1689,6 +1764,9 @@
         el.saveTrackBtn.title = state.alsXml
           ? 'Escribe los locators de esta estructura en un .als nuevo'
           : 'Cargá un .als primero';
+        Array.prototype.forEach.call(document.querySelectorAll('[data-paso]'), function (b) {
+          b.classList.toggle('activo', Number(b.dataset.paso) === state.pasoLane);
+        });
         el.zoomFactor.textContent = state.zoomLanes + '×';
         el.zoomOutBtn.disabled = state.zoomLanes <= 1;
         el.zoomInBtn.disabled = state.zoomLanes >= 8;
@@ -2263,10 +2341,18 @@
             parts.push('<text x="10" y="' + (y + 4) + '" fill="#89a7a2" font-size="11">' + value + '</text>');
           });
 
-          for (var bar = 1; bar <= totalBars; bar += 1) {
+          // LA GRILLA MUESTRA EL PASO. Las lineas finas solo se dibujan si entran: por
+          // debajo de tres pixeles entre una y otra son una mancha, no una grilla.
+          var paso = state.pasoLane || 1;
+          var pxPaso = (w - box.padL - box.padR) / Math.max(1, totalBars - 1) * paso;
+          var pasoDibujado = pxPaso >= 3 ? paso : 1;
+          for (var bar = 1; bar <= totalBars; bar += pasoDibujado) {
             var x = xForBar(bar, totalBars, w, box.padL, box.padR);
-            var strong = ((bar - 1) % 16 === 0);
-            parts.push('<line x1="' + x + '" y1="' + box.padT + '" x2="' + x + '" y2="' + (h - box.padB) + '" stroke="' + (strong ? '#3f6068' : '#22373d') + '" stroke-width="' + (strong ? '2' : '1') + '"></line>');
+            var enCompas = Math.abs(bar - Math.round(bar)) < 1e-6;
+            var strong = enCompas && ((Math.round(bar) - 1) % 16 === 0);
+            parts.push('<line x1="' + x + '" y1="' + box.padT + '" x2="' + x + '" y2="' + (h - box.padB) +
+              '" stroke="' + (strong ? '#3f6068' : enCompas ? '#22373d' : '#16262a') +
+              '" stroke-width="' + (strong ? '2' : '1') + '"></line>');
           }
 
           // LOS BORDES DE SECCION, ENCIMA DE LA GRILLA. La curva se dibuja contra el
@@ -2680,6 +2766,14 @@
           addScene(last ? Math.min(state.project.totalBars, last.bar + 16) : 8, last ? Math.min(127, last.program + 1) : 0);
           return;
         }
+        if (target.dataset && target.dataset.paso !== undefined) {
+          state.pasoLane = Number(target.dataset.paso) || 1;
+          log('PASO → ' + (state.pasoLane === 1 ? 'un compás'
+            : state.pasoLane === 0.5 ? 'medio compás'
+            : state.pasoLane === 0.25 ? 'un cuarto' : 'un step'));
+          renderAll();
+          return;
+        }
         if (target.id === 'zoomInBtn' || target.id === 'zoomOutBtn') {
           var pasos = [1, 2, 4, 8];
           var i = pasos.indexOf(state.zoomLanes);
@@ -3086,12 +3180,16 @@
             (event.key === 'ArrowLeft' || event.key === 'ArrowRight' ||
              event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
           event.preventDefault();
-          var cuantas = HPM.sectionTimeline(state.project).length;
-          if (event.key === 'ArrowUp') {
-            state.selectedSectionIndex = Math.max(0, state.selectedSectionIndex - 1);
-            renderAll();
-          } else if (event.key === 'ArrowDown') {
-            state.selectedSectionIndex = Math.min(cuantas - 1, state.selectedSectionIndex + 1);
+          if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+            // SE RECORRE DE GRUPO EN GRUPO: una seccion y su fill son una sola cosa, asi
+            // que la seleccion no se para en el fill. Siempre cae en la madre.
+            var listaSel = HPM.editableSections(state.project);
+            var inicios = iniciosDeGrupo(listaSel);
+            var grupoActual = grupoDe(listaSel, state.selectedSectionIndex);
+            var posActual = inicios.indexOf(grupoActual.ini);
+            var siguiente = Math.max(0, Math.min(inicios.length - 1,
+              posActual + (event.key === 'ArrowDown' ? 1 : -1)));
+            state.selectedSectionIndex = inicios[siguiente];
             renderAll();
           } else {
             moverSeccion(event.key === 'ArrowLeft' ? -1 : 1);
@@ -3112,6 +3210,14 @@
         if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || event.key === 'Y')) {
           event.preventDefault();
           rehacer();
+          return;
+        }
+        // SUPR BORRA LA SECCION ELEGIDA. Un punto de automatizacion elegido le gana: es el
+        // mismo orden que usa el arranger con las vueltas.
+        if ((event.key === 'Delete' || event.key === 'Backspace') && !state.selectedLanePoint &&
+            state.selectedSectionIndex >= 0 && !(focused && focused.matches('input, select, textarea'))) {
+          event.preventDefault();
+          opSeccion('del');
           return;
         }
         if ((event.key === 'Delete' || event.key === 'Backspace') && state.selectedLanePoint && !(focused && focused.matches('input, select, textarea'))) {
@@ -3303,9 +3409,11 @@
           cuantos[point.bar] = (cuantos[point.bar] || 0) + 1;
         });
         if ((cuantos[wanted] || 0) < 2) return wanted;
-        for (var offset = 1; offset < state.project.totalBars; offset += 1) {
-          var forward = wanted + offset;
-          var backward = wanted - offset;
+        // Se busca el lugar libre mas cercano EN LA GRILLA ELEGIDA, no de compas en compas.
+        var paso = state.pasoLane || 1;
+        for (var n = 1; n * paso < state.project.totalBars; n += 1) {
+          var forward = HPM.normalizeBar(wanted + n * paso);
+          var backward = HPM.normalizeBar(wanted - n * paso);
           if (forward <= state.project.totalBars && (cuantos[forward] || 0) < 2) return forward;
           if (backward >= 1 && (cuantos[backward] || 0) < 2) return backward;
         }
@@ -3347,6 +3455,42 @@
       // EL BPM SE ARRASTRA, como en el arranger: agarrarlo y mover el mouse arriba y
       // abajo. Cuatro pixeles por golpe, y hasta que no se mueve tres no cuenta como
       // arrastre, asi que un click sigue sirviendo para escribir el numero.
+      // ZOOM CON SHIFT + RUEDA ADENTRO DE LA LANE. La rueda sola scrollea, que es lo que
+      // uno espera de una caja que scrollea; con Shift hace zoom, y el punto que esta bajo
+      // el cursor se queda quieto: se guarda su posicion relativa antes de redibujar y se
+      // recolocan los scrolls despues.
+      document.addEventListener('wheel', function (event) {
+        if (!event.shiftKey) return;
+        var caja = event.target.closest ? event.target.closest('.lane-scroll') : null;
+        if (!caja) return;
+        var pasos = [1, 2, 4, 8];
+        var i = pasos.indexOf(state.zoomLanes);
+        if (i < 0) i = 0;
+        var j = Math.max(0, Math.min(pasos.length - 1, i + (event.deltaY < 0 ? 1 : -1)));
+        event.preventDefault();
+        if (j === i) return;
+        var r = caja.getBoundingClientRect();
+        var xEnCaja = event.clientX - r.left;
+        var relativo = (caja.scrollLeft + xEnCaja) / Math.max(1, caja.scrollWidth);
+        state.zoomLanes = pasos[j];
+        renderAll();
+        Array.prototype.forEach.call(document.querySelectorAll('.lane-scroll'), function (c) {
+          c.scrollLeft = Math.max(0, relativo * c.scrollWidth - xEnCaja);
+        });
+      }, { passive: false });
+
+      // Todas las lanes scrollean juntas: si no, comparar dos es imposible.
+      document.addEventListener('scroll', function (event) {
+        var caja = event.target;
+        if (!caja || !caja.classList || !caja.classList.contains('lane-scroll')) return;
+        if (state.sincronizando) return;
+        state.sincronizando = true;
+        Array.prototype.forEach.call(document.querySelectorAll('.lane-scroll'), function (c) {
+          if (c !== caja) c.scrollLeft = caja.scrollLeft;
+        });
+        state.sincronizando = false;
+      }, true);
+
       document.addEventListener('pointerdown', function (event) {
         if (event.target !== el.bpm) return;
         state.bpmDrag = { y0: event.clientY, v0: Math.max(20, Math.min(300, Number(el.bpm.value) || 138)), movio: false };
@@ -3393,12 +3537,16 @@
           // `yaEstaba` es la seleccion ANTES de este gesto: sin eso, el pointerdown elige
           // y el pointerup vuelve a alternar sobre lo que acaba de elegir, asi que nada
           // quedaba elegido nunca.
-          state.secMove = { index: Number(segmento.dataset.secrow), startX: event.clientX,
-            arrastro: false, yaEstaba: state.selectedSectionIndex };
+          var cajaSeg = segmento.getBoundingClientRect();
+          state.secMove = {
+            index: Number(segmento.dataset.secrow), startX: event.clientX,
+            arrastro: false, movio: false, dir: 0, ultX: event.clientX,
+            mouseX: event.clientX, hotX: event.clientX - cajaSeg.left,
+            yaEstaba: state.selectedSectionIndex
+          };
           state.selectedSectionIndex = state.secMove.index;
           state.paletaAbierta = false;
           renderStructure();
-          marcarArrastrando();
           event.preventDefault();
           return;
         }
@@ -3452,33 +3600,47 @@
           return;
         }
         if (state.secMove) {
+          var mov = state.secMove;
+          // Cinco pixeles de umbral: si no, un click cualquiera reordena.
+          if (!mov.movio && Math.abs(event.clientX - mov.startX) < 5) return;
+          if (Math.abs(event.clientX - mov.ultX) > 0.5) mov.dir = event.clientX > mov.ultX ? 1 : -1;
+          mov.ultX = event.clientX;
+          mov.mouseX = event.clientX;
+          mov.movio = true;
+          pintarDrag();
+
           var lista = HPM.editableSections(state.project);
-          var desde = state.secMove.index;
-          // Sobre que seccion esta el cursor. Se pregunta al DOM en vez de calcular
-          // anchos: los segmentos tienen un piso de ancho y no son proporcionales exactos.
-          var destino = desde;
-          Array.prototype.forEach.call(el.structureStrip.querySelectorAll('[data-secrow]'), function (nodo) {
-            var caja = nodo.getBoundingClientRect();
-            if (event.clientX >= caja.left && event.clientX <= caja.right) destino = Number(nodo.dataset.secrow);
-          });
-          if (destino === desde) return;
-          // SE ARRASTRA EL GRUPO, NO LA SECCION. Una madre y su fill son una sola cosa:
-          // moverla sola dejaba el fill colgado en el medio de otra seccion. Es el mismo
-          // `planMoverGrupo` que usan las flechas.
-          if (grupoDe(lista, destino).ini === grupoDe(lista, desde).ini) return;
-          var plan = planMoverGrupo(lista, desde, destino);
-          if (!plan) return;
-          if (!state.secMove.arrastro) { anotarPaso(); state.secMove.arrastro = true; }
+          // LA PIEZA ARRASTRADA ESTA BAJO EL CURSOR -va pegada a el-, asi que hay que
+          // mirar QUE HAY DEBAJO de ella: con elementFromPoint a secas el destino era
+          // siempre uno mismo y no se reordenaba nunca.
+          var seg = null;
+          var debajo = document.elementsFromPoint(event.clientX, event.clientY);
+          for (var q = 0; q < debajo.length; q += 1) {
+            var cand = debajo[q].closest ? debajo[q].closest('[data-secrow]') : null;
+            if (cand && el.structureStrip.contains(cand) && Number(cand.dataset.secrow) !== mov.index) {
+              seg = cand;
+              break;
+            }
+          }
+          if (!seg) return;
+          var slot = slotDragEn(lista, event.clientX, seg);
+          if (slot === null) return;
+          var plan = planMoverGrupoASlot(lista, mov.index, slot);
+          if (!plan) return;                       // seguis sobre el mismo hueco
+          if (!mov.arrastro) { anotarPaso(); mov.arrastro = true; }
           var nueva = plan.orden.map(function (k) { return lista[k]; });
-          state.secMove.index = plan.orden.indexOf(desde);
-          state.selectedSectionIndex = state.secMove.index;
+          var quienEra = mov.index;
+          mov.index = plan.orden.indexOf(quienEra);
+          state.selectedSectionIndex = mov.index;
+          // Las OTRAS cajas se deslizan; la arrastrada queda afuera de la animacion
+          // porque ya va pegada al cursor.
           animarReorden(plan.orden, function () {
             state.project = HPM.remapStructure(state.project, nueva);
             refreshLivePlan();
             renderStructure();
             renderLaneCharts();
-          });
-          marcarArrastrando();
+          }, mov.index);
+          pintarDrag();
           return;
         }
         if (state.secDrag) {
@@ -3523,7 +3685,7 @@
         if (state.secMove) {
           var movida = state.secMove;
           state.secMove = null;
-          marcarArrastrando();
+          limpiarDrag();
           if (movida.arrastro) {
             log('ESTRUCTURA → movida a la posición ' + (movida.index + 1));
             saveProject();

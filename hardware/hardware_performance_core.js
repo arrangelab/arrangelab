@@ -124,9 +124,22 @@
     return a.bar - b.bar;
   }
 
+  // UN PUNTO NO CAE SOLO EN EL BORDE DEL COMPAS. Con zoom se dibuja en medio compas, en
+  // un cuarto o en un step, asi que el compas es fraccionario. Se redondea a 1/64 de
+  // compas -mas fino que un step de 1/16- para que dos puntos dibujados en el mismo lugar
+  // den el mismo numero y el escalon funcione.
+  var PASO_MINIMO = 1 / 64;
+
+  function normalizeBar(bar) {
+    var b = Number(bar);
+    if (!Number.isFinite(b)) b = 1;
+    b = Math.round(b / PASO_MINIMO) * PASO_MINIMO;
+    return Math.max(1, Math.min(9999, Math.round(b * 1e6) / 1e6));
+  }
+
   function normalizePoint(point) {
     return {
-      bar: clampInt(point && point.bar, 1, 9999, 1),
+      bar: normalizeBar(point && point.bar),
       value: clampInt(point && point.value, 0, 127, 0)
     };
   }
@@ -353,8 +366,9 @@
     return clampInt(ts.numerator, 1, 32, 4);
   }
 
+  // Sin redondear: un punto puede estar en el compas 9.5 y el beat tiene que caer ahi.
   function barToBeat(project, bar) {
-    return (clampInt(bar, 1, 9999, 1) - 1) * beatsPerBar(project);
+    return (normalizeBar(bar) - 1) * beatsPerBar(project);
   }
 
   function beatToBarFloat(project, beat) {
@@ -1480,6 +1494,7 @@
     setTrackInputRouting: setTrackInputRouting,
     interpolateLaneValue: interpolateLaneValue,
     beatsPerBar: beatsPerBar,
+    normalizeBar: normalizeBar,
     barToBeat: barToBeat,
     beatToBarFloat: beatToBarFloat,
     describeBeat: describeBeat,
