@@ -489,7 +489,7 @@
     .palsec .sinluz{background:transparent;color:var(--dim)}
     /* La fila de acciones va ARRIBA de la barra, como la del arranger. */
     .estructura-acciones{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
-    .estructura-acciones.arriba{margin:0 0 12px}
+    .estructura-acciones.arriba{margin:0 0 12px;justify-content:flex-end}
     .estructura-acciones .rotulo{font:11px/1 var(--fuentetit);letter-spacing:.09em;
       text-transform:uppercase;color:var(--hw-label-green)}
     .estructura-acciones button.activo{border-color:var(--acc);color:var(--acc)}
@@ -676,12 +676,7 @@
           <div class="secdurs" id="structureDurs"></div>
         </div>
 
-        <div class="help" id="structureHelp">Las secciones son los locators del Set y el último marca el final, no una sección más.
-        Tocá una para elegirla: se resalta también en las automation lanes y se puede renombrar,
-        estirar desde su borde derecho, mover, duplicar o borrar.
-        <b>Los puntos de automatización viajan con su sección</b>: si estirás el break, el barrido
-        que lo cruzaba lo sigue cruzando entero, y lo que venía después se corre.
-        BARS nunca se escribe: es la suma de las secciones.</div>
+
     </section>
 
     <section class="panel">
@@ -828,7 +823,6 @@
         delStructureBtn: document.getElementById('delStructureBtn'),
         structureSource: document.getElementById('structureSource'),
         structureEmpty: document.getElementById('structureEmpty'),
-        structureHelp: document.getElementById('structureHelp'),
         sceneTable: document.getElementById('sceneTable'),
         lanesHost: document.getElementById('lanesHost'),
         loadAls: document.getElementById('loadAlsBtn'),
@@ -1097,7 +1091,6 @@
         el.structureEmpty.hidden = !!secciones.length;
         el.structureBox.hidden = !secciones.length;
         el.structureActions.hidden = !secciones.length;
-        el.structureHelp.hidden = !secciones.length;
         if (state.selectedSectionIndex >= secciones.length) state.selectedSectionIndex = -1;
         if (!secciones.length) {
           el.structureSource.textContent = 'sin .als';
@@ -1127,7 +1120,10 @@
 
         // Fila 2: las secciones.
         el.structureStrip.innerHTML = secciones.map(function (seccion) {
-          var elegida = seccion.index === state.selectedSectionIndex;
+          // Una seccion y su fill se resaltan juntos: son un grupo y se mueven juntos.
+          var elegida = seccion.index === state.selectedSectionIndex ||
+            (state.selectedSectionIndex >= 0 &&
+             grupoDe(secciones, state.selectedSectionIndex).ini === grupoDe(secciones, seccion.index).ini);
           var activa = !!(sonando && sonando.index === seccion.index);
           var angosto = seccion.bars / state.project.totalBars < 0.045;
           // EL CABEZAL VA ADENTRO DE SU SECCION, no encima de la barra: asi cae en el
@@ -1182,6 +1178,59 @@
         return tira(i, 1, false);
       }
 
+      // UNA SECCION Y SU FILL SON UN GRUPO, y se mueven juntos. Es la misma cuenta de
+      // ArrangeLab: los grupos se recorren de a uno o de a dos segun haya un fill pegado
+      // atras, y mover es mover el grupo entero al lugar del grupo vecino.
+      function esMadreConFill(lista, i) {
+        return !!(lista[i] && !lista[i].fill && lista[i + 1] && lista[i + 1].fill);
+      }
+
+      function grupoDe(lista, i) {
+        var ini = (lista[i] && lista[i].fill && i > 0) ? i - 1 : i;
+        return { ini: ini, len: (lista[ini + 1] && lista[ini + 1].fill) ? 2 : 1 };
+      }
+
+      function iniciosDeGrupo(lista) {
+        var out = [];
+        for (var k = 0; k < lista.length;) { out.push(k); k += (lista[k + 1] && lista[k + 1].fill) ? 2 : 1; }
+        return out;
+      }
+
+      function vecinoDeGrupo(lista, i, delta) {
+        var g = grupoDe(lista, i);
+        var grupos = iniciosDeGrupo(lista);
+        var pos = grupos.indexOf(g.ini);
+        var j = pos + delta;
+        return (j < 0 || j >= grupos.length) ? null : grupos[j];
+      }
+
+      function planMoverGrupo(lista, i, j) {
+        var desde = grupoDe(lista, i), hasta = grupoDe(lista, j);
+        if (desde.ini === hasta.ini) return null;
+        var orden = lista.map(function (_, k) { return k; });
+        var chunk = orden.splice(desde.ini, desde.len);
+        var donde = hasta.ini;
+        if (desde.ini < hasta.ini) donde = (hasta.ini - desde.len) + hasta.len;
+        orden.splice.apply(orden, [donde, 0].concat(chunk));
+        return { orden: orden };
+      }
+
+      function moverSeccion(delta) {
+        var lista = HPM.editableSections(state.project);
+        var i = state.selectedSectionIndex;
+        if (i < 0 || !lista[i]) return;
+        // Regla copiada tal cual: una madre con fill pegado no se mueve hacia adelante
+        // desde ella misma; se mueve el grupo agarrando el fill.
+        if (delta > 0 && esMadreConFill(lista, i)) return;
+        var j = vecinoDeGrupo(lista, i, delta);
+        if (j === null) return;
+        var plan = planMoverGrupo(lista, i, j);
+        if (!plan) return;
+        var nueva = plan.orden.map(function (k) { return lista[k]; });
+        state.selectedSectionIndex = plan.orden.indexOf(i);   // la seleccion viaja con su seccion
+        aplicarSecciones(nueva, 'movida ' + (delta > 0 ? 'a la derecha' : 'a la izquierda'));
+      }
+
       // CAMBIAR EL LARGO DE UNA SECCION. Es el `setBars` de ArrangeLab, con su regla del
       // fill adentro, asi que el arrastre, el campo de compases y x2/div2 se comportan
       // igual: el fill crece hacia atras y lo que crece sale de su madre, que nunca puede
@@ -1234,6 +1283,7 @@
         html += '<span class="sbnom" style="color:' + color + '">' + esc(actual.name) + ' · ' +
           barsLegibles(actual.bars) + ' BARS · ' + mmss(actual.bars) + '</span>';
         html += '<input id="secBars" type="number" min="1" max="512" step="1" value="' + barsLegibles(actual.bars) + '" aria-label="Bars" title="Compases">';
+        // Sobre un fill no hay "insertar antes": ese borde es de su madre.
         if (!actual.fill && actual.index > 0) {
           html += '<button class="sb sblarg" data-secop="antes" title="Insertar una sección antes">+</button>';
         }
@@ -1287,8 +1337,14 @@
         var lista = HPM.editableSections(state.project);
         if (!lista.length) return;
         var cambio = false;
-        lista.forEach(function (s) {
-          var nuevo = Math.max(paso, Math.round(s.bars / paso) * paso);
+        // EL GRUPO ES EL QUE CAE EN LA GRILLA, no la seccion sola: un fill no se redondea
+        // -mide lo que mide- y lo que se acomoda es la madre para que MADRE + FILL de el
+        // multiplo. Es la cuenta de `redondearTodo`.
+        lista.forEach(function (s, i) {
+          if (s.fill) return;
+          var fill = (lista[i + 1] && lista[i + 1].fill) ? lista[i + 1].bars : 0;
+          var objetivo = Math.max(paso, Math.round((s.bars + fill) / paso) * paso);
+          var nuevo = Math.max(1, objetivo - fill);
           if (nuevo !== s.bars) { s.bars = nuevo; cambio = true; }
         });
         if (!cambio) { log('ROUND → ya estaban todas en múltiplos de ' + paso); return; }
@@ -1335,28 +1391,36 @@
         var i = state.selectedSectionIndex;
         if (i < 0 || !lista[i]) return;
         var nombre = lista[i].name;
-        if (op === 'antes') {
-          lista.splice(i, 0, { name: 'NUEVA', bars: 16, color: '', fill: false, from: -1 });
-          state.selectedSectionIndex = i;
-        } else if (op === 'add') {
-          lista.splice(i + 1, 0, { name: 'NUEVA', bars: 16, color: '', fill: false, from: -1 });
-          state.selectedSectionIndex = i + 1;
+        if (op === 'antes' || op === 'add') {
+          // EL FILL CIERRA A SU MADRE: no se puede dar de alta entre las dos. Cualquier
+          // alta alrededor de ese borde cae DELANTE del fill, que es donde empieza el
+          // material nuevo.
+          var donde = op === 'antes' ? i : i + 1;
+          if (lista[i].fill) donde = i + 1;
+          else if (op === 'add' && lista[i + 1] && lista[i + 1].fill) donde = i + 2;
+          lista.splice(donde, 0, { name: 'NUEVA', bars: 16, color: '', fill: false, from: -1 });
+          state.selectedSectionIndex = donde;
         } else if (op === 'dup') {
-          lista.splice(i + 1, 0, { name: lista[i].name, bars: lista[i].bars,
-            color: lista[i].color, fill: lista[i].fill, from: -1 });
-          state.selectedSectionIndex = i + 1;
+          // Una madre con fill se duplica CON su fill: la copia es el grupo entero.
+          if (esMadreConFill(lista, i)) {
+            var copiaMadre = Object.assign({}, lista[i], { from: -1 });
+            var copiaFill = Object.assign({}, lista[i + 1], { from: -1 });
+            lista.splice(i + 2, 0, copiaMadre, copiaFill);
+            state.selectedSectionIndex = i + 2;
+          } else {
+            lista.splice(i + 1, 0, Object.assign({}, lista[i], { from: -1 }));
+            state.selectedSectionIndex = i + 1;
+          }
         } else if (op === 'del') {
+          // Borrar un fill es SACARLO: sus compases vuelven a la seccion de la que
+          // salieron. Borrarlo como una seccion comun acortaria el tema.
+          if (lista[i].fill) { opFill(lista, i); return; }
           if (lista.length < 2) { log('ESTRUCTURA → no se puede borrar la única sección'); return; }
           lista.splice(i, 1);
           state.selectedSectionIndex = Math.max(0, i - 1);
-        } else if (op === 'left') {
-          if (i === 0) return;
-          lista.splice(i - 1, 0, lista.splice(i, 1)[0]);
-          state.selectedSectionIndex = i - 1;
-        } else if (op === 'right') {
-          if (i >= lista.length - 1) return;
-          lista.splice(i + 1, 0, lista.splice(i, 1)[0]);
-          state.selectedSectionIndex = i + 1;
+        } else if (op === 'left' || op === 'right') {
+          moverSeccion(op === 'left' ? -1 : 1);
+          return;
         } else if (op === 'x2') {
           setBarsSeccion(i, lista[i].bars * 2);
           return;
@@ -2046,7 +2110,6 @@
           html += '<label>CC Parameter<select data-lane-cc="' + laneIndex + '">' + ccOptions(lane.mcTrack, lane.cc) + '</select></label>';
           html += '</div>';
           html += '<svg class="lane-svg" data-lane-svg="' + laneIndex + '" viewBox="0 0 1200 160" preserveAspectRatio="none"></svg>';
-          html += '<div class="lane-actions"><span class="muted">Click vacío agrega un punto. Arrastrá un punto para moverlo. Funciona durante PLAY: se actualiza sólo la automatización futura. Con un punto rojo: ←/↑ y →/↓ recorren puntos; Supr lo elimina.</span></div>';
           html += '</article>';
         });
         return html;
@@ -2813,7 +2876,7 @@
             state.selectedSectionIndex = Math.min(cuantas - 1, state.selectedSectionIndex + 1);
             renderAll();
           } else {
-            opSeccion(event.key === 'ArrowLeft' ? 'left' : 'right');
+            moverSeccion(event.key === 'ArrowLeft' ? -1 : 1);
           }
           return;
         }
