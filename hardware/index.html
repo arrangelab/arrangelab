@@ -482,6 +482,36 @@
     /* EL ZOOM ES ANCHO, NO ESCALA. La lane se dibuja mas ancha que su caja y la caja
        scrollea: el SVG se rehace con el ancho nuevo, asi que la grilla y los puntos
        quedan nitidos en vez de agrandados. */
+    /* EL DIALOGO DE LA GUIA, con la misma CSS del arranger. */
+    .dlg{position:fixed;z-index:200;left:50%;top:6%;transform:translateX(-50%);
+      width:min(760px,calc(100vw - 32px));display:grid;gap:8px;padding:14px;
+      max-height:88vh;overflow:auto;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.035), transparent 38%),
+        linear-gradient(180deg, color-mix(in srgb, var(--eleva) 86%, black 14%), var(--eleva));
+      border:1px solid color-mix(in srgb, var(--line) 75%, black 25%);border-radius:var(--radio);
+      box-shadow:var(--menusom), inset 0 1px 0 rgba(255,255,255,.05)}
+    .dlg[hidden]{display:none}
+    .dlgcab{display:flex;align-items:center;gap:8px}
+    .dlgtit{flex:1;font-size:11px;letter-spacing:.11em;text-transform:uppercase;
+      color:var(--marca);font-family:var(--fuentetit)}
+    .dlgx{width:22px;height:22px;min-height:0;padding:0;display:flex;align-items:center;
+      justify-content:center;background:transparent;border:1px solid transparent;
+      color:var(--dim);border-radius:4px;font-size:11px;cursor:pointer}
+    .dlgx:hover{color:var(--bad);border-color:var(--bad)}
+    .dlgpie{display:flex;justify-content:flex-end;gap:6px;margin-top:2px}
+    .helpguide{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+    .helpguide section{display:grid;gap:7px;padding:10px 12px;border:1px solid var(--line);
+      border-radius:var(--radio2);background:var(--campo);box-shadow:var(--hundido);
+      position:relative;overflow:hidden;align-content:start}
+    .helpguide h3{margin:0;font:11px/1 var(--fuentetit);letter-spacing:.11em;text-transform:uppercase;
+      color:var(--hw-label-green);text-shadow:0 0 3px var(--hw-label-green-glow)}
+    .helpguide ul{margin:0;padding-left:18px;display:grid;gap:5px}
+    .helpguide li{color:var(--txt);font-size:12px}
+    .helpguide b{font-family:var(--fuentetit);letter-spacing:.03em;color:var(--display-fg)}
+    .helpguide code{font:11px/1.2 var(--fuentetit);color:var(--display-fg);background:transparent}
+    .helpguide p{margin:0;padding-top:3px;border-top:1px solid color-mix(in srgb, var(--line) 72%, transparent);
+      color:var(--dim);font-size:12px}
     .lane-scroll{overflow-x:auto;overflow-y:hidden;width:100%}
     .lane-scroll::-webkit-scrollbar{height:10px}
     .lane-scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
@@ -747,6 +777,7 @@
           <select id="structurePresetSelect" aria-label="Estructura guardada"></select>
           <button id="loadStructureBtn" class="secondary">CARGAR</button>
           <button id="saveStructureBtn" class="secondary">SAVE STRUCTURE</button>
+          <button id="guideBtn" class="secondary">GUÍA</button>
           <button id="saveTrackBtn">SAVE TRACK</button>
           <button id="delStructureBtn" class="danger">BORRAR</button>
         </div>
@@ -819,6 +850,63 @@
     <button type="button" data-ctl-action="max">SET MAX AQUI</button>
     <button type="button" data-ctl-action="reset">RANGO COMPLETO</button>
     <button type="button" data-ctl-action="automation" class="ctl-auto">AUTOMATION</button>
+  </div>
+
+  <!-- LA GUIA. Mismo dialogo que el del arranger: los comandos que de verdad hay, no una
+       lista de deseos. Si algo cambia de tecla, cambia aca. -->
+  <div id="dlgGuia" class="dlg" hidden role="dialog" aria-modal="true" aria-labelledby="dlgGuiaTit">
+    <div class="dlgcab">
+      <span class="dlgtit" id="dlgGuiaTit">Guía y atajos · Hardware</span>
+      <button class="dlgx" id="guiaCerrarX" title="Cerrar" aria-label="cerrar">&#10005;</button>
+    </div>
+    <div class="helpguide">
+      <section>
+        <h3>La estructura</h3>
+        <ul>
+          <li>Las secciones son los <b>locators</b> del Set que cargues; el último marca el final, no una sección más.</li>
+          <li><b>Click</b> elige una sección; <b>click afuera</b> o <b>Esc</b> la suelta.</li>
+          <li><b>Doble click</b> o <b>R</b> renombran. <b>N</b> agrega una a la derecha con el nombre abierto. <b>D</b> duplica.</li>
+          <li><b>← →</b> se mueven entre secciones. <b>Ctrl + ← →</b> mueven la sección de lugar.</li>
+          <li><b>Supr</b> borra la sección elegida.</li>
+          <li><b>Arrastrar</b> una sección la reordena; <b>arrastrar su borde</b> la estira.</li>
+          <li><b>ROUND 8 / 16</b> lleva cada sección al múltiplo más cercano, de una.</li>
+        </ul>
+      </section>
+      <section>
+        <h3>Fills</h3>
+        <ul>
+          <li><b>FILL</b> corta el último compás de la sección y lo vuelve un fill pegado atrás: el tema no cambia de largo.</li>
+          <li>Sobre un fill, el mismo botón lo <b>saca</b> y le devuelve sus compases a su sección.</li>
+          <li>Un fill <b>crece hacia atrás</b>: su borde izquierdo lo estira comiéndole compases a su sección; el derecho estira la sección.</li>
+          <li>Una sección y su fill son <b>una sola cosa</b>: se eligen, se mueven y se duplican juntos, y <b>ROUND</b> redondea la suma de los dos.</li>
+        </ul>
+      </section>
+      <section>
+        <h3>Automation lanes</h3>
+        <ul>
+          <li><b>Click</b> en un lugar vacío agrega un punto; <b>arrastrarlo</b> lo mueve. Funciona <b>durante PLAY</b>.</li>
+          <li>Con un punto elegido: <b>← ↑ → ↓</b> recorren los puntos y <b>Supr</b> borra.</li>
+          <li><b>Dos puntos en el mismo compás</b> son un escalón: el valor salta en vez de subir en rampa.</li>
+          <li><b>PASO</b> elige la grilla de dibujo: compás, medio, un cuarto o un step.</li>
+          <li><b>Shift + rueda</b> sobre una lane hace zoom; la rueda sola scrollea y todas van juntas.</li>
+          <li>Cambiar el <b>rango</b> de un control reescala lo dibujado en vez de recortarlo.</li>
+        </ul>
+      </section>
+      <section>
+        <h3>Del Set y hacia el Set</h3>
+        <ul>
+          <li><b>CARGAR .ALS</b> trae estructura, tempo y pistas. El <b>BPM</b> se arrastra con el mouse.</li>
+          <li><b>CLIPS → CC</b> mira dónde suena cada pista del Set y dibuja el Level de sus instrumentos.</li>
+          <li><b>SAVE TRACK</b> escribe los locators en un <code>.als</code> nuevo: <b>el original nunca se toca</b>.</li>
+          <li><b>SAVE STRUCTURE</b> guarda el arreglo con nombre y se aplica a otro tema.</li>
+          <li><b>Ctrl+Z</b> deshace, <b>Ctrl+Shift+Z</b> rehace. <b>Espacio</b> es Play/Stop.</li>
+        </ul>
+        <p>Esta página manda <b>sólo CC</b> y MIDI Clock: no manda notas, ni escenas, ni Program Change.</p>
+      </section>
+    </div>
+    <div class="dlgpie">
+      <button id="guiaCerrar" class="secondary">CERRAR</button>
+    </div>
   </div>
 
   <script src="als.js"></script>
@@ -2869,6 +2957,11 @@
         if (target.id === 'redoBtn') { rehacer(); return; }
         if (target.id === 'saveStructureBtn') { guardarEstructuraActual(); return; }
         if (target.id === 'saveTrackBtn') { guardarAls(); return; }
+        if (target.id === 'guideBtn') { document.getElementById('dlgGuia').hidden = false; return; }
+        if (target.id === 'guiaCerrar' || target.id === 'guiaCerrarX') {
+          document.getElementById('dlgGuia').hidden = true;
+          return;
+        }
         if (target.id === 'loadStructureBtn') { aplicarEstructuraGuardada(); return; }
         if (target.id === 'delStructureBtn') { borrarEstructuraGuardada(); return; }
         if (target.id === 'refreshMidiBtn') { refreshMidi(true); return; }
@@ -3254,19 +3347,24 @@
             (event.key === 'ArrowLeft' || event.key === 'ArrowRight' ||
              event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
           event.preventDefault();
-          if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+          // LAS FLECHAS SE MUEVEN ENTRE SECCIONES; CON CTRL MUEVEN LA SECCION. Es lo que
+          // se espera de una lista: caminar es lo comun y reordenar es lo excepcional.
+          if (event.ctrlKey || event.metaKey) {
+            moverSeccion(event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1);
+          } else {
             // SE RECORRE DE GRUPO EN GRUPO: una seccion y su fill son una sola cosa, asi
             // que la seleccion no se para en el fill. Siempre cae en la madre.
+            // De grupo en grupo: una seccion y su fill son una sola cosa, asi que la
+            // seleccion no se para en el fill.
             var listaSel = HPM.editableSections(state.project);
             var inicios = iniciosDeGrupo(listaSel);
             var grupoActual = grupoDe(listaSel, state.selectedSectionIndex);
             var posActual = inicios.indexOf(grupoActual.ini);
-            var siguiente = Math.max(0, Math.min(inicios.length - 1,
-              posActual + (event.key === 'ArrowDown' ? 1 : -1)));
+            var adelante = event.key === 'ArrowDown' || event.key === 'ArrowRight';
+            var siguiente = Math.max(0, Math.min(inicios.length - 1, posActual + (adelante ? 1 : -1)));
             state.selectedSectionIndex = inicios[siguiente];
-            renderAll();
-          } else {
-            moverSeccion(event.key === 'ArrowLeft' ? -1 : 1);
+            renderStructure();
+            renderLaneCharts();
           }
           return;
         }
