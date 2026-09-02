@@ -578,7 +578,18 @@
     .estructura > .secbarwrap,
     .estructura > .sectimes,
     .estructura > .secstrip,
-    .estructura > .secdurs{margin-left:calc(var(--wlabel) + var(--gapfila))}
+    .estructura > .secdurs{margin-left:calc(var(--wlabel) + var(--gapfila));width:auto}
+    /* SE IBA DE LA PANTALLA. Las tres filas eran `width:100%` Y ademas llevaban el margen
+       del ancho de la etiqueta: 100% + 164px es mas ancho que el panel, y el sobrante
+       empujaba la pagina entera. Siendo hijas de un grid, con `width:auto` ocupan justo lo
+       que queda. Y si las secciones son tantas que ni con el piso de ancho entran, la
+       barra scrollea como las filas en vez de empujar nada. */
+    .estructura > .sectimes,
+    .estructura > .secstrip,
+    .estructura > .secdurs{overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+    .estructura > .sectimes::-webkit-scrollbar,
+    .estructura > .secstrip::-webkit-scrollbar,
+    .estructura > .secdurs::-webkit-scrollbar{height:0}
     /* y las filas van pegadas a la barra: la barra es su encabezado */
     #lanesHost{margin-top:6px}
     /* EL CABEZAL CRUZA TODO. En la barra de secciones va adentro de su segmento, pero la
@@ -3757,7 +3768,7 @@
             var siguiente = Math.max(0, Math.min(inicios.length - 1, posActual + (adelante ? 1 : -1)));
             state.selectedSectionIndex = inicios[siguiente];
             renderStructure();
-            renderLaneCharts();
+            renderLanes();
           }
           return;
         }
@@ -4118,6 +4129,7 @@
           try { agarre.setPointerCapture(event.pointerId); } catch (_err) {}
           event.preventDefault();
           renderStructure();
+          renderLanes();
           return;
         }
         // ARRASTRAR UNA SECCION PARA REORDENARLA, como en ArrangeLab. Se decide en el
@@ -4143,6 +4155,7 @@
           state.selectedSectionIndex = state.secMove.index;
           state.paletaAbierta = false;
           renderStructure();
+          renderLanes();
           event.preventDefault();
           return;
         }
@@ -4247,7 +4260,7 @@
             state.project = HPM.remapStructure(state.project, nueva);
             refreshLivePlan();
             renderStructure();
-            renderLaneCharts();
+            renderLanes();
           }, mov.index);
           pintarDrag();
           return;
@@ -4261,7 +4274,7 @@
           if (setBarsSeccion(state.secDrag.index, bars, { sinPaso: true, silencio: true, sinRender: true })) {
             refreshLivePlan();
             renderStructure();
-            renderLaneCharts();
+            renderLanes();
           }
           return;
         }
@@ -4329,7 +4342,7 @@
           state.selectedSectionIndex = movida.yaEstaba === movida.index ? -1 : movida.index;
           state.paletaAbierta = false;
           renderStructure();
-          renderLaneCharts();
+          renderLanes();
           return;
         }
         if (state.secDrag) {
