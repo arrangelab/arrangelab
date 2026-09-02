@@ -379,6 +379,35 @@
     /* LA BARRA DE SECCIONES. Es la de ArrangeLab, no un dibujo nuevo: el mismo segmento
        .useg, el mismo flex-grow por compases, el mismo color por seccion y el mismo
        piso de ancho, para que las dos paginas se lean igual. */
+    /* LAS PASTILLAS DE LA BARRA DE ARRIBA, copiadas del arranger: la pista cargada y el
+       BPM se ven como un display, no como un campo de formulario. */
+    .current-track{min-width:0;display:flex;flex-direction:column;justify-content:center;
+      gap:2px;padding:7px 10px;background:
+        linear-gradient(180deg, color-mix(in srgb, var(--display-bg) 78%, var(--display-line) 22%), var(--display-bg));
+      border:1px solid color-mix(in srgb, var(--display-line) 78%, black 22%);
+      border-radius:var(--radio2);box-shadow:var(--hundido), inset 0 0 0 1px rgba(255,255,255,.03), inset 0 0 18px var(--display-glow);
+      position:relative;overflow:hidden;max-width:260px}
+    .current-track::after,.bpmbox::after{content:'';position:absolute;inset:1px;border-radius:calc(var(--radio2) - 1px);
+      pointer-events:none;background:repeating-linear-gradient(180deg, transparent 0 5px, rgba(255,255,255,.02) 5px 6px);opacity:.18}
+    .current-track-label{font:11px/1 var(--fuentetit);letter-spacing:.11em;text-transform:uppercase;
+      color:var(--display-dim)}
+    .current-track strong{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;
+      white-space:nowrap;font:600 12px/1.2 var(--fuentetit);letter-spacing:.02em;color:var(--display-fg);
+      text-shadow:0 0 10px rgba(58,174,231,.12)}
+    .bpmbox{display:grid;gap:4px;align-content:center;justify-items:start;min-height:44px;
+      width:max-content;min-width:0;padding:6px 8px;
+      background:linear-gradient(180deg, color-mix(in srgb, var(--display-bg) 78%, var(--display-line) 22%), var(--display-bg));
+      border:1px solid color-mix(in srgb, var(--display-line) 78%, black 22%);border-radius:var(--radio2);
+      box-shadow:var(--hundido), inset 0 0 0 1px rgba(255,255,255,.03), inset 0 0 18px var(--display-glow);
+      font:11px/1 var(--fuentetit);letter-spacing:.11em;text-transform:uppercase;color:var(--display-dim);
+      position:relative;overflow:hidden}
+    .bpmbox input{width:4ch;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;
+      color:var(--display-fg);font:600 12px/1.2 var(--fuentetit);letter-spacing:.02em;cursor:ns-resize}
+    .bpmbox input:focus{outline:none}
+    .bpmbox input::-webkit-outer-spin-button,
+    .bpmbox input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+    .bpmbox input[type=number]{-moz-appearance:textfield;appearance:textfield}
+    .bpmbox.solo-lectura input{cursor:default;color:var(--display-dim)}
     .secstrip{display:flex;gap:var(--gapsec);width:100%;align-items:stretch}
     .useg{flex-basis:0;min-width:var(--minseg);position:relative;height:58px;border-radius:5px;
       display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -582,10 +611,15 @@
          mientras se toca, asi que ocupa una tira fina y no un bloque. El estado del MIDI
          queda a la vista siempre: es contexto de seguridad, no decoracion. -->
     <div class="transport-bar">
-      <button id="loadAlsBtn" class="secondary">CARGAR .ALS</button>
+      <button id="loadAlsBtn" class="primary">CARGAR .ALS</button>
       <input id="alsFile" type="file" accept=".als" hidden>
-      <label class="tfield">BPM<input id="bpmInput" type="number" min="20" max="300" step="1"></label>
-      <label class="tfield">BARS<input id="barsInput" type="number" min="1" max="9999" step="1"></label>
+      <div class="current-track">
+        <span class="current-track-label">Pista actual</span>
+        <strong id="currentTrackName">NINGUNA PISTA CARGADA</strong>
+      </div>
+      <label class="bpmbox">BPM<input id="bpmInput" type="number" min="20" max="300" step="1"
+        title="Arrastrá arriba y abajo para cambiarlo"></label>
+      <label class="bpmbox solo-lectura">BARS<input id="barsInput" type="number" min="1" max="9999" step="1"></label>
       <label class="tfield tout">OUT<select id="midiOutputSelect"></select></label>
       <button id="refreshMidiBtn" class="secondary">CONNECT</button>
       <span class="tsep" aria-hidden="true"></span>
@@ -667,6 +701,7 @@
           <select id="structurePresetSelect" aria-label="Estructura guardada"></select>
           <button id="loadStructureBtn" class="secondary">CARGAR</button>
           <button id="saveStructureBtn" class="secondary">SAVE STRUCTURE</button>
+          <button id="saveTrackBtn">SAVE TRACK</button>
           <button id="delStructureBtn" class="danger">BORRAR</button>
         </div>
         <div class="estructura" id="structureBox">
@@ -778,6 +813,7 @@
         selectedSectionIndex: -1,
         secDrag: null,
         secMove: null,
+        bpmDrag: null,
         paletaAbierta: false,
         gruposLanes: {},
         historia: { atras: [], adelante: [] },
@@ -791,6 +827,7 @@
       var el = {
         bpm: document.getElementById('bpmInput'),
         bars: document.getElementById('barsInput'),
+        currentTrackName: document.getElementById('currentTrackName'),
         midiOutput: document.getElementById('midiOutputSelect'),
         refreshMidi: document.getElementById('refreshMidiBtn'),
         dryRun: document.getElementById('dryRunBtn'),
@@ -820,6 +857,7 @@
         structurePresetSelect: document.getElementById('structurePresetSelect'),
         loadStructureBtn: document.getElementById('loadStructureBtn'),
         saveStructureBtn: document.getElementById('saveStructureBtn'),
+        saveTrackBtn: document.getElementById('saveTrackBtn'),
         delStructureBtn: document.getElementById('delStructureBtn'),
         structureSource: document.getElementById('structureSource'),
         structureEmpty: document.getElementById('structureEmpty'),
@@ -1146,7 +1184,11 @@
           var angosto = seccion.bars / state.project.totalBars < 0.045;
           var corto = seccion.bars <= 3;
           var texto = seccion.bars <= 4 ? barsLegibles(seccion.bars) : (barsLegibles(seccion.bars) + ' BAR');
+          // UN SEGMENTO ANGOSTO IGUAL MUESTRA SU NUMERO si mide poco: un fill de 1 compas
+          // tiene que decir 1, y 2 cuando lo estiras. Es la clase `num` de ArrangeLab.
+          var num = angosto && seccion.bars <= 4;
           return '<div class="udur' + (corto ? ' corto' : '') + (angosto ? ' micro' : '') +
+            (num ? ' num' : '') +
             '" style="flex-grow:' + seccion.bars + ';--udurc:' + colorDeSeccion(seccion.index, seccion.color) + '"' +
             ' data-dursec="' + seccion.index + '"><i aria-hidden="true"></i><span class="udurtxt">' +
             texto + '</span></div>';
@@ -1520,6 +1562,8 @@
         refreshLivePlan();
         saveProject();
 
+        el.currentTrackName.textContent = state.alsName || 'NINGUNA PISTA CARGADA';
+        el.currentTrackName.title = state.alsName || '';
         el.bpm.value = state.project.bpm;
         // BARS NO SE ESCRIBE NUNCA. Con Set cargado es la suma de sus secciones; sin Set
         // no hay largo que mostrar y el campo queda vacio.
@@ -1564,6 +1608,10 @@
         el.undoBtn.disabled = !state.historia.atras.length;
         el.redoBtn.disabled = !state.historia.adelante.length;
         el.saveStructureBtn.disabled = !state.project.structure;
+        el.saveTrackBtn.disabled = !state.project.structure || !state.alsXml;
+        el.saveTrackBtn.title = state.alsXml
+          ? 'Escribe los locators de esta estructura en un .als nuevo'
+          : 'Cargá un .als primero';
         if (el.foldLanesBtn) {
           el.foldLanesBtn.disabled = !state.project.automationLanes.length;
           el.foldLanesBtn.textContent = state.project.automationLanes.some(function (l) { return !l.collapsed; })
@@ -2196,6 +2244,78 @@
         renderAll();
       }
 
+      // ---------------------------------------------------------------- GUARDAR EL .ALS
+      //
+      // Cargar el Set aca, editar la estructura aca y guardarla aca: no hay que ir a la
+      // otra pagina para escribir los locators. Por ahora escribe SOLO LOS LOCATORS -la
+      // estructura- y nada mas; los bloques vienen despues.
+      //
+      // EL ORIGINAL NO SE TOCA NUNCA: se parte del XML que se cargo y se baja un archivo
+      // nuevo, con devices, mezcla, clips y automatizaciones intactos. Es la misma
+      // decision que ya tomo el producto.
+      //
+      // Se usa `ALS.setLocators`, la misma funcion que escribe el producto, asi que los
+      // dos archivos salen iguales: numerados y con el END al final.
+      async function guardarAls() {
+        if (!state.alsXml) { log('SAVE TRACK → primero cargá un .als'); return; }
+        var secciones = HPM.sectionTimeline(state.project);
+        if (!secciones.length) { log('SAVE TRACK → no hay estructura que escribir'); return; }
+        try {
+          var secs = secciones.map(function (s) { return { name: s.name, bars: s.bars }; });
+          var r = ALS.setLocators(state.alsXml, secs, state.project.bpm, HPM.beatsPerBar(state.project));
+          // Y el tempo, si lo cambiaste acá. Va a los dos lugares donde vive: el manual y
+          // la envolvente del MasterTrack, que es la que Live toca de verdad.
+          var tempoOriginal = ALS.readTempo(state.alsXml);
+          if (tempoOriginal !== state.project.bpm) r.xml = ALS.setTempo(r.xml, state.project.bpm);
+
+          // VERIFICAR ANTES DE ENTREGAR. Se relee lo que se escribio y se compara contra
+          // la estructura que se ve en pantalla; si no coincide, no se baja nada.
+          var bytes = new TextEncoder().encode(r.xml);
+          var salida = await gzip(bytes);
+          var vuelta = new TextDecoder('utf-8').decode(await gunzip(salida));
+          var leidos = ALS.readLocators(vuelta).slice().sort(function (a, b) { return a.beat - b.beat; });
+          var problemas = [];
+          if (leidos.length !== secs.length + 1) {
+            problemas.push('quedaron ' + leidos.length + ' locators y esperaba ' + (secs.length + 1));
+          }
+          var releida = HPM.readStructure(vuelta, ALS, HPM.beatsPerBar(state.project));
+          if (Math.round(releida.totalBars) !== state.project.totalBars) {
+            problemas.push('el archivo mide ' + Math.round(releida.totalBars) + ' bars y la estructura ' +
+              state.project.totalBars);
+          }
+          releida.sections.forEach(function (s, i) {
+            if (!secciones[i]) return;
+            if (Math.abs(s.bars - secciones[i].bars) > 1e-6) {
+              problemas.push(s.name + ' quedó en ' + s.bars + ' bars y era ' + secciones[i].bars);
+            }
+          });
+          var graves = (ALS.revisar(vuelta) || []).filter(function (p) { return p.grave; });
+          graves.forEach(function (p) { problemas.push(p.que + ' — ' + p.detalle); });
+
+          if (problemas.length) {
+            log('SAVE TRACK → NO se bajó nada, el archivo no quedó bien:');
+            problemas.slice(0, 6).forEach(function (p) { log('   ' + p); });
+            return;
+          }
+
+          var base = String(state.alsName || 'track').replace(/\.als$/i, '');
+          var nombre = base + '_HW.als';
+          var url = URL.createObjectURL(new Blob([salida], { type: 'application/octet-stream' }));
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = nombre;
+          a.style.display = 'none';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+          log('SAVE TRACK → ' + nombre + ' · ' + secs.length + ' secciones + END · ' +
+              state.project.totalBars + ' bars · ' + state.project.bpm + ' BPM · el original quedó intacto');
+        } catch (err) {
+          log('SAVE TRACK ERROR → ' + err.message);
+        }
+      }
+
       // ---------------------------------------------------------------- CLIPS → CC
       //
       // El .als no dice solo la estructura: dice DONDE SUENA CADA PISTA. Cada clip del
@@ -2505,6 +2625,7 @@
         if (target.id === 'undoBtn') { deshacer(); return; }
         if (target.id === 'redoBtn') { rehacer(); return; }
         if (target.id === 'saveStructureBtn') { guardarEstructuraActual(); return; }
+        if (target.id === 'saveTrackBtn') { guardarAls(); return; }
         if (target.id === 'loadStructureBtn') { aplicarEstructuraGuardada(); return; }
         if (target.id === 'delStructureBtn') { borrarEstructuraGuardada(); return; }
         if (target.id === 'refreshMidiBtn') { refreshMidi(true); return; }
@@ -3126,6 +3247,14 @@
         renderAll();
       }
 
+      // EL BPM SE ARRASTRA, como en el arranger: agarrarlo y mover el mouse arriba y
+      // abajo. Cuatro pixeles por golpe, y hasta que no se mueve tres no cuenta como
+      // arrastre, asi que un click sigue sirviendo para escribir el numero.
+      document.addEventListener('pointerdown', function (event) {
+        if (event.target !== el.bpm) return;
+        state.bpmDrag = { y0: event.clientY, v0: Math.max(20, Math.min(300, Number(el.bpm.value) || 138)), movio: false };
+      });
+
       document.addEventListener('pointerdown', function (event) {
         var knob = event.target.closest('[data-live-knob]');
         if (knob) {
@@ -3208,6 +3337,22 @@
       });
 
       document.addEventListener('pointermove', function (event) {
+        if (state.bpmDrag) {
+          var dy = state.bpmDrag.y0 - event.clientY;
+          if (!state.bpmDrag.movio && Math.abs(dy) < 3) return;
+          state.bpmDrag.movio = true;
+          document.body.style.cursor = 'ns-resize';
+          var pedido = Math.max(20, Math.min(300, state.bpmDrag.v0 + Math.trunc(dy / 4)));
+          if (String(pedido) !== String(el.bpm.value)) {
+            el.bpm.value = pedido;
+            state.project = HPM.normalizeProject(Object.assign({}, state.project, { bpm: pedido }));
+            refreshLivePlan();
+            renderStructure();
+            renderLaneCharts();
+            saveProject();
+          }
+          return;
+        }
         if (state.secMove) {
           var lista = HPM.editableSections(state.project);
           var desde = state.secMove.index;
@@ -3262,6 +3407,12 @@
       });
 
       document.addEventListener('pointerup', function () {
+        if (state.bpmDrag) {
+          var movio = state.bpmDrag.movio;
+          state.bpmDrag = null;
+          document.body.style.cursor = '';
+          if (movio) { log('BPM → ' + state.project.bpm); renderAll(); return; }
+        }
         if (state.secMove) {
           var movida = state.secMove;
           state.secMove = null;

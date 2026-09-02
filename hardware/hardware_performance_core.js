@@ -676,11 +676,21 @@
     for (var i = 0; i < locators.length - 1; i++) {
       var beats = locators[i + 1].beat - locators[i].beat;
       if (beats <= 0) continue;
-      sections.push({ name: String(locators[i].name || '').trim(), bars: beats / bpb, beats: beats });
+      // EL NOMBRE VIENE NUMERADO cuando el Set lo escribio ArrangeLab -"01 INTRO"-, y
+      // ese numero es de la herramienta, no del tema: se saca al leer y se vuelve a poner
+      // al escribir. Si no, cada vuelta agrega un prefijo mas.
+      var crudo = String(locators[i].name || '').trim();
+      var nombre = crudo.replace(/^\d{2}\s+/, '');
+      // Y un locator llamado FILL vuelve como fill: es la unica marca que el .als puede
+      // llevar, porque un <Locator> son cinco campos y ninguno dice "esto es un fill".
+      sections.push({ name: nombre, bars: beats / bpb, beats: beats,
+                      fill: nombre.toUpperCase() === 'FILL' });
     }
     var totalBars = sections.reduce(function (acc, s) { return acc + s.bars; }, 0);
     return { bpb: bpb, sections: sections, totalBars: totalBars,
-             endName: locators.length ? String(locators[locators.length - 1].name || '').trim() : '' };
+             endName: locators.length
+               ? String(locators[locators.length - 1].name || '').trim().replace(/^\d{2}\s+/, '')
+               : '' };
   }
 
   // ------------------------------------------------------ la estructura como timeline
