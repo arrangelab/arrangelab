@@ -365,6 +365,30 @@
     button.primary::before{content:'';position:absolute;left:2px;right:2px;top:1px;height:1px;
       border-radius:999px;background:rgba(255,255,255,.055);pointer-events:none}
     button.primary:hover{box-shadow:var(--hw-btn-shadow-hover)}
+    /* LOS BOTONES DE HERRAMIENTA, con la misma base que la toolbar del arranger: fondo
+       mate, borde fino, 44px de alto y EL COLOR SOLO EN LA LEYENDA -verde el que hace,
+       rojo el que borra-. Al pasar por encima el borde toma el color de la leyenda.
+       Antes eran celestes por defecto y no se parecian a nada de la otra pagina. */
+    .transport-bar button, .panel-head .actions button, .estructura-acciones button,
+    .zoom-lanes button, .preset-bar button, .lane-head button, .control-order button{
+      min-height:38px;padding:6px 10px;border:1px solid var(--line);border-radius:var(--radio2);
+      background:var(--campo);box-shadow:none;font:11px/1 var(--fuentetit);
+      letter-spacing:.09em;text-transform:uppercase;
+      color:var(--hw-label-green);text-shadow:0 0 3px var(--hw-label-green-glow)}
+    .transport-bar button:hover, .panel-head .actions button:hover,
+    .estructura-acciones button:hover, .zoom-lanes button:hover, .preset-bar button:hover,
+    .lane-head button:hover, .control-order button:hover{background:var(--campo);border-color:currentColor}
+    .transport-bar button:disabled, .panel-head .actions button:disabled,
+    .estructura-acciones button:disabled, .zoom-lanes button:disabled,
+    .preset-bar button:disabled, .lane-head button:disabled{
+      color:var(--hw-label-green-dim);text-shadow:none;opacity:1}
+    /* El que borra o interrumpe cambia SOLO de color, como RESET y FILLS alla. */
+    .transport-bar button.danger, .panel-head .actions button.danger,
+    .estructura-acciones button.danger, .preset-bar button.danger, .lane-head button.danger,
+    .control-order button.mute-all{
+      color:var(--hw-label-red);text-shadow:0 0 3px var(--hw-label-red-glow)}
+    .transport-bar button.danger:disabled, .estructura-acciones button.danger:disabled,
+    .preset-bar button.danger:disabled{color:var(--hw-label-red-dim);text-shadow:none}
     button.secondary{color:var(--acc2)}
     button.danger{color:var(--bad)}
     /* El estado es una pastilla LED: punto encendido y leyenda, como el livepill. */
