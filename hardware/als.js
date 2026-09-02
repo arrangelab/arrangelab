@@ -117,13 +117,56 @@
     };
   }
 
+  // EL TEMPO VIVE EN DOS LADOS, Y EL QUE MANDA ES LA ENVOLVENTE.
+  //
+  // `<Tempo><Manual>` es el valor de la perilla. Pero el MasterTrack tiene SIEMPRE una
+  // automation lane de tempo -aunque nadie la haya dibujado-, y cuando tiene un solo
+  // evento en `Time="-63072000"` -el "menos infinito" de Live- ese evento ES el tempo del
+  // tema. Los dos pueden no coincidir: medido el 2-sep-2026 sobre `Prueba.als`, `Manual`
+  // decia 75 y el Set sonaba a 145.
+  //
+  // Por eso leer `Manual` devolvia un numero que no era el del tema, y escribir `Manual`
+  // no cambiaba nada: Live seguia tocando la envolvente. Se leen y se escriben los dos.
+  function tempoEnvelope(xml) {
+    var t = /<Tempo>[\s\S]{0,1200}?<AutomationTarget Id="(\d+)"/.exec(xml);
+    if (!t) return null;
+    var re = /<AutomationEnvelope\b[^>]*>[\s\S]*?<\/AutomationEnvelope>/g, m;
+    while ((m = re.exec(xml))) {
+      var pid = /<PointeeId Value="(\d+)"/.exec(m[0]);
+      if (!pid || pid[1] !== t[1]) continue;
+      var eventos = [], rf = /<FloatEvent\b[^>]*?\sTime="([-\d.eE]+)"[^>]*?\sValue="([-\d.eE]+)"[^>]*\/>/g, f;
+      while ((f = rf.exec(m[0]))) eventos.push({ time: parseFloat(f[1]), value: parseFloat(f[2]), texto: f[0] });
+      return { id: t[1], ini: m.index, fin: m.index + m[0].length, bloque: m[0], eventos: eventos };
+    }
+    return null;
+  }
+
+  // Un tempo DIBUJADO a lo largo del tema: mas de un evento. Cambiarlo seria aplastar la
+  // automatizacion, asi que no se toca y el que llama avisa.
+  function tempoAutomatizado(xml) {
+    var env = tempoEnvelope(xml);
+    return !!(env && env.eventos.length > 1);
+  }
+
   function readTempo(xml) {
+    var env = tempoEnvelope(xml);
+    if (env && env.eventos.length) {
+      var evs = env.eventos.slice().sort(function (a, b) { return a.time - b.time; });
+      if (isFinite(evs[0].value)) return evs[0].value;
+    }
     var m = /<Tempo>[\s\S]*?<Manual Value="([\d.]+)"/.exec(xml);
     return m ? parseFloat(m[1]) : null;
   }
 
   function setTempo(xml, bpm) {
-    return xml.replace(/(<Tempo>[\s\S]*?<Manual Value=")[\d.]+(")/, '$1' + bpm + '$2');
+    var out = xml.replace(/(<Tempo>[\s\S]*?<Manual Value=")[\d.]+(")/, '$1' + bpm + '$2');
+    var env = tempoEnvelope(out);
+    if (env && env.eventos.length === 1) {
+      var viejo = env.eventos[0].texto;
+      var nuevo = viejo.replace(/(\sValue=")[-\d.eE]+(")/, '$1' + bpm + '$2');
+      out = out.slice(0, env.ini) + env.bloque.replace(viejo, nuevo) + out.slice(env.fin);
+    }
+    return out;
   }
 
   function readTrackNames(xml) {
@@ -1848,7 +1891,7 @@
     buildGuideMidiClip: buildGuideMidiClip, setTrackArrangementClips: setTrackArrangementClips,
     revisar: revisar, maxPointeeId: maxPointeeId,
     setLocators: setLocators, fixNextPointeeId: fixNextPointeeId, maxId: maxId,
-    readTempo: readTempo, setTempo: setTempo, readTrackNames: readTrackNames, readVersion: readVersion,
+    readTempo: readTempo, setTempo: setTempo, tempoAutomatizado: tempoAutomatizado, readTrackNames: readTrackNames, readVersion: readVersion,
     readLocators: readLocators, buildLocators: buildLocators, mmss: mmss,
     volumenDelTrack: volumenDelTrack,
     setEnvelope: setEnvelope, shapePoints: shapePoints, trackNames: trackNames, gruposDe: gruposDe, rutaDeGrupo: rutaDeGrupo,
