@@ -7,7 +7,7 @@
      pestaña el nombre entra justo: todo lo que se agregue lo empuja fuera. -->
 <title>ArrangeLab</title>
 <meta name="author" content="@tmochetti">
-<!-- build: 2026-09-02 01:24 · f90c585 -->
+<!-- build: 2026-09-02 04:02 · a8e7de7 -->
 <!-- La versión no se muestra en la interfaz a propósito. Si hace falta saber qué copia
      tiene alguien, está en la línea de arriba: se abre el archivo con cualquier editor. -->
 <link rel="icon" href="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Crect%20x%3D%2210%22%20y%3D%2212%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FF3636%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2234%22%20y%3D%2224%22%20width%3D%2220%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%23FFF034%22%2F%3E%3Crect%20x%3D%2220%22%20y%3D%2236%22%20width%3D%2234%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%231AFF2F%22%2F%3E%3Crect%20x%3D%2210%22%20y%3D%2248%22%20width%3D%2212%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3Crect%20x%3D%2226%22%20y%3D%2248%22%20width%3D%2228%22%20height%3D%227%22%20rx%3D%222%22%20fill%3D%22%2310A4EE%22%2F%3E%3C%2Fsvg%3E%0A" type="image/svg+xml">
@@ -1683,6 +1683,7 @@
       'als.vacio': 'No hay archivos .als en esta carpeta.',
       'als.carpeta': 'Carpeta con .als',
       'als.archivo': 'Ableton Live Set',
+      'als.bpmtuyo': 'El Set viene a {delset} BPM. Se mantiene el {tuyo} que pusiste a mano: ese es el que se escribe en el .als generado.',
       'als.nopude': 'No pude abrir esa carpeta.',
       'als.nonav': 'Este navegador no permite explorar carpetas. Se usa el selector nativo.',
 
@@ -2134,6 +2135,7 @@
       'als.vacio': 'There are no .als files in this folder.',
       'als.carpeta': 'Folder with .als',
       'als.archivo': 'Ableton Live Set',
+      'als.bpmtuyo': 'The Set is at {delset} BPM. Keeping the {tuyo} you set by hand: that is what gets written into the generated .als.',
       'als.nopude': 'I could not open that folder.',
       'als.nonav': 'This browser cannot browse folders. The native picker is used instead.',
 
@@ -7887,6 +7889,7 @@ document.addEventListener('mousemove', e => {
     const pedido = Math.max(60, Math.min(200, bpmDragV0 + Math.trunc(dy / 4)));
     if (String(pedido) !== String($('bpm').value)){
       $('bpm').value = pedido;
+      bpmAMano = true;
       refresh();
     }
     return;
@@ -8112,6 +8115,15 @@ function msg(clave, datos){ return I18N.t(clave, datos); }
 
 const $ = id => document.getElementById(id);
 const bpm = () => Math.max(1, Number($('bpm').value) || 138);
+
+// ¿EL BPM LO PUSO UNA PERSONA O SALIÓ DE UN ARCHIVO?
+//
+// Cargar un .als escribe el tempo del Set en el campo. Eso está bien la primera vez —el
+// campo arranca en 138 y nadie lo miró—, pero si vos ya habías escrito 147, pisarlo te
+// borra la decisión sin decir nada, y el .als que se genera sale con el tempo viejo. Era
+// el bug: "lee el BPM pero no lo escribe". Desde que lo tocás a mano, el archivo ya no
+// manda: se avisa y se respeta lo tuyo.
+let bpmAMano = false;
 const secsPerBar = () => 4 * 60 / bpm();
 const total = () => secs.reduce((a,s) => a + s.bars, 0);
 const mmss = t => Math.floor(t/60) + ':' + String(Math.round(t%60)).padStart(2,'0');
@@ -9746,7 +9758,7 @@ document.addEventListener('input', e => {
     refresh();
     return;
   }
-  if (el.id === 'bpm'){ refresh(); return; }
+  if (el.id === 'bpm'){ bpmAMano = true; refresh(); return; }
 });
 // ------------------------------------------------------------------ pintar la matriz
 // Se pinta arrastrando: el click pone UNA vuelta y el arrastre hacia la derecha sigue
@@ -11692,7 +11704,12 @@ async function cargarAls(f){
     };
     verDetalle = false;
     pintarInfoAls();
-    if (bpmT) $('bpm').value = bpmT;
+    if (bpmT){
+      // Si el BPM lo escribiste vos y no coincide con el del Set, gana el tuyo y se avisa:
+      // el que se escribe en el archivo generado es el que está en el campo.
+      if (!bpmAMano || Number(bpmT) === bpm()) $('bpm').value = bpmT;
+      else if (log) log.textContent = msg('als.bpmtuyo', { delset: bpmT, tuyo: bpm() });
+    }
     // el nombre de salida arranca igual al del archivo cargado: si lo dejás así,
     // el .als que baja se llama igual y podés sobrescribir el original
     baseOutname = f.name.replace(/\.als$/i, '');

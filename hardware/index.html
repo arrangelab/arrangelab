@@ -376,6 +376,103 @@
       box-shadow:0 0 7px currentColor}
     .status.ok{color:var(--hw-label-green)}
     .status.warn{color:var(--warn)}
+    /* LA BARRA DE SECCIONES. Es la de ArrangeLab, no un dibujo nuevo: el mismo segmento
+       .useg, el mismo flex-grow por compases, el mismo color por seccion y el mismo
+       piso de ancho, para que las dos paginas se lean igual. */
+    .secstrip{display:flex;gap:var(--gapsec);width:100%;align-items:stretch}
+    .useg{flex-basis:0;min-width:var(--minseg);position:relative;height:58px;border-radius:5px;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      color:var(--secc,#34f06e);font-size:11px;white-space:nowrap;overflow:hidden;cursor:pointer;
+      border:1px solid var(--secc,#34f06e);user-select:none;background:#090b0d;
+      transition:background-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.05), inset 0 -1px 0 rgba(0,0,0,.52)}
+    .useg:hover{background:color-mix(in srgb,var(--secc,#34f06e) 7%,#090b0d 93%)}
+    .useg .unom{font-weight:600;letter-spacing:.02em;max-width:100%;overflow:hidden;
+      text-overflow:ellipsis;padding:0 6px}
+    .useg small{opacity:.92;font-size:9px;letter-spacing:.04em;
+      color:color-mix(in srgb,var(--secc,#34f06e) 72%,#f4f7fb 28%)}
+    .useg.sel{outline:1px solid var(--secc,#34f06e);outline-offset:-1px;
+      background:color-mix(in srgb,var(--secc,#34f06e) 12%,#090b0d 88%);
+      box-shadow:0 0 0 1px color-mix(in srgb,var(--secc,#34f06e) 72%,transparent),
+        0 0 16px color-mix(in srgb,var(--secc,#34f06e) 22%,transparent)}
+    .useg .ubar{position:absolute;left:5px;top:3px;font:9px/1 var(--fuentetit);color:var(--dim)}
+    /* El tirador de la derecha estira la seccion. Es el borde, no un boton aparte: es el
+       gesto de ArrangeLab. */
+    .useg .ugrip{position:absolute;right:-1px;top:0;bottom:0;width:9px;cursor:ew-resize;z-index:2;
+      border-radius:0 5px 5px 0}
+    .useg .ugrip:hover{background:color-mix(in srgb,var(--secc,#34f06e) 42%,transparent)}
+    .useg .uplay{position:absolute;top:0;bottom:0;width:2px;background:var(--warn);
+      box-shadow:0 0 9px var(--warn);pointer-events:none}
+    /* El puntito rojo dice QUE ESTE CONTROL TIENE AUTOMATIZACION. Va arriba a la derecha
+       del parametro, apagado si la lane existe pero todavia no tiene puntos. */
+    .device-param{position:relative}
+    .autodot{position:absolute;top:2px;right:3px;width:7px;height:7px;border-radius:50%;
+      background:var(--bad);box-shadow:0 0 6px var(--bad);pointer-events:none}
+    .autodot.vacia{background:transparent;border:1px solid var(--bad);box-shadow:none;opacity:.6}
+    .lane-head{display:flex;align-items:center;gap:10px}
+    .lane-head b{font:12px/1 var(--fuentetit);letter-spacing:.06em}
+    .lane-head .lane-cc{font:11px/1 var(--fuentetit);letter-spacing:.06em;color:var(--dim)}
+    .lane-head .crece{flex:1}
+    .lane-fold{width:26px;padding:0;line-height:1}
+    .lane-card.plegada{padding:8px 14px}
+    /* Las tres filas comparten columnas: tiempos, secciones y duracion. Es la mhead de
+       ArrangeLab, con el mismo flex-grow y el mismo piso de ancho. */
+    /* El hueco de arriba es para la barra flotante: sin el, tapa el titulo del panel. */
+    .estructura{display:grid;gap:3px;margin-top:34px}
+    .sectimes,.secdurs{display:flex;gap:var(--gapsec);width:100%}
+    .utime{flex-basis:0;min-width:var(--minseg);font:9px/1 var(--fuentetit);letter-spacing:.06em;
+      color:var(--dim);padding-left:2px;white-space:nowrap;overflow:hidden}
+    .utime.fin{flex:0 0 auto;min-width:0;padding:0 0 0 4px;text-align:right}
+    .useg.esfill{border-style:dashed}
+    .useg.angosto .unom{display:none}
+    .udur{flex-basis:0;min-width:var(--minseg);height:15px;display:flex;align-items:center;
+      justify-content:center;position:relative;
+      color:color-mix(in srgb,var(--udurc,var(--dim)) 84%,#f4f7fb 16%);
+      font:600 9px/1 var(--fuentetit);letter-spacing:.08em;text-transform:uppercase;
+      white-space:nowrap;overflow:hidden}
+    .udur::before,.udur::after{content:'';position:absolute;top:6px;height:1px;
+      background:color-mix(in srgb,var(--udurc,var(--dim)) 82%,#101417 18%)}
+    .udur::before{left:0;right:50%;margin-right:18px}
+    .udur::after{left:50%;right:0;margin-left:18px}
+    .udur i{position:absolute;inset:0;display:block;pointer-events:none}
+    .udur i::before,.udur i::after{content:'';position:absolute;top:3px;width:1px;height:7px;
+      background:color-mix(in srgb,var(--udurc,var(--dim)) 84%,#f4f7fb 16%)}
+    .udur i::before{left:0}
+    .udur i::after{right:0}
+    .udurtxt{position:relative;z-index:1;padding:0 4px;background:#090b0d;max-width:100%;
+      overflow:hidden;text-overflow:ellipsis}
+    .udur.corto::before{margin-right:9px}
+    .udur.corto::after{margin-left:9px}
+    .udur.micro::before{right:0;margin-right:0}
+    .udur.micro::after{left:0;margin-left:0}
+    .udur.micro .udurtxt{display:none}
+    /* LA BARRA FLOTANTE de la seccion elegida, como la .secbar del original. */
+    .secbarwrap{position:relative;height:0}
+    .secbar{position:absolute;bottom:6px;left:0;z-index:46;display:flex;align-items:center;gap:5px;
+      padding:5px 7px;border:1px solid var(--line);border-radius:10px;background:var(--eleva);
+      box-shadow:var(--shadow);white-space:nowrap}
+    .secbar[hidden]{display:none}
+    .secbar .sbnom{font:11px/1 var(--fuentetit);letter-spacing:.08em;text-transform:uppercase;padding:0 6px 0 2px}
+    .secbar .sb{width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;
+      border:1px solid transparent;border-radius:7px;background:transparent;color:var(--txt);
+      font:11px/1 var(--fuentetit);letter-spacing:.04em;cursor:pointer}
+    .secbar .sb:hover{border-color:var(--hw-label-green);color:var(--hw-label-green)}
+    .secbar .sb.activo{border-color:var(--acc);color:var(--acc)}
+    .secbar .sblarg{width:auto;min-width:28px;padding:0 8px}
+    .secbar .sbdel{color:var(--bad)}
+    .secbar .sbdel:hover{background:var(--bad);border-color:var(--bad);color:var(--sobreacc)}
+    .secbar input[type=text]{width:150px;height:28px;padding:0 8px}
+    .secbar input[type=number]{width:74px;height:28px;padding:0 8px}
+    .secbar .sbcolor{width:16px;height:16px;border-radius:5px;border:1px solid rgba(255,255,255,.28);display:block}
+    .palsec{display:inline-flex;gap:4px;align-items:center;padding-left:6px;margin-left:2px;
+      border-left:1px solid var(--line)}
+    .palsec button{width:16px;height:16px;padding:0;border-radius:5px;
+      border:1px solid rgba(255,255,255,.22);cursor:pointer}
+    .palsec .sinluz{background:transparent;color:var(--dim)}
+    .estructura-acciones{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px}
+    .estructura-acciones .rotulo{font:11px/1 var(--fuentetit);letter-spacing:.09em;
+      text-transform:uppercase;color:var(--hw-label-green)}
+    .estructura-acciones button.activo{border-color:var(--acc);color:var(--acc)}
     .timeline-wrap{display:grid;gap:14px}
     .timeline-svg,.lane-svg{
       width:100%;
@@ -392,7 +489,7 @@
       letter-spacing:.09em;text-align:left;padding:4px 6px}
     .lane-card{padding:14px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02);display:grid;gap:12px}
     .lane-meta{display:grid;gap:10px;grid-template-columns:2fr repeat(3,minmax(110px,1fr))}
-    .lane-points td input{width:100%}
+    .lane-actions{display:flex;align-items:center;gap:12px;min-height:25px}
     .muted{color:var(--muted)}
     .debug{
       min-height:180px;
@@ -414,6 +511,12 @@
     .stem-editor{border-top:1px solid var(--line);padding:14px 0 0;margin-top:14px}.stem-editor h3{margin:0 0 10px;color:var(--accent);font-size:14px}.block-editor{padding:10px;border:1px solid var(--line);border-radius:10px;margin:8px 0;background:var(--campo)}
     .cc-switch{min-width:94px;padding:8px 10px;font-size:12px}.cc-switch.on{background:var(--accent);color:var(--sobreacc);border-color:var(--accent);font-weight:700}.cc-switch.off{color:var(--muted)}
     .control-board{display:flex;gap:6px;align-items:stretch;overflow-x:auto;padding-bottom:6px}.control-board::-webkit-scrollbar{height:8px}.control-board::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px}
+    /* Los FX son una seccion global de la TR-8S, no instrumentos. Van arriba, compactos,
+       y quedan fuera de la seleccion, grupos y acciones de los canales. */
+    .global-fx-strip{display:flex;align-items:center;gap:12px;min-height:86px;margin:0 0 10px;padding:9px 12px;border:1px solid var(--line);border-radius:var(--radio2);background:var(--campo)}
+    .global-fx-title{margin-right:4px;color:var(--hw-label-green);font:700 10px/1 var(--fuentetit);letter-spacing:.1em;white-space:nowrap}
+    .global-fx-control{display:flex;align-items:center;justify-content:center;flex:0 0 109px;min-height:66px;padding-right:12px;border-right:1px solid rgba(137,167,162,.2)}.global-fx-control:last-child{padding-right:0;border-right:0}
+    .global-fx-control .device-param{width:100%;flex:none}.global-fx-control .swing-toggle{width:30px;height:5px;padding:0}
     .device-groups{display:grid;gap:14px}.device-group{background:transparent;overflow:hidden}.device-group-head{display:flex;align-items:center;gap:8px;padding:5px 2px}.device-group-head b{flex:1;color:var(--text);font:700 11px/1 var(--fuentetit);letter-spacing:.08em}.device-group-head .muted{font-size:10px}.device-group-head button{padding:4px 7px;font-size:9px;background:transparent;border-color:transparent;color:var(--muted)}.device-group-head button:hover{border-color:var(--line);color:var(--text)}.device-group-body{padding:4px 0}
     .control-order{display:flex;gap:8px;align-items:center;margin-bottom:14px}.control-order b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--accent);font:700 12px/1 var(--fuentetit)}.control-order input{width:130px;padding:8px;font:700 10px/1 var(--fuentetit)}.control-order button{min-width:46px;font-size:18px;padding:8px}
     /* BORDE DE COLOR POR DEVICE. Es lo que hace ArrangeLab con las secciones de la
@@ -423,7 +526,7 @@
     .device-card{flex:0 0 109px;min-height:318px;padding:7px;display:flex;flex-direction:column;gap:5px;cursor:pointer;user-select:none;border:1px solid color-mix(in srgb,var(--control-color) 34%,var(--line));border-radius:var(--radio2);background:var(--campo);box-shadow:var(--bisel)}
     .device-card:hover{border-color:color-mix(in srgb,var(--control-color) 62%,var(--line))}.device-card.tr8s{background:rgba(255,255,255,.028)}.device-card.selected{background:color-mix(in srgb,var(--control-color) 13%,var(--eleva));box-shadow:inset 0 2px 0 var(--control-color)}
     .device-card.linked{box-shadow:inset 0 3px 0 #52E6FF}.device-card.linked.selected{box-shadow:inset 0 3px 0 #52E6FF,0 0 0 1px color-mix(in srgb,var(--control-color) 42%,transparent)}.device-head{width:100%;display:flex;align-items:center;gap:3px}.device-name{min-width:0;width:100%;padding:4px 2px;border:0;border-radius:0;background:transparent;color:var(--text);font:700 10px/1.2 var(--fuentetit);text-align:center;user-select:text}.device-name:focus{outline:none;background:rgba(255,255,255,.06)}.control-color-select{width:18px;height:18px;padding:0;border:0;border-radius:50%;background:var(--control-color);color:transparent;font-size:0;cursor:pointer}
-    .device-params{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px}.device-param{width:100%;display:flex;flex-direction:column;align-items:center;gap:2px}.device-param .muted{font-size:8px;text-align:center;min-height:10px}.parameter-name{width:100%;min-height:14px;padding:1px;border:0;border-radius:0;background:transparent;color:var(--text);font:700 8px/1 var(--fuentetit);text-align:center;user-select:text}.parameter-name:focus{outline:none;background:rgba(255,255,255,.06)}.device-param strong{font:700 12px/1 var(--fuentetit);color:var(--control-color,var(--accent))}
+    .device-params{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px}.device-param{width:100%;display:flex;flex-direction:column;align-items:center;gap:2px}.device-param-spacer{visibility:hidden}.device-param .muted{font-size:8px;text-align:center;min-height:10px}.parameter-name{width:100%;min-height:14px;padding:1px;border:0;border-radius:0;background:transparent;color:var(--text);font:700 8px/1 var(--fuentetit);text-align:center;user-select:text}.parameter-name:focus{outline:none;background:rgba(255,255,255,.06)}.device-param strong{font:700 12px/1 var(--fuentetit);color:var(--control-color,var(--accent))}
     .vertical-fader{appearance:slider-vertical;-webkit-appearance:slider-vertical;width:22px;height:102px;padding:0;accent-color:var(--control-color,var(--accent));cursor:pointer}.vertical-fader:disabled{cursor:not-allowed}
     .rotary-knob{position:relative;width:30px;height:30px;margin:2px 0;border:1px solid color-mix(in srgb,var(--control-color) 58%,var(--line));border-radius:50%;background:radial-gradient(circle at 35% 28%,color-mix(in srgb,var(--txt) 12%,var(--eleva)) 0 5%,var(--eleva) 38%,var(--campo) 70%);box-shadow:inset 0 0 0 3px var(--campo),0 3px 6px rgba(0,0,0,.35);cursor:ns-resize}.rotary-knob::after{content:"";position:absolute;left:50%;top:3px;width:2px;height:10px;border-radius:2px;background:var(--control-color);box-shadow:0 0 4px var(--control-color);transform-origin:50% 12px;transform:translateX(-50%) rotate(var(--knob-angle));}.rotary-knob:focus-visible{outline:2px solid var(--control-color);outline-offset:3px}.rotary-knob:disabled{opacity:.45;cursor:not-allowed}
     .level-toggle{width:100%;padding:5px 3px;font:700 9px/1 var(--fuentetit);letter-spacing:.06em;border-color:transparent;background:rgba(255,255,255,.05);color:var(--control-color)}.level-toggle:hover{border-color:var(--control-color)}.level-toggle.off{color:var(--muted)}
@@ -471,26 +574,6 @@
       <div id="midiStatus" class="status warn">MIDI NOT READY</div>
     </div>
 
-    <!-- Los canales que vinieron en el .als. Los nombres son los de ArrangeLab y no se
-         tocan aca: lo que se elige es QUE INSTRUMENTOS suenan por cada canal, que es el
-         dato que el Set no tiene y que hace falta para bajar los bloques a CC.
-
-         El renombrar y el GENERAR .ALS se sacaron por pedido de Tomas. Las funciones
-         siguen en el core con sus tests: no se borro nada, solo dejo de estar a la vista. -->
-    <section class="panel" id="setPanel" hidden>
-      <div class="panel-head">
-        <h2>Instrumentos por canal</h2>
-        <button id="sugerirCanalesBtn" class="secondary">SUGERIR</button>
-      </div>
-      <div class="panel-body">
-        <div id="busList"></div>
-        <p class="help" style="margin:12px 0 0">Cada instrumento suena por un solo canal:
-        tocarlo en otra fila lo mueve. El Set dice que por 9/10 entra «HHs», pero no cuál
-        de los once instrumentos de la TR-8S es — eso lo decidís acá una vez y queda
-        guardado con el preset.</p>
-      </div>
-    </section>
-
     <section class="panel" id="presetPanel">
       <div class="panel-head">
         <h2>Preset</h2>
@@ -517,7 +600,9 @@
         <h2>Arrangement Overview</h2>
         <div class="actions">
           <button id="addSceneBtn">+ Scene Change</button>
+          <button id="clipsToCcBtn" class="secondary">CLIPS → CC</button>
           <button id="addLaneBtn">+ CC Lane</button>
+          <button id="foldLanesBtn" class="secondary">PLEGAR TODO</button>
         </div>
       </div>
       <div class="panel-body timeline-wrap">
@@ -536,6 +621,48 @@
       </div>
     </section>
 
+    <!-- LA ESTRUCTURA DEL SET, LEIDA DE LOS LOCATORS. Es geometria y nada mas: dice
+         donde empieza y termina cada seccion. No manda un solo mensaje MIDI, y por ahora
+         tampoco dispara bloques: los bloques de performance se van a colgar de aca. -->
+    <section class="panel" id="structurePanel" hidden>
+      <div class="panel-head">
+        <h2>Estructura</h2>
+        <div class="actions">
+          <span class="muted" id="structureSource"></span>
+        </div>
+      </div>
+      <div class="panel-body timeline-wrap">
+        <div class="help" id="structureEmpty" hidden><b>Cargá un .als para empezar.</b>
+        El largo del tema sale de sus locators y de ningún otro lado: sin Set no hay timeline,
+        no hay lanes y PLAY queda apagado. Los controles CC de abajo sí funcionan: son manuales
+        y no dependen del arreglo.</div>
+        <div class="estructura" id="structureBox">
+          <div class="secbarwrap"><div id="secbar" class="secbar" hidden></div></div>
+          <div class="sectimes" id="structureTimes"></div>
+          <div class="secstrip" id="structureStrip"></div>
+          <div class="secdurs" id="structureDurs"></div>
+        </div>
+        <div class="estructura-acciones" id="structureActions" hidden>
+          <span class="rotulo" title="Lleva cada sección al múltiplo más cercano">Round</span>
+          <button id="round8Btn" class="secondary" title="Acomodar todo a múltiplos de 8">8</button>
+          <button id="round16Btn" class="secondary" title="Acomodar todo a múltiplos de 16">16</button>
+          <span class="tsep" aria-hidden="true"></span>
+          <button id="undoBtn" class="secondary" title="Deshacer (Ctrl+Z)">↶</button>
+          <button id="redoBtn" class="secondary" title="Rehacer (Ctrl+Shift+Z)">↷</button>
+          <span class="tsep" aria-hidden="true"></span>
+          <select id="structurePresetSelect" aria-label="Estructura guardada"></select>
+          <button id="loadStructureBtn" class="secondary">CARGAR</button>
+          <button id="saveStructureBtn" class="secondary">SAVE STRUCTURE</button>
+          <button id="delStructureBtn" class="danger">BORRAR</button>
+        </div>
+        <div class="help" id="structureHelp">Las secciones son los locators del Set y el último marca el final, no una sección más.
+        Tocá una para elegirla: se resalta también en las automation lanes y se puede renombrar,
+        estirar desde su borde derecho, mover, duplicar o borrar.
+        <b>Los puntos de automatización viajan con su sección</b>: si estirás el break, el barrido
+        que lo cruzaba lo sigue cruzando entero, y lo que venía después se corre.
+        BARS nunca se escribe: es la suma de las secciones.</div>
+    </section>
+
     <section class="panel">
       <div class="panel-head">
         <h2>Automation Lanes</h2>
@@ -549,7 +676,27 @@
         <h2>Live CC Control</h2>
         <div class="muted">Faders 0–127. Tocá una tira para seleccionarla; usá ←/→ o los botones para ordenarla.</div>
       </div>
-      <div class="panel-body"><div class="control-order"><span class="muted">SELECTED</span><b id="selectedControlName">Tap a device</b><button id="moveControlLeftBtn" title="Move left">←</button><button id="moveControlRightBtn" title="Move right">→</button><span class="muted">SHIFT + CLICK TO LINK</span><button id="unlinkDevicesBtn">UNLINK</button><button id="muteAllLevelsBtn" class="mute-all">MUTE ALL</button></div><div id="liveControlsHost"></div></div>
+      <div class="panel-body"><div id="globalFxHost"></div><div class="control-order"><span class="muted">SELECTED</span><b id="selectedControlName">Tap a device</b><button id="moveControlLeftBtn" title="Move left">←</button><button id="moveControlRightBtn" title="Move right">→</button><span class="muted">SHIFT + CLICK TO LINK</span><button id="unlinkDevicesBtn">UNLINK</button><button id="muteAllLevelsBtn" class="mute-all">MUTE ALL</button></div><div id="liveControlsHost"></div></div>
+    </section>
+
+    <!-- Los canales que vinieron en el .als. Los nombres son los de ArrangeLab y no se
+         tocan aca: lo que se elige es QUE INSTRUMENTOS suenan por cada canal, que es el
+         dato que el Set no tiene y que hace falta para bajar los bloques a CC.
+
+         El renombrar y el GENERAR .ALS se sacaron por pedido de Tomas. Las funciones
+         siguen en el core con sus tests: no se borro nada, solo dejo de estar a la vista. -->
+    <section class="panel" id="setPanel" hidden>
+      <div class="panel-head">
+        <h2>Instrumentos por canal</h2>
+        <button id="sugerirCanalesBtn" class="secondary">SUGERIR</button>
+      </div>
+      <div class="panel-body">
+        <div id="busList"></div>
+        <p class="help" style="margin:12px 0 0">Cada instrumento suena por un solo canal:
+        tocarlo en otra fila lo mueve. El Set dice que por 9/10 entra «HHs», pero no cuál
+        de los once instrumentos de la TR-8S es — eso lo decidís acá una vez y queda
+        guardado con el preset.</p>
+      </div>
     </section>
 
     <section class="panel">
@@ -586,6 +733,7 @@
       var STORAGE_KEY = 'arrangelab.hardware.performance.mvp.v2';
       var LEGACY_STORAGE_KEY = 'arrangelab.hardware.performance.mvp.v1';
       var PRESET_STORAGE_KEY = 'arrangelab.hardware.performance.presets.v1';
+      var STRUCTURE_STORAGE_KEY = 'arrangelab.hardware.structures.v1';
       var state = {
         project: loadProject(),
         presets: loadPresets(),
@@ -610,6 +758,15 @@
         liveSoloDeviceId: '',
         liveSoloRestoreValues: {},
         drag: null,
+        selectedLanePoint: null,
+        selectedSectionIndex: -1,
+        secDrag: null,
+        secMove: null,
+        paletaAbierta: false,
+        historia: { atras: [], adelante: [] },
+        estructuras: cargarEstructuras(),
+        estructuraElegida: '',
+        lastLanePlanRefreshAt: 0,
         knobDrag: null,
         logLines: ['Hardware Performance Arranger listo.']
       };
@@ -632,6 +789,24 @@
         deletePreset: document.getElementById('deletePresetBtn'),
         midiStatus: document.getElementById('midiStatus'),
         sceneTimeline: document.getElementById('sceneTimeline'),
+        structurePanel: document.getElementById('structurePanel'),
+        structureBox: document.getElementById('structureBox'),
+        structureStrip: document.getElementById('structureStrip'),
+        structureTimes: document.getElementById('structureTimes'),
+        structureDurs: document.getElementById('structureDurs'),
+        structureActions: document.getElementById('structureActions'),
+        secbar: document.getElementById('secbar'),
+        round8Btn: document.getElementById('round8Btn'),
+        round16Btn: document.getElementById('round16Btn'),
+        undoBtn: document.getElementById('undoBtn'),
+        redoBtn: document.getElementById('redoBtn'),
+        structurePresetSelect: document.getElementById('structurePresetSelect'),
+        loadStructureBtn: document.getElementById('loadStructureBtn'),
+        saveStructureBtn: document.getElementById('saveStructureBtn'),
+        delStructureBtn: document.getElementById('delStructureBtn'),
+        structureSource: document.getElementById('structureSource'),
+        structureEmpty: document.getElementById('structureEmpty'),
+        structureHelp: document.getElementById('structureHelp'),
         sceneTable: document.getElementById('sceneTable'),
         lanesHost: document.getElementById('lanesHost'),
         loadAls: document.getElementById('loadAlsBtn'),
@@ -644,10 +819,13 @@
         moveControlLeft: document.getElementById('moveControlLeftBtn'),
         moveControlRight: document.getElementById('moveControlRightBtn'),
         unlinkDevices: document.getElementById('unlinkDevicesBtn'),
+        globalFxHost: document.getElementById('globalFxHost'),
         liveControlsHost: document.getElementById('liveControlsHost'),
         debugLog: document.getElementById('debugLog'),
         addSceneBtn: document.getElementById('addSceneBtn'),
         addLaneBtn: document.getElementById('addLaneBtn'),
+        clipsToCcBtn: document.getElementById('clipsToCcBtn'),
+        foldLanesBtn: document.getElementById('foldLanesBtn'),
         clearLogBtn: document.getElementById('clearLogBtn')
       };
 
@@ -675,7 +853,10 @@
           var items = JSON.parse(localStorage.getItem(PRESET_STORAGE_KEY) || '[]');
           if (!Array.isArray(items)) return [];
           return items.filter(function (item) { return item && item.id && item.name && item.project; }).map(function (item) {
-            return { id: String(item.id), name: String(item.name).slice(0, 48), project: HPM.normalizeProject(item.project), updatedAt: Number(item.updatedAt) || 0 };
+            return { id: String(item.id), name: String(item.name).slice(0, 48),
+                     project: HPM.normalizeProject(item.project),
+                     values: (item.values && typeof item.values === 'object') ? item.values : {},
+                     updatedAt: Number(item.updatedAt) || 0 };
           }).sort(function (a, b) { return b.updatedAt - a.updatedAt; });
         } catch (_err) { return []; }
       }
@@ -692,17 +873,33 @@
         el.deletePreset.disabled = !state.selectedPresetId;
       }
 
+      // EL ESTADO NATURAL DE UNA PERILLA ES SU MINIMO. Si a un control se le fijo un
+      // rango, el preset lo guarda en el piso de ese rango -aunque el piso sea 0-: es de
+      // donde arranca la performance. Los controles sin rango fijado no se guardan con
+      // valor: no hay un "natural" que inventarles.
+      function valoresNaturales() {
+        var rangos = state.project.liveControls.ranges || {};
+        var out = {};
+        Object.keys(rangos).forEach(function (id) {
+          var r = rangos[id];
+          if (r && Number.isFinite(r.min)) out[id] = r.min;
+        });
+        return out;
+      }
+
       function savePreset() {
         var name = el.presetName.value.trim().slice(0, 48);
         if (!name) { log('PRESET ERROR → escribí un nombre.'); renderAll(); return; }
         var existing = state.presets.filter(function (preset) { return preset.name.toLowerCase() === name.toLowerCase(); })[0];
-        var preset = { id: existing ? existing.id : 'preset-' + Date.now(), name: name, project: HPM.clone(HPM.normalizeProject(state.project)), updatedAt: Date.now() };
+        var valores = valoresNaturales();
+        var preset = { id: existing ? existing.id : 'preset-' + Date.now(), name: name, project: HPM.clone(HPM.normalizeProject(state.project)), values: valores, updatedAt: Date.now() };
         if (existing) state.presets[state.presets.indexOf(existing)] = preset;
         else state.presets.unshift(preset);
         state.presets.sort(function (a, b) { return b.updatedAt - a.updatedAt; });
         state.selectedPresetId = preset.id;
         savePresets();
-        log('PRESET SAVED → ' + preset.name);
+        log('PRESET SAVED → ' + preset.name +
+          (Object.keys(valores).length ? ' · ' + Object.keys(valores).length + ' controles con rango quedan en su mínimo' : ''));
         renderAll();
       }
 
@@ -710,12 +907,16 @@
         var preset = state.presets.filter(function (item) { return item.id === state.selectedPresetId; })[0];
         if (!preset) { log('PRESET ERROR → elegí un preset.'); renderAll(); return; }
         state.project = HPM.clone(HPM.normalizeProject(preset.project));
-        state.liveControlValues = {};
+        // Las perillas vuelven a su minimo, que es el estado natural del preset. NO se
+        // envia nada: cargar un preset nunca puede mover la mezcla fisica.
+        state.liveControlValues = HPM.clone(preset.values || {});
         state.liveSoloDeviceId = '';
         state.liveSoloRestoreValues = {};
         state.connected = false;
         el.presetName.value = preset.name;
-        log('PRESET LOADED → ' + preset.name);
+        log('PRESET LOADED → ' + preset.name +
+          (Object.keys(preset.values || {}).length
+            ? ' · las perillas con rango muestran su mínimo, sin enviar MIDI' : ''));
         renderAll();
       }
 
@@ -737,7 +938,8 @@
 
       function layoutForSvg(svg) {
         var width = svg.clientWidth || 900;
-        var height = svg.classList.contains('lane-svg') ? 160 : 150;
+        var height = svg.classList.contains('lane-svg') ? 160
+          : svg.classList.contains('structure-svg') ? 128 : 150;
         return { width: width, height: height, padL: 52, padR: 22, padT: 18, padB: 28 };
       }
 
@@ -779,6 +981,320 @@
         return HPM.controlRange(lane.controlId, state.project.liveControls);
       }
 
+      function colorDeLane(lane) {
+        return colorDeControl(lane && lane.controlId);
+      }
+
+      // ==================================================================== ESTRUCTURA
+      //
+      // Es la barra de secciones de ArrangeLab, con sus mismos controles. Tres filas que
+      // comparten columnas -tiempos, secciones, duracion-, la barra flotante sobre la
+      // seccion elegida, y los mismos gestos: arrastrar para reordenar y el borde derecho
+      // para estirar. La geometria es la de alla: flex-grow = compases, y por eso el
+      // ancho ES la duracion.
+      //
+      // Lo que NO cruzo del original: GUIDE y SAVE TRACK son del flujo de audio y aca no
+      // tienen a que apuntar. FILL cruza como marca de seccion: se ve, se guarda, y
+      // todavia no dispara nada -esto sigue siendo CC-only-.
+
+      // La paleta la manda el core: el color se guarda en la seccion para que viaje con
+      // ella cuando se la mueve.
+      var SECTION_PALETTE = HPM.sectionPalette();
+
+      function colorDeSeccion(index, propio) {
+        if (propio) return propio;
+        var i = ((index % SECTION_PALETTE.length) + SECTION_PALETTE.length) % SECTION_PALETTE.length;
+        return SECTION_PALETTE[i];
+      }
+
+      function barsLegibles(bars) {
+        return String(Math.round(bars * 100) / 100);
+      }
+
+      // CUANTO DURA ESO EN TIEMPO. Los compases no dicen si el tema entra en un set: los
+      // segundos si. Sale del BPM del Set y del compas, no de un numero guardado.
+      function mmss(bars) {
+        var segundos = (bars * HPM.beatsPerBar(state.project) * 60) / Math.max(1, state.project.bpm);
+        var m = Math.floor(segundos / 60);
+        var seg = Math.round(segundos - m * 60);
+        if (seg === 60) { m += 1; seg = 0; }
+        return m + ':' + (seg < 10 ? '0' : '') + seg;
+      }
+
+      // El color de un control es el de su tarjeta: una lane de la acid tiene que verse
+      // del color de la acid, no del celeste de todas.
+      function colorDeControl(controlId) {
+        if (!controlId) return '#6fb7ff';
+        var control = HPM.controlRegistry().filter(function (c) { return c.id === controlId; })[0];
+        if (!control) return '#6fb7ff';
+        return state.project.liveControls.deviceColors[control.deviceId] ||
+          (control.deviceId.indexOf('tr8s-') === 0 ? '#4F8DFF' : '#B584FF');
+      }
+
+      // ---------------------------------------------------------------- deshacer/rehacer
+      //
+      // Un paso es una FOTO DEL PROYECTO. Es chico -secciones y puntos- y cuesta menos que
+      // llevar un registro de operaciones inversas, que es donde se cuelan los bugs.
+      function anotarPaso() {
+        state.historia.atras.push(JSON.stringify(state.project));
+        if (state.historia.atras.length > 60) state.historia.atras.shift();
+        state.historia.adelante.length = 0;
+      }
+
+      function volverA(pila, otra, queHizo) {
+        if (!pila.length) return;
+        otra.push(JSON.stringify(state.project));
+        state.project = HPM.normalizeProject(JSON.parse(pila.pop()));
+        state.selectedLanePoint = null;
+        log('ESTRUCTURA → ' + queHizo);
+        renderAll();
+      }
+
+      function deshacer() { volverA(state.historia.atras, state.historia.adelante, 'deshecho'); }
+      function rehacer() { volverA(state.historia.adelante, state.historia.atras, 'rehecho'); }
+
+      // ---------------------------------------------------------------- dibujar la barra
+      function renderStructure() {
+        var secciones = HPM.sectionTimeline(state.project);
+        // EL PANEL ESTA SIEMPRE. Sin Set cargado no se esconde: dice que falta cargarlo,
+        // que es la unica forma de que la pagina tenga largo.
+        el.structurePanel.hidden = false;
+        el.structureEmpty.hidden = !!secciones.length;
+        el.structureBox.hidden = !secciones.length;
+        el.structureActions.hidden = !secciones.length;
+        el.structureHelp.hidden = !secciones.length;
+        if (state.selectedSectionIndex >= secciones.length) state.selectedSectionIndex = -1;
+        if (!secciones.length) {
+          el.structureSource.textContent = 'sin .als';
+          el.structureStrip.innerHTML = '';
+          el.structureTimes.innerHTML = '';
+          el.structureDurs.innerHTML = '';
+          el.secbar.hidden = true;
+          return;
+        }
+
+        var estructura = state.project.structure;
+        el.structureSource.textContent = (estructura.source || 'estructura importada') + ' · ' +
+          secciones.length + ' secciones · ' + state.project.totalBars + ' bars · ' +
+          mmss(state.project.totalBars) + (estructura.endName ? ' · fin ' + estructura.endName : '');
+
+        var sonando = null, playBar = 0;
+        if (state.playing && state.transport) {
+          playBar = HPM.beatToBarFloat(state.project, state.transport.getCurrentBeat(performance.now()));
+          sonando = HPM.sectionAtBar(state.project, playBar);
+        }
+
+        // Fila 1: en que minuto arranca cada seccion. El ultimo numero es el largo del tema.
+        el.structureTimes.innerHTML = secciones.map(function (seccion) {
+          return '<div class="utime" style="flex-grow:' + seccion.bars + '">' +
+            mmss(seccion.startBar - 1) + '</div>';
+        }).join('') + '<div class="utime fin">' + mmss(state.project.totalBars) + '</div>';
+
+        // Fila 2: las secciones.
+        el.structureStrip.innerHTML = secciones.map(function (seccion) {
+          var elegida = seccion.index === state.selectedSectionIndex;
+          var activa = !!(sonando && sonando.index === seccion.index);
+          var angosto = seccion.bars / state.project.totalBars < 0.045;
+          // EL CABEZAL VA ADENTRO DE SU SECCION, no encima de la barra: asi cae en el
+          // lugar exacto sin tener que descontar los huecos entre segmentos.
+          var avance = activa ? ((playBar - seccion.startBar) / seccion.bars) * 100 : 0;
+          return '<div class="useg' + (elegida ? ' sel' : '') + (seccion.fill ? ' esfill' : '') +
+            (angosto ? ' angosto' : '') + '" data-secrow="' + seccion.index +
+            '" style="flex-grow:' + seccion.bars + ';--secc:' + colorDeSeccion(seccion.index, seccion.color) + '"' +
+            ' title="' + esc(seccion.name) + ' · bars ' + Math.round(seccion.startBar) + '-' +
+            (Math.ceil(seccion.endBar) - 1) + ' · ' + mmss(seccion.bars) + '">' +
+            (angosto ? '' : '<span class="unom">' + esc(seccion.name) + '</span>') +
+            '<small>' + (seccion.fill ? 'F' : (angosto ? '' : mmss(seccion.bars))) + '</small>' +
+            (activa ? '<span class="uplay" style="left:' + Math.max(0, Math.min(100, avance)) + '%"></span>' : '') +
+            '<span class="ugrip" data-secgrip="' + seccion.index + '" title="Estirar"></span>' +
+            '</div>';
+        }).join('');
+
+        // Fila 3: el carril con los compases, como la mdurrow de ArrangeLab.
+        el.structureDurs.innerHTML = secciones.map(function (seccion) {
+          var angosto = seccion.bars / state.project.totalBars < 0.045;
+          var corto = seccion.bars <= 3;
+          var texto = seccion.bars <= 4 ? barsLegibles(seccion.bars) : (barsLegibles(seccion.bars) + ' BAR');
+          return '<div class="udur' + (corto ? ' corto' : '') + (angosto ? ' micro' : '') +
+            '" style="flex-grow:' + seccion.bars + ';--udurc:' + colorDeSeccion(seccion.index, seccion.color) + '"' +
+            ' data-dursec="' + seccion.index + '"><i aria-hidden="true"></i><span class="udurtxt">' +
+            texto + '</span></div>';
+        }).join('') + '<div class="utime fin"></div>';
+
+        renderSecBar(secciones);
+      }
+
+      // LA BARRA FLOTANTE de la seccion elegida. Son los mismos controles de ArrangeLab:
+      // nombre, compases, x2, /2, color, FILL, duplicar, borrar y agregar.
+      function renderSecBar(secciones) {
+        var actual = secciones[state.selectedSectionIndex];
+        el.secbar.hidden = !actual;
+        if (!actual) return;
+        var color = colorDeSeccion(actual.index, actual.color);
+        var html = '';
+        html += '<span class="sbnom" style="color:' + color + '">' + esc(actual.name) + ' · ' +
+          barsLegibles(actual.bars) + ' BARS · ' + mmss(actual.bars) + '</span>';
+        html += '<input id="secName" type="text" maxlength="40" value="' + esc(actual.name) + '" aria-label="Nombre">';
+        html += '<input id="secBars" type="number" min="1" max="512" step="1" value="' + barsLegibles(actual.bars) + '" aria-label="Bars">';
+        html += '<button class="sb sblarg" data-secop="x2" title="El doble de largo">×2</button>';
+        html += '<button class="sb sblarg" data-secop="div2" title="La mitad de largo">÷2</button>';
+        html += '<button class="sb sbcolorbtn" data-secop="color" title="Color"><span class="sbcolor" style="background:' + color + '"></span></button>';
+        html += '<button class="sb sblarg' + (actual.fill ? ' activo' : '') + '" data-secop="fill" title="Marcar como fill">FILL</button>';
+        html += '<button class="sb" data-secop="left" title="Mover a la izquierda">←</button>';
+        html += '<button class="sb" data-secop="right" title="Mover a la derecha">→</button>';
+        html += '<button class="sb" data-secop="dup" title="Duplicar">⧉</button>';
+        html += '<button class="sb sblarg" data-secop="add" title="Agregar una seccion despues">+</button>';
+        html += '<button class="sb sbdel" data-secop="del" title="Borrar">✕</button>';
+        if (state.paletaAbierta) {
+          html += '<span class="palsec">' + SECTION_PALETTE.map(function (c) {
+            return '<button data-seccolor="' + c + '" style="background:' + c + '" title="' + c + '"></button>';
+          }).join('') + '<button data-seccolor="" title="El del indice" class="sinluz">·</button></span>';
+        }
+        el.secbar.innerHTML = html;
+        // Sobre su seccion, sin salirse de la caja.
+        var seg = el.structureStrip.querySelector('[data-secrow="' + actual.index + '"]');
+        if (seg) {
+          var izq = seg.offsetLeft;
+          var tope = Math.max(0, el.structureStrip.clientWidth - el.secbar.offsetWidth);
+          el.secbar.style.left = Math.max(0, Math.min(tope, izq)) + 'px';
+        }
+      }
+
+      // TODA EDICION PASA POR ACA. El core recibe la lista nueva de secciones diciendo de
+      // donde viene cada una, y mueve los puntos de las lanes con ellas.
+      function aplicarSecciones(lista, queHizo, sinPaso) {
+        if (!sinPaso) anotarPaso();
+        state.project = HPM.remapStructure(state.project, lista);
+        if (queHizo) log('ESTRUCTURA → ' + queHizo + ' · ' + state.project.totalBars + ' bars');
+        renderAll();
+      }
+
+      // ROUND ES UNA ACCION, NO UN MODO. Acomoda las secciones que ya estan: lleva cada
+      // largo al multiplo de 8 o de 16 mas cercano, de una. No traba el arrastre -estirar
+      // sigue siendo libre, compas por compas-, que era lo que molestaba.
+      function acomodarEnGrilla(paso) {
+        var lista = HPM.editableSections(state.project);
+        if (!lista.length) return;
+        var cambio = false;
+        lista.forEach(function (s) {
+          var nuevo = Math.max(paso, Math.round(s.bars / paso) * paso);
+          if (nuevo !== s.bars) { s.bars = nuevo; cambio = true; }
+        });
+        if (!cambio) { log('ROUND → ya estaban todas en múltiplos de ' + paso); return; }
+        aplicarSecciones(lista, 'acomodadas a múltiplos de ' + paso);
+      }
+
+      function opSeccion(op, dato) {
+        var lista = HPM.editableSections(state.project);
+        var i = state.selectedSectionIndex;
+        if (i < 0 || !lista[i]) return;
+        var nombre = lista[i].name;
+        if (op === 'add') {
+          lista.splice(i + 1, 0, { name: 'NUEVA', bars: 16, color: '', fill: false, from: -1 });
+          state.selectedSectionIndex = i + 1;
+        } else if (op === 'dup') {
+          lista.splice(i + 1, 0, { name: lista[i].name, bars: lista[i].bars,
+            color: lista[i].color, fill: lista[i].fill, from: -1 });
+          state.selectedSectionIndex = i + 1;
+        } else if (op === 'del') {
+          if (lista.length < 2) { log('ESTRUCTURA → no se puede borrar la única sección'); return; }
+          lista.splice(i, 1);
+          state.selectedSectionIndex = Math.max(0, i - 1);
+        } else if (op === 'left') {
+          if (i === 0) return;
+          lista.splice(i - 1, 0, lista.splice(i, 1)[0]);
+          state.selectedSectionIndex = i - 1;
+        } else if (op === 'right') {
+          if (i >= lista.length - 1) return;
+          lista.splice(i + 1, 0, lista.splice(i, 1)[0]);
+          state.selectedSectionIndex = i + 1;
+        } else if (op === 'x2') {
+          lista[i].bars = Math.min(512, lista[i].bars * 2);
+        } else if (op === 'div2') {
+          if (lista[i].bars <= 1) { log('ESTRUCTURA → ' + nombre + ' ya mide un compás'); return; }
+          lista[i].bars = Math.max(1, Math.round(lista[i].bars / 2));
+        } else if (op === 'fill') {
+          lista[i].fill = !lista[i].fill;
+        } else if (op === 'color') {
+          state.paletaAbierta = !state.paletaAbierta;
+          renderStructure();
+          return;
+        } else if (op === 'pintar') {
+          lista[i].color = dato || '';
+          state.paletaAbierta = false;
+        } else return;
+        aplicarSecciones(lista, op + ' ' + nombre);
+      }
+
+      // ---------------------------------------------------------------- estructuras guardadas
+      //
+      // Una estructura guardada es un arreglo reusable: se le aplica a otro tema y los
+      // bloques ya dibujados se estiran o se achican con cada seccion. Se guarda por
+      // POSICION: la seccion 1 del preset ocupa el lugar de la 1 que habia.
+      function cargarEstructuras() {
+        try {
+          var items = JSON.parse(localStorage.getItem(STRUCTURE_STORAGE_KEY) || '[]');
+          if (!Array.isArray(items)) return [];
+          return items.filter(function (x) { return x && x.id && x.name && Array.isArray(x.sections) && x.sections.length; });
+        } catch (_err) { return []; }
+      }
+
+      function guardarEstructuras() {
+        localStorage.setItem(STRUCTURE_STORAGE_KEY, JSON.stringify(state.estructuras));
+      }
+
+      function renderEstructuras() {
+        var html = '<option value="">Estructura guardada</option>';
+        state.estructuras.forEach(function (e) {
+          html += '<option value="' + esc(e.id) + '"' + (e.id === state.estructuraElegida ? ' selected' : '') + '>' +
+            esc(e.name) + ' (' + e.sections.length + ')</option>';
+        });
+        el.structurePresetSelect.innerHTML = html;
+        el.loadStructureBtn.disabled = !state.estructuraElegida;
+        el.delStructureBtn.disabled = !state.estructuraElegida;
+      }
+
+      function guardarEstructuraActual() {
+        var secciones = HPM.editableSections(state.project);
+        if (!secciones.length) return;
+        var nombre = (state.project.structure.source || 'estructura').replace(/\.als$/i, '') +
+          ' · ' + secciones.length + ' secciones';
+        var previo = state.estructuras.filter(function (e) { return e.name === nombre; })[0];
+        var guardada = {
+          id: previo ? previo.id : 'est-' + Date.now(),
+          name: nombre,
+          sections: secciones.map(function (s) { return { name: s.name, bars: s.bars, color: s.color, fill: s.fill }; }),
+          updatedAt: Date.now()
+        };
+        if (previo) state.estructuras[state.estructuras.indexOf(previo)] = guardada;
+        else state.estructuras.unshift(guardada);
+        state.estructuraElegida = guardada.id;
+        guardarEstructuras();
+        log('ESTRUCTURA → guardada como "' + nombre + '"');
+        renderAll();
+      }
+
+      function aplicarEstructuraGuardada() {
+        var guardada = state.estructuras.filter(function (e) { return e.id === state.estructuraElegida; })[0];
+        if (!guardada) return;
+        // POR POSICION: la seccion 1 del preset se queda con lo que habia dibujado en la 1.
+        var lista = guardada.sections.map(function (s, i) {
+          return { name: s.name, bars: s.bars, color: s.color, fill: s.fill, from: i };
+        });
+        state.selectedSectionIndex = -1;
+        aplicarSecciones(lista, 'cargada "' + guardada.name + '"');
+      }
+
+      function borrarEstructuraGuardada() {
+        var guardada = state.estructuras.filter(function (e) { return e.id === state.estructuraElegida; })[0];
+        if (!guardada) return;
+        state.estructuras.splice(state.estructuras.indexOf(guardada), 1);
+        state.estructuraElegida = '';
+        guardarEstructuras();
+        log('ESTRUCTURA → borrada "' + guardada.name + '"');
+        renderAll();
+      }
+
       function sceneLabel(program) {
         return 'Scene ' + (program + 1);
       }
@@ -789,19 +1305,25 @@
         saveProject();
 
         el.bpm.value = state.project.bpm;
-        el.bars.value = state.project.totalBars;
+        // BARS NO SE ESCRIBE NUNCA. Con Set cargado es la suma de sus secciones; sin Set
+        // no hay largo que mostrar y el campo queda vacio.
+        el.bars.value = state.project.structure ? state.project.totalBars : '';
         // Con un .als cargado los compases son la SUMA de las secciones, no un numero
         // tipeado: el campo pasa a solo lectura y dice de donde sale.
-        el.bars.readOnly = !!state.structure;
-        el.bars.title = state.structure
-          ? state.structure.sections.length + ' secciones de ' + state.alsName
-          : 'Se deriva del .als cuando cargues uno';
+        el.bars.readOnly = true;
+        el.bars.placeholder = '--';
+        el.bars.title = state.project.structure
+          ? state.project.structure.sections.length + ' secciones de ' +
+            (state.project.structure.source || 'un .als')
+          : 'Cargá un .als: el largo sale de sus locators';
 
         renderSetPanel();
         renderMidiOutputs();
         renderMidiStatus();
         renderPresets();
         renderSceneTimeline();
+        renderStructure();
+        renderEstructuras();
         renderSceneTable();
         renderLanes();
         renderLiveControls();
@@ -810,7 +1332,27 @@
       }
 
       function renderButtons() {
-        el.play.disabled = state.playing;
+        // SIN ESTRUCTURA NO HAY TRANSPORTE NI LANES. No es una restriccion de gusto: sin
+        // los locators del Set la pagina no sabe cuanto dura el tema, y una lane dibujada
+        // sobre un largo inventado despues no coincide con nada.
+        var hayEstructura = !!state.project.structure;
+        el.play.disabled = state.playing || !hayEstructura;
+        el.play.title = hayEstructura ? '' : 'Cargá un .als: el largo sale de sus locators';
+        el.addLaneBtn.disabled = !hayEstructura;
+        el.clipsToCcBtn.disabled = !hayEstructura || !state.alsXml;
+        el.clipsToCcBtn.title = state.alsXml
+          ? 'Dibuja el Level de cada instrumento con los clips del Set'
+          : 'Cargá un .als con clips en el Arrangement';
+        el.round8Btn.disabled = !state.project.structure;
+        el.round16Btn.disabled = !state.project.structure;
+        el.undoBtn.disabled = !state.historia.atras.length;
+        el.redoBtn.disabled = !state.historia.adelante.length;
+        el.saveStructureBtn.disabled = !state.project.structure;
+        if (el.foldLanesBtn) {
+          el.foldLanesBtn.disabled = !state.project.automationLanes.length;
+          el.foldLanesBtn.textContent = state.project.automationLanes.some(function (l) { return !l.collapsed; })
+            ? 'PLEGAR TODO' : 'DESPLEGAR TODO';
+        }
         el.stop.disabled = !state.playing;
         el.dryRun.textContent = 'DRY RUN: ' + (state.dryRun ? 'ON' : 'OFF');
       }
@@ -819,8 +1361,9 @@
         var byId = {};
         HPM.controlRegistry().forEach(function (control) { byId[control.id] = control; });
         var controls = state.project.liveControls.order.map(function (id) { return byId[id]; }).filter(Boolean).filter(function (control) { return !control.hidden; });
+        var globalControls = controls.filter(function (control) { return control.global; });
         var devices = {};
-        controls.forEach(function (control) {
+        controls.filter(function (control) { return !control.global; }).forEach(function (control) {
           if (!devices[control.deviceId]) devices[control.deviceId] = { id: control.deviceId, label: control.deviceLabel, controls: [] };
           devices[control.deviceId].controls.push(control);
         });
@@ -832,7 +1375,7 @@
         function parameterControl(control, color, deviceLabel) {
           var value = state.liveControlValues && state.liveControlValues[control.id];
           var shown = Number.isFinite(value) ? value : '--';
-          var parameterName = state.project.liveControls.labels[control.id] || control.name;
+          var parameterName = state.project.liveControls.labels[control.id] || control.globalLabel || control.name;
           var enabled = midiReady() ? '' : 'disabled';
           var currentValue = Number.isFinite(value) ? value : 0;
           // El recorrido del control es su RANGO UTIL, no el limite duro: si el filtro de
@@ -849,7 +1392,7 @@
           // Encendido SOLO en el maximo, no en la mitad de arriba: el boton dice "estas
           // arriba de todo", y en cualquier otro valor esta apagado.
           var enMaximo = currentValue >= rangeMax;
-          var actions = control.name === 'Level'
+          var actions = control.controlType === 'fader'
             ? '<button class="level-toggle' + (currentValue > 0 ? '' : ' off') + '" data-live-toggle="' + esc(control.id) + '" ' + enabled + '>' + (currentValue > 0 ? 'OFF' : 'ON') + '</button>'
             : '<button type="button" class="swing-toggle' + (enMaximo ? ' arriba' : '') + '" data-live-swing="' + esc(control.id) + '" ' + enabled +
               ' aria-label="' + esc(deviceLabel + ' ' + control.name) + ': ir a ' + (enMaximo ? rangeMin : rangeMax) + '"' +
@@ -864,25 +1407,44 @@
           // disabled hasta que conecte el MIDI, y sobre un control deshabilitado el
           // navegador no dispara contextmenu. Definir un rango o revelar una lane no manda
           // MIDI, asi que tiene que poder hacerse sin la maquina enchufada.
-          return '<div class="device-param" data-ctl-id="' + esc(control.id) + '">' + parameterLabel + '<strong data-live-value="' + esc(control.id) + '">' + shown + '</strong>' + performer + actions + '</div>';
+          // EL PUNTITO. Dice que este control tiene una lane; hueco mientras la lane esta
+          // vacia, porque una lane sin puntos todavia no manda nada.
+          var laneDelControl = state.project.automationLanes.filter(function (l) { return l.controlId === control.id; })[0];
+          var punto = laneDelControl
+            ? '<span class="autodot' + (laneDelControl.points.length ? '' : ' vacia') + '" title="Tiene automatización"></span>'
+            : '';
+          return '<div class="device-param" data-ctl-id="' + esc(control.id) + '">' + parameterLabel + '<strong data-live-value="' + esc(control.id) + '">' + shown + '</strong>' + performer + actions + punto + '</div>';
         }
         var orderedDevices = state.project.liveControls.deviceOrder.map(function (id) { return devices[id]; }).filter(Boolean);
         var linkedSelectedIds = linkedDeviceIdsFor(state.selectedLiveControlId);
         function deviceCard(device) {
           var color = state.project.liveControls.deviceColors[device.id] || (device.controls[0].id.indexOf('tr8s-') === 0 ? '#4F8DFF' : '#B584FF');
           var label = state.project.liveControls.deviceLabels[device.id] || device.label;
-          var parameterOrder = { Tune: 0, Decay: 1, Ctrl: 2, Filter: 0, Mod: 1, FX: 2, Level: 3 };
+          var parameterOrder = { Tune: 0, Decay: 1, Ctrl: 2, Filter: 0, Mod: 1, FX: 2, Sound: 3, Level: 4 };
           var deviceControls = device.controls.slice().sort(function (a, b) { return parameterOrder[a.name] - parameterOrder[b.name]; });
+          var knobControls = deviceControls.filter(function (control) { return control.controlType === 'knob'; });
+          var levelControls = deviceControls.filter(function (control) { return control.controlType === 'fader'; });
+          // Todas las tarjetas reservan cuatro perillas: los slots vacios mantienen los
+          // faders alineados hoy y permiten sumar controles de la chart sin mover nada.
+          var parameterHtml = knobControls.map(function (control) { return parameterControl(control, color, label); }).join('');
+          for (var slot = knobControls.length; slot < 4; slot += 1) {
+            parameterHtml += '<div class="device-param device-param-spacer" aria-hidden="true"><span class="muted">.</span><strong>0</strong><button class="rotary-knob" type="button" disabled></button><button class="swing-toggle" type="button" disabled></button></div>';
+          }
+          parameterHtml += levelControls.map(function (control) { return parameterControl(control, color, label); }).join('');
           var checkbox = '';
           var soloActive = state.liveSoloDeviceId === device.id;
           var soloSafe = state.project.liveControls.soloSafeDeviceIds.indexOf(device.id) >= 0;
           var linkIndex = state.project.liveControls.linkedDeviceGroups.findIndex(function (group) { return group.deviceIds.indexOf(device.id) >= 0; });
-          return '<article class="device-card ' + (device.controls[0].id.indexOf('tr8s-') === 0 ? 'tr8s' : 'mc707') + (linkIndex >= 0 ? ' linked' : '') + (linkedSelectedIds.indexOf(device.id) >= 0 ? ' selected' : '') + '" style="--control-color:' + color + '" data-live-device-item="' + esc(device.id) + '"><div class="device-head">' + checkbox + '<input class="device-name" value="' + esc(label) + '" data-live-device-label="' + esc(device.id) + '" aria-label="Device name"><select class="control-color-select" style="--control-color:' + color + '" data-live-device-color="' + esc(device.id) + '" aria-label="Roland color">' + colorOptions(color) + '</select></div><div class="device-params">' + deviceControls.map(function (control) { return parameterControl(control, color, label); }).join('') + '</div><div class="device-actions"><button class="' + (soloActive ? 'active' : '') + '" data-live-solo="' + esc(device.id) + '" ' + (midiReady() ? '' : 'disabled') + '>' + (soloActive ? 'UNSOLO' : 'SOLO') + '</button><button class="' + (soloSafe ? 'active' : '') + '" data-live-solo-safe="' + esc(device.id) + '">' + (soloSafe ? 'SAFE' : 'SAFE') + '</button></div></article>';
+          return '<article class="device-card ' + (device.controls[0].id.indexOf('tr8s-') === 0 ? 'tr8s' : 'mc707') + (linkIndex >= 0 ? ' linked' : '') + (linkedSelectedIds.indexOf(device.id) >= 0 ? ' selected' : '') + '" style="--control-color:' + color + '" data-live-device-item="' + esc(device.id) + '"><div class="device-head">' + checkbox + '<input class="device-name" value="' + esc(label) + '" data-live-device-label="' + esc(device.id) + '" aria-label="Device name"><select class="control-color-select" style="--control-color:' + color + '" data-live-device-color="' + esc(device.id) + '" aria-label="Roland color">' + colorOptions(color) + '</select></div><div class="device-params">' + parameterHtml + '</div><div class="device-actions"><button class="' + (soloActive ? 'active' : '') + '" data-live-solo="' + esc(device.id) + '" ' + (midiReady() ? '' : 'disabled') + '>' + (soloActive ? 'UNSOLO' : 'SOLO') + '</button><button class="' + (soloSafe ? 'active' : '') + '" data-live-solo-safe="' + esc(device.id) + '">' + (soloSafe ? 'SAFE' : 'SAFE') + '</button></div></article>';
+        }
+        function globalFxControl(control) {
+          return '<div class="global-fx-control" style="--control-color:#4F8DFF" title="' + esc(control.destination) + '">' + parameterControl(control, '#4F8DFF', control.label) + '</div>';
         }
         function drumsMasterCard() {
           var control = byId['mc4-drums-level'];
           if (!control) return '';
-          return '<article class="device-card mc707" style="--control-color:#FF4F4F"><div class="device-head"><span class="device-name">DRUMS MASTER</span></div><div class="device-params">' + parameterControl(control, '#FF4F4F', 'DRUMS MASTER') + '</div></article>';
+          var spacer = '<div class="device-param device-param-spacer" aria-hidden="true"><span class="muted">.</span><strong>0</strong><button class="rotary-knob" type="button" disabled></button><button class="swing-toggle" type="button" disabled></button></div>';
+          return '<article class="device-card mc707" style="--control-color:#FF4F4F"><div class="device-head"><span class="device-name">DRUMS MASTER</span></div><div class="device-params">' + spacer + spacer + spacer + spacer + parameterControl(control, '#FF4F4F', 'DRUMS MASTER') + '</div></article>';
         }
         var assigned = {};
         state.project.liveControls.groups.forEach(function (group) { group.deviceIds.forEach(function (id) { assigned[id] = true; }); });
@@ -895,6 +1457,9 @@
           html += '<section class="device-group"><div class="device-group-head"><b>' + esc(group.name) + '</b><span class="muted">' + groupDevices.length + ' devices</span><button data-toggle-device-group="' + esc(group.id) + '">' + (group.collapsed ? 'EXPAND' : 'MINIMIZE') + '</button><button data-ungroup-devices="' + esc(group.id) + '">UNGROUP</button></div>' + (group.collapsed ? '' : '<div class="device-group-body"><div class="control-board">' + (group.id === 'drums' ? drumsMasterCard() : '') + groupDevices.map(deviceCard).join('') + '</div></div>') + '</section>';
         });
         el.liveControlsHost.innerHTML = html + '</div>';
+        el.globalFxHost.innerHTML = globalControls.length
+          ? '<div class="global-fx-strip"><b class="global-fx-title">TR-8S · GLOBAL FX</b>' + globalControls.map(globalFxControl).join('') + '</div>'
+          : '';
         renderControlSelection(orderedDevices);
       }
 
@@ -1014,19 +1579,19 @@
       // completo y queda un paso atras. Le paso al boton del rango: mostraba el estado
       // anterior, o sea encendido justo cuando el control estaba en el minimo.
       function updateLiveControlView(id, value) {
-        var readout = el.liveControlsHost.querySelector('[data-live-value="' + CSS.escape(id) + '"]');
-        if (readout) readout.textContent = String(value);
+        var controlView = document.querySelector('[data-live-value="' + CSS.escape(id) + '"]');
+        if (controlView) controlView.textContent = String(value);
         // El recorrido visible es el RANGO UTIL, no el limite duro: con el filtro entre 30
         // y 90, un 90 tiene que dejar la aguja al fondo y no a dos tercios.
         var rango = HPM.controlRange(id, state.project.liveControls);
         var t = rango.max === rango.min ? 0 : (value - rango.min) / (rango.max - rango.min);
         t = Math.max(0, Math.min(1, t));
-        var knob = el.liveControlsHost.querySelector('[data-live-knob="' + CSS.escape(id) + '"]');
+        var knob = document.querySelector('[data-live-knob="' + CSS.escape(id) + '"]');
         if (knob) {
           knob.style.setProperty('--knob-angle', (-135 + t * 270) + 'deg');
           knob.setAttribute('aria-valuenow', String(value));
         }
-        var swing = el.liveControlsHost.querySelector('[data-live-swing="' + CSS.escape(id) + '"]');
+        var swing = document.querySelector('[data-live-swing="' + CSS.escape(id) + '"]');
         if (swing) {
           var enMax = value >= rango.max;
           swing.classList.toggle('arriba', enMax);
@@ -1052,7 +1617,7 @@
       }
 
       function liveLevelControls() {
-        return HPM.controlRegistry().filter(function (control) { return control.name === 'Level'; });
+        return HPM.controlRegistry().filter(function (control) { return control.controlType === 'fader'; });
       }
 
       function instrumentLevelControls() {
@@ -1134,6 +1699,16 @@
         if (!state.playing || !state.scheduler || !state.transport) return;
         state.plan = HPM.buildPlaybackPlan(state.project, { ccStepBeats: 0.25 });
         state.scheduler.replacePlan(state.plan, performance.now());
+      }
+
+      function refreshLanePlanDuringDrag() {
+        if (!state.playing) return;
+        var now = performance.now();
+        // Rehacer cientos de eventos CC por cada pixel no aporta precision audible. Esta
+        // cadencia mantiene la respuesta en vivo y deja intacta la cola MIDI inmediata.
+        if (now - state.lastLanePlanRefreshAt < 80) return;
+        state.lastLanePlanRefreshAt = now;
+        refreshLivePlan();
       }
 
       function renderMidiOutputs() {
@@ -1239,26 +1814,29 @@
       function renderLanes() {
         var html = '';
         state.project.automationLanes.forEach(function (lane, laneIndex) {
-          html += '<article class="lane-card">';
+          // PLEGADA OCUPA UNA LINEA. Con ocho lanes abiertas la pantalla no entra en
+          // ningun monitor, y en vivo lo que importa es la que se esta dibujando.
+          var plegada = !!lane.collapsed;
+          html += '<article class="lane-card' + (plegada ? ' plegada' : '') + '">';
+          html += '<div class="lane-head">';
+          html += '<button class="secondary lane-fold" data-lane-fold="' + laneIndex + '" aria-expanded="' +
+            (plegada ? 'false' : 'true') + '" title="' + (plegada ? 'Desplegar' : 'Plegar') + '">' +
+            (plegada ? '▸' : '▾') + '</button>';
+          html += '<b style="color:' + colorDeLane(lane) + '">' + esc(lane.name) + '</b>';
+          html += '<span class="lane-cc">CH' + lane.channel + ' · CC' + lane.cc + ' · ' +
+            lane.points.length + ' puntos</span>';
+          html += '<span class="crece"></span>';
+          html += '<button class="danger" data-remove-lane="' + laneIndex + '">Remove Lane</button>';
+          html += '</div>';
+          if (plegada) { html += '</article>'; return; }
           html += '<div class="lane-meta">';
           html += '<label>Name<input type="text" value="' + esc(lane.name) + '" data-lane-name="' + laneIndex + '"></label>';
           html += '<label>MC-707 Track<select data-lane-mc-track="' + laneIndex + '">' + mcTrackOptions(lane.mcTrack) + '</select></label>';
           html += '<label>MIDI Channel<input type="number" value="' + lane.channel + '" readonly></label>';
           html += '<label>CC Parameter<select data-lane-cc="' + laneIndex + '">' + ccOptions(lane.mcTrack, lane.cc) + '</select></label>';
-          html += '<label>&nbsp;<button class="danger" data-remove-lane="' + laneIndex + '">Remove Lane</button></label>';
           html += '</div>';
           html += '<svg class="lane-svg" data-lane-svg="' + laneIndex + '" viewBox="0 0 1200 160" preserveAspectRatio="none"></svg>';
-          html += '<table class="lane-points"><thead><tr><th>Bar</th><th>Value</th><th>Lane</th><th></th></tr></thead><tbody>';
-          lane.points.forEach(function (point, pointIndex) {
-            html += '<tr>';
-            html += '<td><input type="number" min="1" max="' + state.project.totalBars + '" value="' + point.bar + '" data-point-bar="' + laneIndex + ':' + pointIndex + '"></td>';
-            html += '<td><input type="number" min="' + rangoDeLane(lane).min + '" max="' + rangoDeLane(lane).max + '" value="' + point.value + '" data-point-value="' + laneIndex + ':' + pointIndex + '"></td>';
-            html += '<td class="muted">' + lane.destination.toUpperCase() + ' · MC ' + lane.mcTrack + ' → MIDI CH' + lane.channel + ' · CC' + lane.cc + '</td>';
-            html += '<td><button class="danger" data-remove-point="' + laneIndex + ':' + pointIndex + '">Remove</button></td>';
-            html += '</tr>';
-          });
-          html += '</tbody></table>';
-          html += '<div class="actions"><button data-add-point="' + laneIndex + '">+ Point</button><span class="muted">Click en el gráfico para agregar, arrastrar para mover. Interpolación lineal y envío discretizado a 1/4 beat.</span></div>';
+          html += '<div class="lane-actions"><span class="muted">Click vacío agrega un punto. Arrastrá un punto para moverlo. Funciona durante PLAY: se actualiza sólo la automatización futura. Con un punto rojo: ←/↑ y →/↓ recorren puntos; Supr lo elimina.</span></div>';
           html += '</article>';
         });
         el.lanesHost.innerHTML = html || '<div class="muted">Sin lanes todavía.</div>';
@@ -1289,19 +1867,39 @@
             parts.push('<line x1="' + x + '" y1="' + box.padT + '" x2="' + x + '" y2="' + (h - box.padB) + '" stroke="' + (strong ? '#3f6068' : '#22373d') + '" stroke-width="' + (strong ? '2' : '1') + '"></line>');
           }
 
+          // LOS BORDES DE SECCION, ENCIMA DE LA GRILLA. La curva se dibuja contra el
+          // arreglo de verdad: donde entra el break se ve, no se cuenta. Es la misma
+          // geometria que la timeline de arriba, asi que las lineas coinciden.
+          HPM.sectionTimeline(state.project).forEach(function (seccion) {
+            var xs = xForBar(seccion.startBar, totalBars, w, box.padL, box.padR);
+            var color = colorDeSeccion(seccion.index);
+            if (seccion.index === state.selectedSectionIndex) {
+              var xe = Math.min(w - box.padR, xForBar(seccion.endBar, totalBars, w, box.padL, box.padR));
+              parts.push('<rect x="' + xs + '" y="' + box.padT + '" width="' + Math.max(0, xe - xs) +
+                '" height="' + (h - box.padT - box.padB) + '" style="fill:' + color + ';fill-opacity:.16"></rect>');
+            }
+            // El borde de la primera seccion es el marco del grafico: dibujarlo tapa el eje.
+            if (seccion.index === 0) return;
+            parts.push('<line x1="' + xs + '" y1="' + box.padT + '" x2="' + xs + '" y2="' + (h - box.padB) +
+              '" style="stroke:' + color + ';stroke-opacity:.55" stroke-width="2" stroke-dasharray="5 4"></line>');
+          });
+
           if (lane.points.length) {
             var path = lane.points.map(function (point, idx) {
               var x = xForBar(point.bar, totalBars, w, box.padL, box.padR);
               var y = yForValue(point.value, h, box.padT, box.padB, rg.min, rg.max);
               return (idx === 0 ? 'M' : 'L') + x + ' ' + y;
             }).join(' ');
-            parts.push('<path d="' + path + '" fill="none" stroke="#6fb7ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>');
+            parts.push('<path d="' + path + '" fill="none" stroke="' + colorDeLane(lane) +
+              '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>');
 
             lane.points.forEach(function (point, pointIndex) {
               var x = xForBar(point.bar, totalBars, w, box.padL, box.padR);
               var y = yForValue(point.value, h, box.padT, box.padB, rg.min, rg.max);
+              var selected = state.selectedLanePoint && state.selectedLanePoint.laneIndex === laneIndex && state.selectedLanePoint.pointIndex === pointIndex;
               parts.push('<g data-point-grab="' + laneIndex + ':' + pointIndex + '" style="cursor:grab">');
-              parts.push('<circle cx="' + x + '" cy="' + y + '" r="7" fill="#6af7d3" stroke="#051012" stroke-width="2"></circle>');
+              parts.push('<circle cx="' + x + '" cy="' + y + '" r="' + (selected ? '9' : '7') + '" fill="' +
+                (selected ? '#ff4f4f' : colorDeLane(lane)) + '" stroke="#051012" stroke-width="2"></circle>');
               parts.push('<text x="' + x + '" y="' + (y - 12) + '" text-anchor="middle" fill="#e5f0ef" font-size="11">' + point.value + '</text>');
               parts.push('</g>');
             });
@@ -1314,7 +1912,8 @@
             parts.push('<line x1="' + xh + '" y1="' + box.padT + '" x2="' + xh + '" y2="' + (h - box.padB) + '" stroke="#ffd166" stroke-width="3"></line>');
           }
 
-          parts.push('<text x="' + box.padL + '" y="14" fill="#6fb7ff" font-size="12">' + esc(lane.name) + ' · ' + lane.destination.toUpperCase() + ' · MIDI CH' + lane.channel + ' · CC' + lane.cc + '</text>');
+          parts.push('<text x="' + box.padL + '" y="14" fill="' + colorDeLane(lane) + '" font-size="12">' +
+            esc(lane.name) + ' · ' + lane.destination.toUpperCase() + ' · MIDI CH' + lane.channel + ' · CC' + lane.cc + '</text>');
           svg.innerHTML = parts.join('');
         });
       }
@@ -1325,7 +1924,80 @@
         renderAll();
       }
 
+      // ---------------------------------------------------------------- CLIPS → CC
+      //
+      // El .als no dice solo la estructura: dice DONDE SUENA CADA PISTA. Cada clip del
+      // Arrangement es un tramo sonando, y el resto del tema es silencio. Con el mapa de
+      // «Instrumentos por canal» eso se baja a CC: el Level de cada instrumento se prende
+      // al empezar el tramo y se apaga al terminarlo, con escalones secos.
+      //
+      // NO MANDA NADA. Dibuja lanes; suenan cuando se aprieta PLAY, como cualquier otra.
+      // Y es un paso de deshacer: si el mapeo estaba mal, Ctrl+Z y listo.
+      function lanesDesdeClips() {
+        if (!state.alsXml) { log('CLIPS → primero cargá un .als'); return; }
+        var asignados = state.project.liveControls.deviceChannel || {};
+        var devices = Object.keys(asignados);
+        if (!devices.length) {
+          log('CLIPS → falta decir qué instrumento entra por cada canal: usá SUGERIR en «Instrumentos por canal»');
+          return;
+        }
+        var pistas = HPM.readArrangementClips(state.alsXml, ALS);
+        if (!pistas.length) { log('CLIPS → el Set no tiene clips en el Arrangement'); return; }
+
+        // La pista se busca por el PAR USB, que es lo estable. Si esa pista no tiene
+        // clips, se prueba con su pista GUIDE, que es la que escribe ArrangeLab al lado.
+        var porKey = {}, porNombre = {};
+        pistas.forEach(function (t) {
+          if (t.key && !porKey[t.key]) porKey[t.key] = t;
+          porNombre[String(t.name).toUpperCase()] = t;
+        });
+        var nombreDePista = {};
+        (state.recordingTracks || []).forEach(function (t) { if (t.key) nombreDePista[t.key] = t.name; });
+
+        var registro = {};
+        HPM.controlRegistry().forEach(function (c) { registro[c.id] = c; });
+
+        var lanes = state.project.automationLanes.slice();
+        var hechas = [], sinClips = [];
+        devices.forEach(function (deviceId) {
+          var clave = asignados[deviceId];
+          var pista = porKey[clave];
+          if (!pista && nombreDePista[clave]) {
+            pista = porNombre[String(nombreDePista[clave]).toUpperCase() + ' — GUIDE'] ||
+                    porNombre[String(nombreDePista[clave]).toUpperCase()];
+          }
+          if (!pista) { sinClips.push(deviceId); return; }
+          var controlId = deviceId + '-level';
+          if (!registro[controlId]) return;
+          var rango = HPM.controlRange(controlId, state.project.liveControls);
+          var puntos = HPM.clipsToLanePoints(state.project, pista.regions, rango);
+          if (!puntos.length) { sinClips.push(deviceId); return; }
+          var yaEsta = lanes.filter(function (l) { return l.controlId === controlId; })[0];
+          if (yaEsta) yaEsta.points = puntos;
+          else lanes.push({ controlId: controlId, points: puntos, collapsed: true });
+          hechas.push({ device: registro[controlId].deviceLabel, pista: pista.name,
+                        tramos: pista.regions.length });
+        });
+
+        if (!hechas.length) {
+          log('CLIPS → ninguna pista asignada tiene clips en el Arrangement');
+          return;
+        }
+        anotarPaso();
+        state.project = HPM.normalizeProject(Object.assign({}, state.project, { automationLanes: lanes }));
+        log('CLIPS → ' + hechas.length + ' lanes de Level dibujadas desde el Set (no se envió MIDI)');
+        hechas.forEach(function (h) {
+          log('   ' + String(h.device).padEnd(12) + ' ← ' + String(h.pista).padEnd(14) + h.tramos + ' tramos');
+        });
+        if (sinClips.length) log('   sin clips: ' + sinClips.join(', '));
+        renderAll();
+      }
+
       function addLane() {
+        if (!state.project.structure) {
+          log('LANE → primero cargá un .als: el largo de la lane sale de sus locators');
+          return;
+        }
         var next = state.project.automationLanes.length + 1;
         state.project.automationLanes.push({
           id: 'lane-' + Date.now(),
@@ -1389,12 +2061,22 @@
       }
 
       async function play() {
+        if (!state.project.structure) {
+          log('PLAY → no hay .als cargado; el largo del tema sale de sus locators');
+          renderAll();
+          return;
+        }
         state.project = HPM.normalizeProject({
           bpm: Number(el.bpm.value),
-          totalBars: Number(el.bars.value),
+          // El campo BARS es un cartel, no una entrada: el largo lo recalcula
+          // normalizeProject desde la estructura.
+          totalBars: state.project.totalBars,
           controlChannel: state.project.controlChannel,
           midiOutputId: el.midiOutput.value,
           timeSignature: state.project.timeSignature,
+          // La estructura viaja: este objeto se arma con una lista blanca de campos y lo
+          // que no este aca se pierde al apretar PLAY.
+          structure: state.project.structure,
           programChanges: state.project.programChanges,
           automationLanes: state.project.automationLanes,
           liveControls: state.project.liveControls
@@ -1470,6 +2152,7 @@
           return;
         }
         renderSceneTimeline();
+        renderStructure();
         renderLaneCharts();
         state.playheadRaf = requestAnimationFrame(tickPlayhead);
       }
@@ -1517,7 +2200,29 @@
           addScene(last ? Math.min(state.project.totalBars, last.bar + 16) : 8, last ? Math.min(127, last.program + 1) : 0);
           return;
         }
+        if (target.id === 'clipsToCcBtn') { lanesDesdeClips(); return; }
         if (target.id === 'addLaneBtn') { addLane(); return; }
+        if (target.id === 'foldLanesBtn') {
+          var abiertas = state.project.automationLanes.some(function (l) { return !l.collapsed; });
+          state.project.automationLanes.forEach(function (l) { l.collapsed = abiertas; });
+          renderAll();
+          return;
+        }
+        if (target.dataset && target.dataset.laneFold !== undefined) {
+          var laneP = state.project.automationLanes[Number(target.dataset.laneFold)];
+          if (laneP) laneP.collapsed = !laneP.collapsed;
+          renderAll();
+          return;
+        }
+        if (target.id === 'round8Btn' || target.id === 'round16Btn') {
+          acomodarEnGrilla(target.id === 'round8Btn' ? 8 : 16);
+          return;
+        }
+        if (target.id === 'undoBtn') { deshacer(); return; }
+        if (target.id === 'redoBtn') { rehacer(); return; }
+        if (target.id === 'saveStructureBtn') { guardarEstructuraActual(); return; }
+        if (target.id === 'loadStructureBtn') { aplicarEstructuraGuardada(); return; }
+        if (target.id === 'delStructureBtn') { borrarEstructuraGuardada(); return; }
         if (target.id === 'refreshMidiBtn') { refreshMidi(true); return; }
         if (target.id === 'dryRunBtn') { toggleDryRun(); return; }
         if (target.id === 'playBtn') { play(); return; }
@@ -1582,6 +2287,11 @@
         var target = event.target;
         if (target === el.alsFile) { if (target.files[0]) cargarAls(target.files[0]); target.value = ''; return; }
         if (target === el.importFile) { importJson(target.files[0]); target.value = ''; return; }
+        if (target === el.structurePresetSelect) {
+          state.estructuraElegida = target.value;
+          renderAll();
+          return;
+        }
         if (target === el.midiOutput) {
           state.project.midiOutputId = target.value;
           state.connected = false;
@@ -1633,17 +2343,22 @@
           if (!estructura.sections.length) log('ALS → ' + file.name + ' no tiene locators: no hay estructura que traer');
           state.alsXml = xml;
           state.alsName = file.name;
-          state.structure = estructura;
           state.recordingTracks = pistas;
+          state.selectedSectionIndex = -1;
+          // LA ESTRUCTURA ENTRA AL PROYECTO, no a una variable suelta: asi se guarda con
+          // el preset, viaja en el Export JSON y sobrevive a recargar la pagina. Los
+          // compases dejan de tipearse: los deriva normalizeProject de esta suma.
           state.project = HPM.normalizeProject(Object.assign({}, state.project, {
             bpm: Math.round(tempo) || state.project.bpm,
-            totalBars: Math.max(1, Math.round(estructura.totalBars) || state.project.totalBars)
+            structure: Object.assign({}, estructura, { source: file.name })
           }));
           log('ALS → ' + file.name + ' · ' + Math.round(tempo) + ' BPM · ' +
               estructura.sections.length + ' secciones · ' + Math.round(estructura.totalBars) + ' bars' +
               (estructura.endName ? ' (fin: ' + estructura.endName + ')' : ''));
           if (estructura.sections.length)
             log('ALS → ' + estructura.sections.map(function (x) { return x.name + '(' + x.bars + ')'; }).join('  '));
+          if (state.project.structure)
+            log('ALS → las secciones son la timeline; BARS = ' + state.project.totalBars + ' (no manda MIDI)');
           // Se lista por BUS y no por nombre de pista: el nombre lo cambia Tomas, el bus
           // de la MC-707 no. Cuando difieren se muestran los dos.
           state.hardwareProfile = HPM.hardwareProfile(pistas);
@@ -1799,18 +2514,24 @@
         var ranges = {};
         Object.keys(state.project.liveControls.ranges || {}).forEach(function (k) { ranges[k] = state.project.liveControls.ranges[k]; });
         ranges[controlId] = { min: min, max: max };
-        state.project = HPM.normalizeProject(Object.assign({}, state.project,
+        // Lo dibujado se reescala al rango nuevo en vez de recortarse: el bloque es el
+        // mismo, cambia cuanto abre.
+        var conEscala = HPM.rescaleLanePoints(state.project, controlId, rango, { min: min, max: max });
+        state.project = HPM.normalizeProject(Object.assign({}, conEscala,
           { liveControls: Object.assign({}, state.project.liveControls, { ranges: ranges }) }));
         log('RANGO → ' + controlId + ' ' + min + '–' + max);
         renderAll();
       }
 
       function resetRango(controlId) {
+        var rangoPrevio = HPM.controlRange(controlId, state.project.liveControls);
         var ranges = {};
         Object.keys(state.project.liveControls.ranges || {}).forEach(function (k) {
           if (k !== controlId) ranges[k] = state.project.liveControls.ranges[k];
         });
-        state.project = HPM.normalizeProject(Object.assign({}, state.project,
+        var completo = HPM.controlRange(controlId, Object.assign({}, state.project.liveControls, { ranges: ranges }));
+        var reescalado = HPM.rescaleLanePoints(state.project, controlId, rangoPrevio, completo);
+        state.project = HPM.normalizeProject(Object.assign({}, reescalado,
           { liveControls: Object.assign({}, state.project.liveControls, { ranges: ranges }) }));
         log('RANGO → ' + controlId + ' vuelve al límite completo');
         renderAll();
@@ -1854,6 +2575,26 @@
       document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape' && !el.ctlMenu.hidden) { cerrarCtlMenu(); return; }
         var focused = document.activeElement;
+        if ((event.ctrlKey || event.metaKey) && (event.key === 'z' || event.key === 'Z')) {
+          event.preventDefault();
+          if (event.shiftKey) rehacer(); else deshacer();
+          return;
+        }
+        if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || event.key === 'Y')) {
+          event.preventDefault();
+          rehacer();
+          return;
+        }
+        if ((event.key === 'Delete' || event.key === 'Backspace') && state.selectedLanePoint && !(focused && focused.matches('input, select, textarea'))) {
+          event.preventDefault();
+          deleteSelectedLanePoint();
+          return;
+        }
+        if ((event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'ArrowUp' || event.key === 'ArrowDown') && state.selectedLanePoint && !(focused && focused.matches('input, select, textarea, button'))) {
+          event.preventDefault();
+          selectAdjacentLanePoint(event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1);
+          return;
+        }
         if ((event.code === 'Space' || event.key === ' ') && !event.repeat && !(focused && focused.matches('input, select, textarea, button'))) {
           event.preventDefault();
           if (state.playing) stop();
@@ -1868,10 +2609,6 @@
           event.preventDefault();
           return;
         }
-        if (!state.selectedLiveControlId || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
-        if (focused && (focused.matches('input:not([type="range"]), select, textarea') || focused.classList.contains('control-name'))) return;
-        event.preventDefault();
-        moveSelectedControl(event.key === 'ArrowLeft' ? -1 : 1);
       });
 
       function updateFromField(target) {
@@ -1893,7 +2630,12 @@
         else if (target.dataset.liveDeviceColor !== undefined) state.project.liveControls.deviceColors[target.dataset.liveDeviceColor] = target.value;
         else if (target.dataset.sceneBar !== undefined) state.project.programChanges[Number(target.dataset.sceneBar)].bar = Number(target.value);
         else if (target.dataset.sceneProgram !== undefined) state.project.programChanges[Number(target.dataset.sceneProgram)].program = Number(target.value);
-        else if (target.dataset.laneName !== undefined) state.project.automationLanes[Number(target.dataset.laneName)].name = target.value;
+        else if (target.dataset.laneName !== undefined) {
+          // Escribir a mano fija el nombre; vaciarlo lo devuelve al del canal.
+          var laneN = state.project.automationLanes[Number(target.dataset.laneName)];
+          laneN.customName = target.value.trim();
+          laneN.name = laneN.customName;
+        }
         else if (target.dataset.laneMcTrack !== undefined) state.project.automationLanes[Number(target.dataset.laneMcTrack)].mcTrack = Number(target.value);
         else if (target.dataset.laneCc !== undefined) state.project.automationLanes[Number(target.dataset.laneCc)].cc = Number(target.value);
         else if (target.dataset.pointBar) {
@@ -1916,6 +2658,35 @@
         addScene(bar, Math.min(127, lastProgram + 1));
       });
 
+      // El nombre y los compases se aplican al soltar el campo, no en cada tecla: cada
+      // cambio de largo mueve puntos de automatizacion. Los campos viven en la barra
+      // flotante, que se redibuja entera, asi que van por delegacion.
+      el.secbar.addEventListener('change', function (event) {
+        var lista = HPM.editableSections(state.project);
+        var i = state.selectedSectionIndex;
+        if (i < 0 || !lista[i]) return;
+        if (event.target.id === 'secName') {
+          var nombre = event.target.value.trim();
+          if (!nombre || nombre === lista[i].name) { renderAll(); return; }
+          lista[i].name = nombre;
+          aplicarSecciones(lista, 'renombrada: ' + nombre);
+          return;
+        }
+        if (event.target.id === 'secBars') {
+          var bars = Math.max(1, Math.min(512, Math.round(Number(event.target.value) || lista[i].bars)));
+          if (bars === lista[i].bars) { renderAll(); return; }
+          lista[i].bars = bars;
+          aplicarSecciones(lista, lista[i].name + ' → ' + bars + ' bars');
+        }
+      });
+
+      el.secbar.addEventListener('click', function (event) {
+        var pintar = event.target.closest('[data-seccolor]');
+        if (pintar) { opSeccion('pintar', pintar.dataset.seccolor); return; }
+        var boton = event.target.closest('[data-secop]');
+        if (boton) opSeccion(boton.dataset.secop);
+      });
+
       document.addEventListener('click', function (event) {
         var marker = event.target.closest('[data-scene-marker]');
         if (!marker) return;
@@ -1925,22 +2696,81 @@
         renderAll();
       });
 
-      document.addEventListener('click', function (event) {
-        var svg = event.target.closest('[data-lane-svg]');
-        if (!svg) return;
-        if (event.target.closest('[data-point-grab]')) return;
-        var laneIndex = Number(svg.dataset.laneSvg);
+      // AGREGAR UN PUNTO DONDE SE TOCO. Devuelve el indice que le toco despues de
+      // ordenar, o -1 si no hay lane.
+      function addLanePointAt(svg, laneIndex, clientX, clientY) {
+        var lane = state.project.automationLanes[laneIndex];
+        if (!lane) return -1;
         var rect = svg.getBoundingClientRect();
         var box = layoutForSvg(svg);
-        var x = ((event.clientX - rect.left) / rect.width) * box.width;
-        var y = ((event.clientY - rect.top) / rect.height) * box.height;
-        var rgAdd = rangoDeLane(state.project.automationLanes[laneIndex]);
-        state.project.automationLanes[laneIndex].points.push({
-          bar: barForX(x, state.project.totalBars, box.width, box.padL, box.padR),
-          value: valueForY(y, box.height, box.padT, box.padB, rgAdd.min, rgAdd.max)
+        var x = ((clientX - rect.left) / rect.width) * box.width;
+        var y = ((clientY - rect.top) / rect.height) * box.height;
+        var rango = rangoDeLane(lane);
+        var punto = {
+          bar: freeBarForLane(lane, barForX(x, state.project.totalBars, box.width, box.padL, box.padR)),
+          value: valueForY(y, box.height, box.padT, box.padB, rango.min, rango.max)
+        };
+        // Estable y con el nuevo al final de su compas: si cae sobre otro, el que ya
+        // estaba es el valor que LLEGA y el nuevo el que SALE. Eso es un escalon.
+        lane.points.push(punto);
+        lane.points = lane.points
+          .map(function (p, i) { return { p: p, i: p === punto ? Infinity : i }; })
+          .sort(function (a, b) { return a.p.bar - b.p.bar || a.i - b.i; })
+          .map(function (x) { return x.p; });
+        return lane.points.indexOf(punto);
+      }
+
+      // UN SEGUNDO PUNTO EN EL MISMO COMPAS ES UN ESCALON y se permite: es la unica forma
+      // de que un valor salte de golpe -un corte, un mute- en vez de llegar en rampa. El
+      // tercero no: no se podria ni ver ni agarrar, asi que ese si se corre al compas
+      // libre mas cercano.
+      function freeBarForLane(lane, wanted, pointIndex) {
+        var cuantos = {};
+        lane.points.forEach(function (point, index) {
+          if (index === pointIndex) return;
+          cuantos[point.bar] = (cuantos[point.bar] || 0) + 1;
         });
+        if ((cuantos[wanted] || 0) < 2) return wanted;
+        for (var offset = 1; offset < state.project.totalBars; offset += 1) {
+          var forward = wanted + offset;
+          var backward = wanted - offset;
+          if (forward <= state.project.totalBars && (cuantos[forward] || 0) < 2) return forward;
+          if (backward >= 1 && (cuantos[backward] || 0) < 2) return backward;
+        }
+        return wanted;
+      }
+
+      // Los limites son INCLUSIVOS: un punto puede quedar en el mismo compas que su
+      // vecino, que es como se arrastra un escalon hasta pegarlo.
+      function constrainedBarForPoint(lane, pointIndex, wanted) {
+        var previous = pointIndex > 0 ? lane.points[pointIndex - 1].bar : 1;
+        var next = pointIndex < lane.points.length - 1 ? lane.points[pointIndex + 1].bar : state.project.totalBars;
+        return Math.max(previous, Math.min(next, wanted));
+      }
+
+      function deleteSelectedLanePoint() {
+        var selected = state.selectedLanePoint;
+        if (!selected) return;
+        var lane = state.project.automationLanes[selected.laneIndex];
+        if (!lane || !lane.points[selected.pointIndex]) return;
+        lane.points.splice(selected.pointIndex, 1);
+        // La seleccion sigue en la misma lane para poder borrar una secuencia con Supr.
+        // Prioriza el punto anterior; si se borro el primero, toma el que quedo primero.
+        state.selectedLanePoint = lane.points.length
+          ? { laneIndex: selected.laneIndex, pointIndex: Math.max(0, selected.pointIndex - 1) }
+          : null;
         renderAll();
-      });
+      }
+
+      function selectAdjacentLanePoint(direction) {
+        var selected = state.selectedLanePoint;
+        var lane = selected && state.project.automationLanes[selected.laneIndex];
+        if (!lane || !lane.points.length) return;
+        var next = selected.pointIndex + direction;
+        if (next < 0 || next >= lane.points.length) return;
+        state.selectedLanePoint = { laneIndex: selected.laneIndex, pointIndex: next };
+        renderAll();
+      }
 
       document.addEventListener('pointerdown', function (event) {
         var knob = event.target.closest('[data-live-knob]');
@@ -1952,15 +2782,110 @@
           event.preventDefault();
           return;
         }
+        // ESTIRAR UNA SECCION desde su borde derecho. El ancho de un segmento es su
+        // duracion, asi que el arrastre se traduce a compases con los pixeles por compas
+        // medidos al empezar: si se recalcularan en cada paso, el largo se realimentaria.
+        var agarre = event.target.closest('[data-secgrip]');
+        if (agarre) {
+          var iSec = Number(agarre.dataset.secgrip);
+          var lista0 = HPM.editableSections(state.project);
+          if (!lista0[iSec]) return;
+          var caja = agarre.closest('[data-secrow]').getBoundingClientRect();
+          anotarPaso();
+          state.secDrag = {
+            index: iSec, startX: event.clientX, startBars: lista0[iSec].bars,
+            pxPorBar: Math.max(1, caja.width) / Math.max(1, lista0[iSec].bars)
+          };
+          state.selectedSectionIndex = iSec;
+          try { agarre.setPointerCapture(event.pointerId); } catch (_err) {}
+          event.preventDefault();
+          renderStructure();
+          return;
+        }
+        // ARRASTRAR UNA SECCION PARA REORDENARLA, como en ArrangeLab. Se decide en el
+        // pointermove: si no se movio, fue un click y solo elige.
+        var segmento = event.target.closest('[data-secrow]');
+        if (segmento && el.structureStrip.contains(segmento)) {
+          // `yaEstaba` es la seleccion ANTES de este gesto: sin eso, el pointerdown elige
+          // y el pointerup vuelve a alternar sobre lo que acaba de elegir, asi que nada
+          // quedaba elegido nunca.
+          state.secMove = { index: Number(segmento.dataset.secrow), startX: event.clientX,
+            arrastro: false, yaEstaba: state.selectedSectionIndex };
+          state.selectedSectionIndex = state.secMove.index;
+          state.paletaAbierta = false;
+          renderStructure();
+          event.preventDefault();
+          return;
+        }
         var grip = event.target.closest('[data-point-grab]');
-        if (!grip) return;
+        if (!grip) {
+          // CREAR UN PUNTO ES pointerdown, NO click, Y ESTO ES POR EL PLAY.
+          //
+          // Durante la reproduccion el SVG se redibuja en cada frame para mover el
+          // cabezal: el nodo que recibio el mousedown ya no esta en el arbol cuando llega
+          // el mouseup, y el click se pierde o cae en otro lado. Con pointerdown el punto
+          // se crea siempre, y ademas queda agarrado para arrastrarlo sin soltar el dedo.
+          var vacio = event.target.closest('[data-lane-svg]');
+          if (!vacio || event.button !== 0) return;
+          var laneVacia = Number(vacio.dataset.laneSvg);
+          var nuevo = addLanePointAt(vacio, laneVacia, event.clientX, event.clientY);
+          if (nuevo < 0) return;
+          state.selectedLanePoint = { laneIndex: laneVacia, pointIndex: nuevo };
+          state.drag = { laneIndex: laneVacia, pointIndex: nuevo, svg: vacio };
+          // La captura va en el <svg>, que sobrevive al redibujo; el <g> del punto no.
+          try { vacio.setPointerCapture(event.pointerId); } catch (_err) {}
+          // Nada de renderAll aca: reescribiria el host de lanes y se perderia el SVG que
+          // se esta arrastrando. Se refresca el plan futuro y el dibujo, como en el drag.
+          refreshLivePlan();
+          saveProject();
+          renderLaneCharts();
+          event.preventDefault();
+          return;
+        }
         var ids = grip.dataset.pointGrab.split(':').map(Number);
         var svg = grip.closest('svg');
+        state.selectedLanePoint = { laneIndex: ids[0], pointIndex: ids[1] };
         state.drag = { laneIndex: ids[0], pointIndex: ids[1], svg: svg };
         grip.setPointerCapture(event.pointerId);
       });
 
       document.addEventListener('pointermove', function (event) {
+        if (state.secMove) {
+          var lista = HPM.editableSections(state.project);
+          var desde = state.secMove.index;
+          // Sobre que seccion esta el cursor. Se pregunta al DOM en vez de calcular
+          // anchos: los segmentos tienen un piso de ancho y no son proporcionales exactos.
+          var destino = desde;
+          Array.prototype.forEach.call(el.structureStrip.querySelectorAll('[data-secrow]'), function (nodo) {
+            var caja = nodo.getBoundingClientRect();
+            if (event.clientX >= caja.left && event.clientX <= caja.right) destino = Number(nodo.dataset.secrow);
+          });
+          if (destino === desde) return;
+          if (!state.secMove.arrastro) { anotarPaso(); state.secMove.arrastro = true; }
+          lista.splice(destino, 0, lista.splice(desde, 1)[0]);
+          state.secMove.index = destino;
+          state.selectedSectionIndex = destino;
+          state.project = HPM.remapStructure(state.project, lista);
+          refreshLivePlan();
+          renderStructure();
+          renderLaneCharts();
+          return;
+        }
+        if (state.secDrag) {
+          var lista = HPM.editableSections(state.project);
+          var actual = lista[state.secDrag.index];
+          if (!actual) return;
+          var bars = Math.max(1, Math.min(512, Math.round(
+            state.secDrag.startBars + (event.clientX - state.secDrag.startX) / state.secDrag.pxPorBar)));
+          if (bars === actual.bars) return;
+          actual.bars = bars;
+          state.project = HPM.remapStructure(state.project, lista);
+          refreshLivePlan();
+          // Sin renderAll durante el arrastre: reescribir todo el panel corta el gesto.
+          renderStructure();
+          renderLaneCharts();
+          return;
+        }
         if (state.knobDrag) {
           sendLiveControl(state.knobDrag.id, state.knobDrag.startValue + (state.knobDrag.startY - event.clientY));
           return;
@@ -1973,19 +2898,46 @@
         var lane = state.project.automationLanes[state.drag.laneIndex];
         var rgDrag = rangoDeLane(lane);
         lane.points[state.drag.pointIndex] = {
-          bar: barForX(x, state.project.totalBars, box.width, box.padL, box.padR),
+          bar: constrainedBarForPoint(lane, state.drag.pointIndex, barForX(x, state.project.totalBars, box.width, box.padL, box.padR)),
           value: valueForY(y, box.height, box.padT, box.padB, rgDrag.min, rgDrag.max)
         };
-        renderAll();
+        refreshLanePlanDuringDrag();
+        renderLaneCharts();
       });
 
       document.addEventListener('pointerup', function () {
+        if (state.secMove) {
+          var movida = state.secMove;
+          state.secMove = null;
+          if (movida.arrastro) {
+            log('ESTRUCTURA → movida a la posición ' + (movida.index + 1));
+            saveProject();
+            renderAll();
+            return;
+          }
+          // No se movio: fue un click, y un click elige o suelta la seccion.
+          state.selectedSectionIndex = movida.yaEstaba === movida.index ? -1 : movida.index;
+          state.paletaAbierta = false;
+          renderAll();
+          return;
+        }
+        if (state.secDrag) {
+          var secciones = HPM.sectionTimeline(state.project);
+          var tocada = secciones[state.secDrag.index];
+          state.secDrag = null;
+          saveProject();
+          if (tocada) log('ESTRUCTURA → ' + tocada.name + ' → ' + barsLegibles(tocada.bars) +
+            ' bars · ' + state.project.totalBars + ' bars en total');
+          renderAll();
+          return;
+        }
         if (state.knobDrag) {
           state.knobDrag = null;
           return;
         }
         if (!state.drag) return;
         state.drag = null;
+        renderAll();
       });
 
       renderAll();

@@ -12,8 +12,17 @@
     ['#FF4F4F', 'Red'], ['#FF8A2A', 'Orange'], ['#4F8DFF', 'Blue'],
     ['#34F06E', 'Green'], ['#B584FF', 'Purple'], ['#FF63C5', 'Pink'], ['#F4F7FB', 'White']
   ];
+  // LA PALETA DE SECCION, en hexadecimal. Es la misma de ArrangeLab y en el mismo orden.
+  // Vive en el core y no en la pagina porque el color se GUARDA en la seccion: si fuera
+  // una variable CSS, al mover una seccion el color se quedaria en la posicion en vez de
+  // viajar con ella, que es justo lo que no tiene que pasar.
+  var SECTION_PALETTE = [
+    '#ff8a2a', '#ffd84a', '#34f06e', '#4f8dff', '#b584ff', '#ff63c5',
+    '#f4f7fb', '#56e6ff', '#f6f1a4', '#a8d9ff', '#ffb4df', '#a8f1bf'
+  ];
+
   var CC_CATALOGS = {
-    mc707: [[1,'Modulation'],[5,'Portamento Time'],[7,'Volume'],[10,'Pan'],[11,'Expression'],[64,'Hold'],[65,'Portamento'],[66,'Sostenuto'],[67,'Soft'],[68,'Legato'],[71,'Resonance'],[72,'Release'],[73,'Attack'],[74,'Cutoff'],[75,'Decay'],[76,'Vibrato Rate'],[77,'Vibrato Depth'],[78,'Vibrato Delay'],[80,'Filter Knob'],[81,'Mod Knob'],[82,'FX Knob'],[83,'Sound Knob'],[91,'Reverb Send'],[93,'Chorus Send']],
+    mc707: [[1,'Modulation'],[5,'Portamento Time'],[7,'Volume'],[10,'Pan'],[11,'Expression'],[64,'Hold'],[65,'Portamento'],[66,'Sostenuto'],[67,'Soft'],[68,'Legato'],[71,'Resonance'],[72,'Release'],[73,'Attack'],[74,'Cutoff'],[75,'Decay'],[76,'Vibrato Rate'],[77,'Vibrato Depth'],[78,'Vibrato Delay'],[80,'Filter Knob'],[81,'Mod Knob'],[82,'FX Knob'],[83,'Sound Knob'],[91,'Reverb Send'],[92,'Chorus Send']],
     tr8s: [[9,'Shuffle'],[12,'External In Level'],[14,'Auto Fill In'],[15,'Master FX On'],[16,'Delay Level'],[17,'Delay Time'],[18,'Delay Feedback'],[19,'Master FX Ctrl'],[20,'BD Tune'],[23,'BD Decay'],[24,'BD Level'],[25,'SD Tune'],[28,'SD Decay'],[29,'SD Level'],[46,'LT Tune'],[47,'LT Decay'],[48,'LT Level'],[49,'MT Tune'],[50,'MT Decay'],[51,'MT Level'],[52,'HT Tune'],[53,'HT Decay'],[54,'HT Level'],[55,'RS Tune'],[56,'RS Decay'],[57,'RS Level'],[58,'HC Tune'],[59,'HC Decay'],[60,'HC Level'],[61,'CH Tune'],[62,'CH Decay'],[63,'CH Level'],[70,'Auto Fill Trigger'],[71,'Accent'],[80,'OH Tune'],[81,'OH Decay'],[82,'OH Level'],[83,'CC Tune'],[84,'CC Decay'],[85,'CC Level'],[86,'RC Tune'],[87,'RC Decay'],[88,'RC Level'],[91,'Reverb Level'],[96,'BD Ctrl'],[97,'SD Ctrl'],[102,'LT Ctrl'],[103,'MT Ctrl'],[104,'HT Ctrl'],[105,'RS Ctrl'],[106,'HC Ctrl'],[107,'CH Ctrl'],[108,'OH Ctrl'],[109,'CC Ctrl'],[110,'RC Ctrl']]
   };
   var DEFAULT_STEMS = [
@@ -47,6 +56,14 @@
       { id:'tr8s-' + id + '-ctrl', label:label, name:'Ctrl', destination:'MIDI CH8 · CC' + instrument[5], targets:[[8, instrument[5]]] }
     );
   });
+  // FX globales de la TR-8S. Son perillas, aunque dos se llamen Level: no participan de
+  // MUTE ALL ni de SOLO, que operan exclusivamente sobre faders de instrumentos.
+  REALTIME_CONTROLS.push(
+    { id:'tr8s-delay-level', label:'TR-8S · Delay', name:'Level', globalLabel:'Delay Level', destination:'MIDI CH8 · CC16', targets:[[8,16]], controlType:'knob', global:true },
+    { id:'tr8s-delay-feedback', label:'TR-8S · Delay', name:'Feedback', globalLabel:'Delay Feedback', destination:'MIDI CH8 · CC18', targets:[[8,18]], global:true },
+    { id:'tr8s-master-fx-ctrl', label:'TR-8S · Master FX', name:'Ctrl', globalLabel:'Master FX Ctrl', destination:'MIDI CH8 · CC19', targets:[[8,19]], global:true },
+    { id:'tr8s-reverb-level', label:'TR-8S · Reverb', name:'Level', globalLabel:'Reverb Level', destination:'MIDI CH8 · CC91', targets:[[8,91]], controlType:'knob', global:true }
+  );
   // MC track 4 is the recorded drums return. It is a DRUMS-group master, not a TR-8S instrument level.
   REALTIME_CONTROLS.push({ id:'mc4-drums-level', label:'MC 4 · Drums Master', name:'Level', destination:'MC-707 · MIDI CH8 · CC7', targets:[[8,7]], hidden:true });
   MC_SYNTHS.forEach(function (synth) {
@@ -54,7 +71,8 @@
       { id:synth[0] + '-level', label:synth[1], name:'Level', destination:'MC-707 · MIDI CH' + synth[2], targets:[[synth[2],7]] },
       { id:synth[0] + '-filter', label:synth[1], name:'Filter', destination:'MC-707 · MIDI CH' + synth[2], targets:[[synth[2],80]] },
       { id:synth[0] + '-mod', label:synth[1], name:'Mod', destination:'MC-707 · MIDI CH' + synth[2], targets:[[synth[2],81]] },
-      { id:synth[0] + '-fx', label:synth[1], name:'FX', destination:'MC-707 · MIDI CH' + synth[2], targets:[[synth[2],82]] }
+      { id:synth[0] + '-fx', label:synth[1], name:'FX', destination:'MC-707 · MIDI CH' + synth[2], targets:[[synth[2],82]] },
+      { id:synth[0] + '-sound', label:synth[1], name:'Sound', destination:'MC-707 · MIDI CH' + synth[2], targets:[[synth[2],83]] }
     );
   });
 
@@ -64,10 +82,10 @@
       var isTr8s = control.id.indexOf('tr8s-') === 0;
       registered.logicalDestination = isTr8s ? 'TR-8S · ' + control.destination : control.destination;
       registered.physicalOutput = 'MC-707 USB MIDI OUT';
-      registered.controlType = control.name === 'Level' ? 'fader' : 'knob';
+      registered.controlType = control.controlType || (control.name === 'Level' ? 'fader' : 'knob');
       registered.min = Number.isFinite(control.min) ? control.min : 0;
       registered.max = Number.isFinite(control.max) ? control.max : 127;
-      registered.deviceId = control.id.replace(/-(level|tune|decay|ctrl|filter|mod|fx)$/, '');
+      registered.deviceId = control.id.replace(/-(level|tune|decay|ctrl|filter|mod|fx|sound|feedback)$/, '');
       registered.deviceLabel = control.label;
       registered.renamable = control.name === 'Ctrl';
       return registered;
@@ -81,6 +99,8 @@
     controlChannel: 16,
     midiOutputId: '',
     timeSignature: { numerator: 4, denominator: 4 },
+    // La estructura del Set: null hasta que se cargue un .als con locators.
+    structure: null,
     programChanges: [],
     automationLanes: [],
     liveControls: { order: [], labels: {}, colors: {}, groups: [], linkedDeviceGroups: [], soloSafeDeviceIds: [], ranges: {}, deviceChannel: {} },
@@ -149,15 +169,25 @@
     if (control) {
       var channel = control.targets[0][0];
       var track = mcTrackForChannel(channel, 5);
+      // EL NOMBRE ES EL QUE PUSO TOMAS. Si renombro el canal a "ACID2", la lane se llama
+      // "ACID2 · Filter" y no "MC 6 · Lead": el nombre de fabrica no le dice nada a nadie.
+      // Se recalcula siempre, salvo que la lane tenga un nombre escrito a mano.
+      var etiquetaDevice = (liveControls && liveControls.deviceLabels && liveControls.deviceLabels[control.deviceId]) ||
+        control.deviceLabel;
+      var etiquetaParam = (liveControls && liveControls.labels && liveControls.labels[control.id]) || control.name;
       return {
         id: safe.id || ('lane-' + control.id),
-        name: safe.name || (control.deviceLabel + ' · ' + control.name),
+        customName: String(safe.customName || ''),
+        name: safe.customName || (etiquetaDevice + ' · ' + etiquetaParam),
+        // Plegada o no es del proyecto: en vivo se abre la que se esta dibujando y el
+        // resto queda en una linea.
+        collapsed: !!safe.collapsed,
         controlId: control.id,
         mcTrack: track,
         channel: channel,
         destination: MC_TRACK_DESTINATIONS[track],
         cc: control.targets[0][1],
-        points: dedupeBars(points)
+        points: dedupePoints(points)
       };
     }
     var mcTrack = clampInt(safe.mcTrack !== undefined ? safe.mcTrack : safe.channel, 1, 8, 5);
@@ -169,7 +199,7 @@
       channel: MC_TRACK_MIDI_CHANNELS[mcTrack],
       destination: MC_TRACK_DESTINATIONS[mcTrack],
       cc: clampInt(safe.cc, 0, 127, 74),
-      points: dedupeBars(points)
+      points: dedupePoints(points)
     };
   }
 
@@ -293,6 +323,21 @@
     });
   }
 
+  // DOS PUNTOS EN EL MISMO COMPAS SON UN ESCALON, no un error: el valor salta ahi mismo
+  // en vez de subir en rampa. `interpolateLaneValue` ya lo resuelve -si los dos beats son
+  // iguales devuelve el segundo-, asi que lo unico que hay que hacer es no borrarlos.
+  // Tres si serian un error: el del medio no se puede ni ver ni tocar.
+  function dedupePoints(points) {
+    var out = [];
+    for (var i = 0; i < points.length; i += 1) {
+      var enEseCompas = 0;
+      for (var j = out.length - 1; j >= 0 && out[j].bar === points[i].bar; j -= 1) enEseCompas += 1;
+      if (enEseCompas >= 2) out[out.length - 1] = points[i];
+      else out.push(points[i]);
+    }
+    return out;
+  }
+
   function dedupeBars(items) {
     var out = [];
     for (var i = 0; i < items.length; i += 1) {
@@ -332,6 +377,7 @@
         numerator: clampInt(raw.timeSignature && raw.timeSignature.numerator, 1, 32, 4),
         denominator: clampInt(raw.timeSignature && raw.timeSignature.denominator, 1, 32, 4)
       },
+      structure: normalizeStructure(raw.structure),
       programChanges: Array.isArray(raw.programChanges)
         ? dedupeBars(raw.programChanges.map(normalizeProgramChange).sort(sortByBar))
         : [],
@@ -348,6 +394,31 @@
       ? rawLanes.map(function (lane, i) { return normalizeLane(lane, i, safe.liveControls); })
       : [];
 
+    // EL LARGO LO MANDA EL SET, SIEMPRE. Los compases son la suma de las secciones y no
+    // un numero tipeado: es la consecuencia directa de traer los locators. Se redondea
+    // para arriba porque un locator puede caer a mitad de compas y ese compas igual
+    // existe.
+    //
+    // Y NADA LO PUEDE ESTIRAR. Un punto o una escena mas alla del ultimo locator se pega
+    // al final en vez de agrandar la timeline: si el tema dura 152 compases, la pagina
+    // dura 152 compases. Antes cualquier punto suelto corria el final y la pantalla
+    // dejaba de coincidir con el Set.
+    var barsFromStructure = Math.ceil(structureTotalBars(safe.structure));
+    if (barsFromStructure > 0) {
+      safe.totalBars = clampInt(barsFromStructure, 1, 9999, safe.totalBars);
+      safe.programChanges = dedupeBars(safe.programChanges.map(function (pc) {
+        return pc.bar > safe.totalBars ? { bar: safe.totalBars, program: pc.program } : pc;
+      }).sort(sortByBar));
+      safe.automationLanes.forEach(function (lane) {
+        lane.points = dedupePoints(lane.points.map(function (point) {
+          return point.bar > safe.totalBars ? { bar: safe.totalBars, value: point.value } : point;
+        }).sort(sortByBar));
+      });
+      return safe;
+    }
+
+    // Sin estructura no hay largo propio: esto es solo para que un proyecto viejo no
+    // pierda puntos. La pagina no deja tocar en este estado.
     if (safe.programChanges.length && safe.totalBars < safe.programChanges[safe.programChanges.length - 1].bar) {
       safe.totalBars = safe.programChanges[safe.programChanges.length - 1].bar;
     }
@@ -370,6 +441,15 @@
     var points = lane.points;
     var firstBeat = barToBeat(project, points[0].bar);
     if (beat <= firstBeat) return points[0].value;
+
+    // JUSTO ENCIMA DE UN PUNTO MANDA EL ULTIMO DE ESE COMPAS. Con un escalon -dos puntos
+    // en el mismo compas- el valor nuevo tiene que entrar EN el compas, no un paso
+    // despues: si no, un corte llega tarde.
+    var exacto = null;
+    for (var e = 0; e < points.length; e += 1) {
+      if (barToBeat(project, points[e].bar) === beat) exacto = points[e];
+    }
+    if (exacto) return exacto.value;
 
     for (var i = 0; i < points.length - 1; i += 1) {
       var a = points[i];
@@ -603,6 +683,182 @@
              endName: locators.length ? String(locators[locators.length - 1].name || '').trim() : '' };
   }
 
+  // ------------------------------------------------------ la estructura como timeline
+  //
+  // Los locators dejan de ser una linea de log y pasan a ser parte del proyecto: se
+  // guardan con el preset y viajan en el Export JSON. El formato es el que ya fijo
+  // HARDWARE_ARRANGEMENT_DESIGN.md 2 bis -{ bpb, sections: [{ name, bars }] }- mas el
+  // nombre del archivo del que salieron, que es contexto y no dato musical.
+  //
+  // ESTO NO ENVIA NADA. Es geometria: donde empieza y donde termina cada seccion. Los
+  // bloques de performance se van a colgar de aca, pero todavia no existen.
+  function normalizeStructure(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    var sections = (Array.isArray(raw.sections) ? raw.sections : []).map(function (section, i) {
+      var bars = Number(section && section.bars);
+      if (!Number.isFinite(bars) || bars <= 0) return null;
+      var color = String((section && section.color) || '').trim();
+      return {
+        name: String((section && section.name) || '').trim() || ('SECTION ' + (i + 1)),
+        // Un locator puede no caer en el borde de un compas: se conserva el largo real
+        // redondeado al milesimo en vez de mentir un entero.
+        bars: Math.round(bars * 1000) / 1000,
+        // EL COLOR ES DE LA INTERFAZ Y NO SE ESCRIBE EN EL .als: un <Locator> son cinco
+        // campos y ninguno es color. Se materializa al normalizar -el que le toca por
+        // indice- para que despues VIAJE CON LA SECCION: si se quedara implicito, mover
+        // una seccion le cambiaria el color, que es lo que hace ArrangeLab y lo que
+        // esperaba Tomas.
+        color: /^#[0-9a-fA-F]{3,8}$/.test(color) ? color : SECTION_PALETTE[i % SECTION_PALETTE.length],
+        // FILL: la seccion corta que anuncia el cambio. Por ahora es una marca visual y
+        // nada mas: en CC-only todavia no dispara nada.
+        fill: !!(section && section.fill)
+      };
+    }).filter(Boolean);
+    if (!sections.length) return null;
+    return {
+      source: String(raw.source || '').slice(0, 120),
+      endName: String(raw.endName || '').slice(0, 120),
+      bpb: clampInt(raw.bpb, 1, 32, 4),
+      sections: sections
+    };
+  }
+
+  function structureTotalBars(structure) {
+    if (!structure || !structure.sections || !structure.sections.length) return 0;
+    return structure.sections.reduce(function (acc, s) { return acc + s.bars; }, 0);
+  }
+
+  // Las secciones ya ubicadas: cada una sabe en que compas empieza y en cual termina.
+  // Es lo que dibuja la timeline y lo que despues va a decidir en que tramo cae un bloque.
+  // El compas es 1-based como en Live y `endBar` es exclusivo: la seccion que empieza en
+  // 1 y dura 16 termina en 17, que es donde empieza la siguiente.
+  //
+  // Los beats salen de `beatsPerBar(project)` y no de `structure.bpb`: el transporte y las
+  // lanes ya miden en esa unidad, y mezclar dos varas seria peor que ignorar una.
+  function sectionTimeline(project) {
+    var structure = project && project.structure;
+    if (!structure || !structure.sections || !structure.sections.length) return [];
+    var bpb = beatsPerBar(project);
+    var bar = 1;
+    return structure.sections.map(function (section, index) {
+      var startBar = bar;
+      bar = Math.round((bar + section.bars) * 1000) / 1000;
+      return {
+        index: index,
+        name: section.name,
+        bars: section.bars,
+        color: section.color || '',
+        fill: !!section.fill,
+        startBar: startBar,
+        endBar: bar,
+        startBeat: (startBar - 1) * bpb,
+        endBeat: (bar - 1) * bpb
+      };
+    });
+  }
+
+  // En que seccion cae un compas. Sirve para decir donde esta el cabezal y, mas adelante,
+  // a que seccion pertenece un bloque. Fuera de la estructura devuelve null: el compas del
+  // ultimo locator es el FINAL del tema y no una seccion mas.
+  function sectionAtBar(project, bar) {
+    var list = sectionTimeline(project);
+    for (var i = 0; i < list.length; i += 1) {
+      if (bar >= list[i].startBar && bar < list[i].endBar) return list[i];
+    }
+    return null;
+  }
+
+  // CAMBIAR EL RANGO NO RECORTA: REESCALA. Un bloque dibujado entre 30 y 90 tiene que
+  // seguir siendo el mismo dibujo cuando el rango pasa a 0-127; lo que cambia es cuanto
+  // se abre. Asi un bloque se reusa en dos controles distintos: el largo lo da la seccion
+  // y el alto lo da el rango.
+  function rescaleLanePoints(project, controlId, viejo, nuevo) {
+    var desdeMin = Number(viejo && viejo.min), desdeMax = Number(viejo && viejo.max);
+    var hastaMin = Number(nuevo && nuevo.min), hastaMax = Number(nuevo && nuevo.max);
+    if (![desdeMin, desdeMax, hastaMin, hastaMax].every(Number.isFinite)) return project;
+    if (desdeMax === desdeMin) return project;
+    var lanes = (project.automationLanes || []).map(function (lane) {
+      if (lane.controlId !== controlId) return lane;
+      return Object.assign({}, lane, { points: (lane.points || []).map(function (point) {
+        var t = (point.value - desdeMin) / (desdeMax - desdeMin);
+        return { bar: point.bar, value: Math.round(hastaMin + Math.max(0, Math.min(1, t)) * (hastaMax - hastaMin)) };
+      }) });
+    });
+    return Object.assign({}, project, { automationLanes: lanes });
+  }
+
+  // ------------------------------------------------------- editar la estructura
+  //
+  // UNA SOLA OPERACION PARA TODO. Estirar una seccion, renombrarla, agregar, borrar y
+  // mover son el mismo movimiento: se declara la lista nueva de secciones diciendo DE
+  // DONDE VIENE cada una (`from`, el indice viejo, o -1 si es nueva), y los puntos de las
+  // lanes viajan con su seccion.
+  //
+  // LA REGLA DE LAS ENVOLVENTES: un punto guarda su posicion RELATIVA dentro de la
+  // seccion en la que estaba. Si el break pasa de 32 a 48 compases, el barrido que lo
+  // cruzaba sigue cruzandolo entero en vez de terminar a dos tercios; lo que venia
+  // despues se corre con el.
+  //
+  //   · seccion que se estira o se achica  -> los puntos de adentro se escalan
+  //   · seccion que se mueve de lugar      -> sus puntos se van con ella
+  //   · seccion que se borra               -> sus puntos se borran con ella
+  //   · punto fuera de toda seccion        -> se pega al final
+  function remapStructure(project, nuevas) {
+    var base = project && project.structure ? project.structure : {};
+    var viejas = sectionTimeline(project);
+    var estructura = normalizeStructure({
+      source: base.source, endName: base.endName, bpb: base.bpb,
+      sections: (nuevas || []).map(function (s) {
+        return { name: s.name, bars: s.bars, color: s.color, fill: s.fill };
+      })
+    });
+    // Sin secciones no hay estructura, y sin estructura la pagina no tiene largo: se
+    // devuelve el proyecto como estaba en vez de dejarlo sin timeline por accidente.
+    if (!estructura) return normalizeProject(project);
+
+    // Los rangos nuevos se calculan con un proyecto de descarte: hacen falta ANTES de
+    // mover los puntos.
+    var nuevos = sectionTimeline(normalizeProject({
+      timeSignature: project.timeSignature, structure: estructura
+    }));
+    var destino = {};
+    (nuevas || []).forEach(function (s, i) {
+      var from = Number(s.from);
+      if (Number.isFinite(from) && from >= 0 && nuevos[i]) destino[from] = nuevos[i];
+    });
+    var finalBar = nuevos.length ? Math.ceil(nuevos[nuevos.length - 1].endBar) - 1 : 1;
+
+    var lanes = (project.automationLanes || []).map(function (lane) {
+      var puntos = [];
+      (lane.points || []).forEach(function (point) {
+        var indice = -1;
+        for (var i = 0; i < viejas.length; i += 1) {
+          if (point.bar >= viejas[i].startBar && point.bar < viejas[i].endBar) { indice = i; break; }
+        }
+        if (indice < 0) { puntos.push({ bar: finalBar, value: point.value }); return; }
+        var hacia = destino[indice];
+        if (!hacia) return;
+        var vieja = viejas[indice];
+        var t = vieja.bars > 0 ? (point.bar - vieja.startBar) / vieja.bars : 0;
+        puntos.push({ bar: Math.round(hacia.startBar + t * hacia.bars), value: point.value });
+      });
+      puntos.sort(sortByBar);
+      return Object.assign({}, lane, { points: dedupePoints(puntos) });
+    });
+
+    return normalizeProject(Object.assign({}, project, { structure: estructura, automationLanes: lanes }));
+  }
+
+  // La lista de secciones lista para editar: cada una sabe de donde viene, asi que
+  // reordenarla o cambiarle un largo alcanza para llamar a remapStructure.
+  function editableSections(project) {
+    var crudas = (project && project.structure && project.structure.sections) || [];
+    return sectionTimeline(project).map(function (s, i) {
+      var cruda = crudas[i] || {};
+      return { name: s.name, bars: s.bars, color: cruda.color || '', fill: !!cruda.fill, from: s.index };
+    });
+  }
+
   // S<n> ES EL PAR ESTEREO 0-BASED: canales 2n+1 / 2n+2. Sin una sola excepcion en las
   // nueve entradas de TRACK1.als.
   function pairFromTarget(target) {
@@ -647,6 +903,98 @@
         recorded: t.tipo === 'AudioTrack'
       };
     });
+  }
+
+  // ------------------------------------------------- los clips: donde suena cada canal
+  //
+  // El .als no dice solo la estructura: dice DONDE SUENA CADA PISTA, que es la mitad del
+  // arreglo. Cada clip del Arrangement es un tramo en el que ese canal esta sonando; el
+  // resto del tema esta en silencio. De ahi salen los prendidos y apagados de CC.
+  //
+  // Sirve igual para dos casos y por eso no distingue el tipo de clip:
+  //   · un Set grabado, donde los clips son el audio de cada bus de la MC-707
+  //   · un Set con pistas GUIDE, donde ArrangeLab ya escribio clips MIDI de guia
+  //
+  // Los clips pegados se juntan en un solo tramo: dos clips consecutivos de kick son un
+  // kick que no paro de sonar, y si no se juntaran quedarian dos escalones inutiles -y
+  // cuatro puntos en el mismo compas, que no se pueden ni ver-.
+  function readArrangementClips(xml, ALS) {
+    var lista = ALS.listaTracks(xml) || [];
+    return lista.map(function (t) {
+      var bloque = xml.slice(t.ini, t.fin);
+      var zona = /<ArrangerAutomation>([\s\S]*?)<\/ArrangerAutomation>/.exec(bloque);
+      var regiones = [];
+      if (zona) {
+        var re = /<(?:Audio|Midi)Clip\b[^>]*\sTime="([-\d.eE]+)"[\s\S]*?<CurrentStart Value="([-\d.eE]+)"[\s\S]*?<CurrentEnd Value="([-\d.eE]+)"/g;
+        var m;
+        while ((m = re.exec(zona[1])) !== null) {
+          var desde = parseFloat(m[1]);
+          var largo = parseFloat(m[3]) - parseFloat(m[2]);
+          if (!Number.isFinite(desde) || !(largo > 0)) continue;
+          regiones.push({ startBeat: desde, endBeat: desde + largo });
+        }
+      }
+      regiones.sort(function (a, b) { return a.startBeat - b.startBeat; });
+      var juntas = [];
+      regiones.forEach(function (r) {
+        var ultima = juntas[juntas.length - 1];
+        // Pegados o encimados: un solo tramo. La tolerancia es de un tick, no de un compas.
+        if (ultima && r.startBeat <= ultima.endBeat + 1e-6) {
+          if (r.endBeat > ultima.endBeat) ultima.endBeat = r.endBeat;
+          return;
+        }
+        juntas.push({ startBeat: r.startBeat, endBeat: r.endBeat });
+      });
+      var par = pairFromTarget((/<AudioInputRouting>[\s\S]*?<Target Value="([^"]*)"/.exec(bloque) || [])[1]);
+      return { id: t.id, name: t.nombre, type: t.tipo, key: par ? 'S' + par.index : '',
+               regions: juntas };
+    }).filter(function (t) { return t.regions.length; });
+  }
+
+  // De los tramos de una pista a los puntos de una lane: apagado afuera, al maximo
+  // adentro, con ESCALONES en los bordes -dos puntos en el mismo compas- para que el
+  // corte sea seco y no una rampa.
+  //
+  // Los bordes se redondean al compas: un clip que arranca dos ticks tarde por como
+  // quedo grabado no tiene que dejar el CC a mitad de camino.
+  function clipsToLanePoints(project, regions, rango) {
+    var bpb = beatsPerBar(project);
+    var total = project.totalBars;
+    var apagado = Number.isFinite(rango && rango.min) ? rango.min : 0;
+    var prendido = Number.isFinite(rango && rango.max) ? rango.max : 127;
+    var puntos = [];
+    function poner(bar, valor) {
+      var ultimo = puntos[puntos.length - 1];
+      if (ultimo && ultimo.bar === bar && ultimo.value === valor) return;
+      puntos.push({ bar: bar, value: valor });
+    }
+
+    // SE VUELVEN A JUNTAR EN COMPASES. Dos tramos separados por medio compas quedan
+    // pegados al redondear, y sin esto saldrian un apagado y un prendido en el mismo
+    // lugar: cuatro puntos en un compas, que no se pueden ni ver ni tocar.
+    var enCompases = [];
+    (regions || []).forEach(function (region) {
+      var d = Math.max(1, Math.round(region.startBeat / bpb) + 1);
+      var h = Math.max(d + 1, Math.round(region.endBeat / bpb) + 1);
+      var ultima = enCompases[enCompases.length - 1];
+      if (ultima && d <= ultima.hasta) { ultima.hasta = Math.max(ultima.hasta, h); return; }
+      enCompases.push({ desde: d, hasta: h });
+    });
+
+    enCompases.forEach(function (region) {
+      var desde = region.desde;
+      var hasta = region.hasta;
+      if (desde > total) return;
+      // Antes de entrar tiene que estar apagado: sin este punto, el tramo anterior
+      // llegaria en rampa hasta el maximo en vez de saltar.
+      if (!puntos.length && desde > 1) poner(1, apagado);
+      if (puntos.length) poner(desde, apagado);
+      poner(desde, prendido);
+      if (hasta > total) { poner(total, prendido); return; }
+      poner(hasta, prendido);
+      poner(hasta, apagado);
+    });
+    return puntos;
   }
 
   // EL PERFIL DE HARDWARE: que bus de la MC-707 entra por cada par USB. Es lo unico
@@ -1068,6 +1416,7 @@
     MC_TRACK_MIDI_CHANNELS: clone(MC_TRACK_MIDI_CHANNELS),
     MC_TRACK_DESTINATIONS: clone(MC_TRACK_DESTINATIONS),
     rolandColors: function () { return clone(ROLAND_COLORS); },
+    sectionPalette: function () { return clone(SECTION_PALETTE); },
     controlRegistry: controlRegistry,
     realtimeControls: controlRegistry,
     ccOptionsForMcTrack: ccOptionsForMcTrack,
@@ -1080,9 +1429,18 @@
     controlTarget: controlTarget,
     controlRange: controlRange,
     readStructure: readStructure,
+    normalizeStructure: normalizeStructure,
+    structureTotalBars: structureTotalBars,
+    sectionTimeline: sectionTimeline,
+    sectionAtBar: sectionAtBar,
+    remapStructure: remapStructure,
+    rescaleLanePoints: rescaleLanePoints,
+    editableSections: editableSections,
     readRecordingTracks: readRecordingTracks,
     pairFromTarget: pairFromTarget,
     hardwareProfile: hardwareProfile,
+    readArrangementClips: readArrangementClips,
+    clipsToLanePoints: clipsToLanePoints,
     suggestDeviceChannels: suggestDeviceChannels,
     triggerBeats: triggerBeats,
     renameTracksByBus: renameTracksByBus,
