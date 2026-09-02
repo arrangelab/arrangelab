@@ -241,6 +241,9 @@
         // Plegada o no es del proyecto: en vivo se abre la que se esta dibujando y el
         // resto queda en una linea.
         collapsed: !!safe.collapsed,
+        // APAGADA NO ES BORRADA. El dibujo queda, pero no manda un solo CC: sirve para
+        // probar el tema sin esa automatizacion y volver a prenderla sin rehacerla.
+        off: !!safe.off,
         controlId: control.id,
         mcTrack: track,
         channel: channel,
@@ -258,6 +261,8 @@
       channel: MC_TRACK_MIDI_CHANNELS[mcTrack],
       destination: MC_TRACK_DESTINATIONS[mcTrack],
       cc: clampInt(safe.cc, 0, 127, 74),
+      collapsed: !!safe.collapsed,
+      off: !!safe.off,
       points: dedupePoints(points)
     };
   }
@@ -534,6 +539,8 @@
     var events = [];
 
     safe.automationLanes.forEach(function (lane) {
+      // APAGADA NO ES BORRADA: el dibujo queda pero no manda un solo CC.
+      if (lane.off) return;
       if (!lane.points.length) return;
       var startBeat = barToBeat(safe, lane.points[0].bar);
       var lastValue = null;

@@ -465,6 +465,8 @@
     .autodot{position:absolute;top:2px;right:3px;width:7px;height:7px;border-radius:50%;
       background:var(--bad);box-shadow:0 0 6px var(--bad);pointer-events:none}
     .autodot.vacia{background:transparent;border:1px solid var(--bad);box-shadow:none;opacity:.6}
+    /* Apagada: el punto se ve gris, para saber que el dibujo esta pero no suena. */
+    .autodot.apagada{background:var(--dim);box-shadow:none;opacity:.7}
     /* LAS LANES, AGRUPADAS POR EL CANAL DEL SET. Cada bus de la MC-707 es un grupo:
        es la misma division con la que se graba en Ableton, asi que la pantalla se lee
        igual que el Set. */
@@ -528,6 +530,8 @@
     .lane-head .crece{flex:1}
     .lane-fold{width:26px;padding:0;line-height:1}
     .lane-card.plegada{padding:8px 14px}
+    .lane-card.apagada{opacity:.55}
+    .lane-card.apagada .lane-cc{color:var(--bad)}
     /* Las tres filas comparten columnas: tiempos, secciones y duracion. Es la mhead de
        ArrangeLab, con el mismo flex-grow y el mismo piso de ancho. */
     /* El hueco de arriba es para la barra flotante: sin el, tapa el titulo del panel. */
@@ -850,6 +854,8 @@
     <button type="button" data-ctl-action="max">SET MAX AQUI</button>
     <button type="button" data-ctl-action="reset">RANGO COMPLETO</button>
     <button type="button" data-ctl-action="automation" class="ctl-auto">AUTOMATION</button>
+    <button type="button" data-ctl-action="autotoggle" id="ctlAutoToggle" hidden>DESACTIVAR AUTOMATIZACIÓN</button>
+    <button type="button" data-ctl-action="autoborrar" id="ctlAutoBorrar" class="danger" hidden>BORRAR AUTOMATIZACIÓN</button>
   </div>
 
   <!-- LA GUIA. Mismo dialogo que el del arranger: los comandos que de verdad hay, no una
@@ -1980,7 +1986,9 @@
           // vacia, porque una lane sin puntos todavia no manda nada.
           var laneDelControl = state.project.automationLanes.filter(function (l) { return l.controlId === control.id; })[0];
           var punto = laneDelControl
-            ? '<span class="autodot' + (laneDelControl.points.length ? '' : ' vacia') + '" title="Tiene automatización"></span>'
+            ? '<span class="autodot' + (laneDelControl.points.length ? '' : ' vacia') +
+              (laneDelControl.off ? ' apagada' : '') + '" title="' +
+              (laneDelControl.off ? 'Automatización desactivada' : 'Tiene automatización') + '"></span>'
             : '';
           return '<div class="device-param" data-ctl-id="' + esc(control.id) + '">' + parameterLabel + '<strong data-live-value="' + esc(control.id) + '">' + shown + '</strong>' + performer + actions + punto + '</div>';
         }
@@ -2444,14 +2452,15 @@
           // PLEGADA OCUPA UNA LINEA. Con ocho lanes abiertas la pantalla no entra en
           // ningun monitor, y en vivo lo que importa es la que se esta dibujando.
           var plegada = !!lane.collapsed;
-          html += '<article class="lane-card' + (plegada ? ' plegada' : '') + '">';
+          html += '<article class="lane-card' + (plegada ? ' plegada' : '') +
+            (lane.off ? ' apagada' : '') + '">';
           html += '<div class="lane-head">';
           html += '<button class="secondary lane-fold" data-lane-fold="' + laneIndex + '" aria-expanded="' +
             (plegada ? 'false' : 'true') + '" title="' + (plegada ? 'Desplegar' : 'Plegar') + '">' +
             (plegada ? '▸' : '▾') + '</button>';
           html += '<b style="color:' + colorDeLane(lane) + '">' + esc(lane.name) + '</b>';
           html += '<span class="lane-cc">CH' + lane.channel + ' · CC' + lane.cc + ' · ' +
-            lane.points.length + ' puntos</span>';
+            lane.points.length + ' puntos' + (lane.off ? ' · DESACTIVADA' : '') + '</span>';
           html += '<span class="crece"></span>';
           html += '<button class="danger" data-remove-lane="' + laneIndex + '">Remove Lane</button>';
           html += '</div>';
@@ -3225,6 +3234,15 @@
           'CH' + control.targets[0][0] + ' · CC' + control.targets[0][1] + '<br>' +
           'rango ' + rango.min + '–' + rango.max + (propio ? '' : ' (completo)') +
           (Number.isFinite(valor) ? ' · ahora ' + valor : '');
+        // Las acciones de la automatizacion aparecen solo si ese control TIENE una lane.
+        var laneDelControl = state.project.automationLanes.filter(function (l) { return l.controlId === controlId; })[0];
+        var botonToggle = document.getElementById('ctlAutoToggle');
+        var botonBorrar = document.getElementById('ctlAutoBorrar');
+        botonToggle.hidden = !laneDelControl;
+        botonBorrar.hidden = !laneDelControl;
+        if (laneDelControl) {
+          botonToggle.textContent = laneDelControl.off ? 'ACTIVAR AUTOMATIZACIÓN' : 'DESACTIVAR AUTOMATIZACIÓN';
+        }
         el.ctlMenu.hidden = false;
         // Se ubica en el puntero y se corrige si se sale por el borde.
         var caja = el.ctlMenu.getBoundingClientRect();
@@ -3311,6 +3329,25 @@
         if (que === 'min' || que === 'max') setRango(id, que);
         else if (que === 'reset') resetRango(id);
         else if (que === 'automation') revelarLane(id);
+        else if (que === 'autotoggle') {
+          var laneT = state.project.automationLanes.filter(function (l) { return l.controlId === id; })[0];
+          if (!laneT) return;
+          laneT.off = !laneT.off;
+          state.project = HPM.normalizeProject(state.project);
+          log('AUTOMATION → ' + laneT.name + (laneT.off ? ' desactivada (no manda CC; el dibujo queda)' : ' activada'));
+          renderAll();
+        }
+        else if (que === 'autoborrar') {
+          var idx = -1;
+          state.project.automationLanes.forEach(function (l, i) { if (l.controlId === id) idx = i; });
+          if (idx < 0) return;
+          var borrada = state.project.automationLanes[idx].name;
+          anotarPaso();
+          state.project.automationLanes.splice(idx, 1);
+          state.project = HPM.normalizeProject(state.project);
+          log('AUTOMATION → ' + borrada + ' borrada');
+          renderAll();
+        }
       });
 
       document.addEventListener('keydown', function (event) {
