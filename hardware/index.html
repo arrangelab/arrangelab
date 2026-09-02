@@ -2472,10 +2472,6 @@
         html += '<b>' + esc(nombreCortoDeLane(lane)) + '</b>';
         html += '<span class="cc">CC' + lane.cc +
           (esLevel(lane) && cuantasDebajo ? ' +' + cuantasDebajo : '') + '</span>';
-        html += '<button class="mini' + (lane.modo === 'bloques' ? ' activo' : '') +
-          '" data-lane-modo="' + laneIndex + ':' + (lane.modo === 'bloques' ? 'linea' : 'bloques') +
-          '" title="' + (lane.modo === 'bloques' ? 'Ver como curva' : 'Ver como bloques') + '">' +
-          (lane.modo === 'bloques' ? '▤' : '∿') + '</button>';
         if (suelta) {
           html += '<button class="mini" data-lane-fold="' + laneIndex + '" title="' +
             (plegada ? 'Desplegar' : 'Plegar') + '">' + (plegada ? '▸' : '▾') + '</button>';
@@ -3031,14 +3027,6 @@
         if (target.dataset && target.dataset.filaFold !== undefined) {
           var devFold = target.dataset.filaFold;
           state.filasPlegadas[devFold] = !state.filasPlegadas[devFold];
-          renderAll();
-          return;
-        }
-        if (target.dataset && target.dataset.laneModo !== undefined) {
-          var partesModo = target.dataset.laneModo.split(':');
-          var laneModo = state.project.automationLanes[Number(partesModo[0])];
-          if (laneModo) laneModo.modo = partesModo[1];
-          state.project = HPM.normalizeProject(state.project);
           renderAll();
           return;
         }

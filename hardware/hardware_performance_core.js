@@ -244,12 +244,11 @@
         // APAGADA NO ES BORRADA. El dibujo queda, pero no manda un solo CC: sirve para
         // probar el tema sin esa automatizacion y volver a prenderla sin rehacerla.
         off: !!safe.off,
-        // COMO SE MIRA: bloques -prendido/apagado, un compas por celda- o la curva. Un
-        // Level es prendido y apagado la mayor parte del tiempo, asi que arranca en
-        // bloques; un filtro es una curva y arranca como curva.
-        modo: safe.modo === 'bloques' || safe.modo === 'linea'
-          ? safe.modo
-          : (/-level$/.test(control.id) ? 'bloques' : 'linea'),
+        // COMO SE MIRA NO SE ELIGE, LO DICE LO QUE ES. Un Level es prendido y apagado:
+        // eso son BLOQUES, como la matriz del arranger. Una envolvente -un filtro, un
+        // decay- es una curva. Que un Level se pudiera ver como linea solo servia para
+        // confundirlo con una envolvente.
+        modo: /-level$/.test(control.id) ? 'bloques' : 'linea',
         controlId: control.id,
         mcTrack: track,
         channel: channel,
@@ -269,7 +268,8 @@
       cc: clampInt(safe.cc, 0, 127, 74),
       collapsed: !!safe.collapsed,
       off: !!safe.off,
-      modo: safe.modo === 'bloques' ? 'bloques' : 'linea',
+      // Una lane suelta no es el Level de nadie: es una envolvente y se ve como curva.
+      modo: 'linea',
       points: dedupePoints(points)
     };
   }
