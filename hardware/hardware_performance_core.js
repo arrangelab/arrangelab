@@ -248,7 +248,9 @@
         // eso son BLOQUES, como la matriz del arranger. Una envolvente -un filtro, un
         // decay- es una curva. Que un Level se pudiera ver como linea solo servia para
         // confundirlo con una envolvente.
-        modo: /-level$/.test(control.id) ? 'bloques' : 'linea',
+        // Los FX globales -Delay, Reverb, Master FX- NO son canales: no tienen bloques,
+        // se automatizan como envolvente.
+        modo: (/-level$/.test(control.id) && !control.global) ? 'bloques' : 'linea',
         controlId: control.id,
         mcTrack: track,
         channel: channel,
@@ -839,6 +841,85 @@
         endBeat: (bar - 1) * bpb
       };
     });
+  }
+
+  // ==================================================================== LA GEOMETRIA
+  //
+  // ESTA ES LA MISMA CUENTA QUE HACE ARRANGELAB, portada de createTimelineGeometry() de
+  // app_core.js. No es una version parecida: si las dos paginas dibujaran la estructura
+  // con cuentas distintas, la misma estructura se veria distinta en cada una.
+  //
+  // La idea: cada seccion es una columna con flex-grow igual a sus compases, asi que el
+  // ANCHO ES LA DURACION. Entre columna y columna hay un hueco de `gapPx`, que el CSS
+  // pone con `gap` y que el JS tiene que descontar para colocar un bloque encima: el
+  // porcentaje va sobre el ancho SIN huecos, y despues se le suman los huecos que le
+  // quedaron a la izquierda. Sin eso los bloques se despegan de su seccion -3 px por
+  // columna- y para la septima el desfase ya se ve.
+  function timelineGeometry(project, options) {
+    options = options || {};
+    var gapPx = options.gapPx === undefined ? 3 : options.gapPx;
+    var bpb = beatsPerBar(project);
+    var mapa = sectionTimeline(project).map(function (s) {
+      return { i: s.index, bars: s.bars, beats: s.bars * bpb, ini: s.startBeat, fin: s.endBeat,
+               name: s.name, color: s.color, fill: s.fill };
+    });
+    var total = mapa.length ? mapa[mapa.length - 1].fin : 0;
+    function huecosAntes(beat) {
+      return mapa.filter(function (s) { return s.ini > 1e-9 && s.ini <= beat + 1e-9; }).length;
+    }
+    function huecosAdentro(ini, fin) {
+      return mapa.filter(function (s) { return s.ini > ini + 1e-9 && s.ini < fin - 1e-9; }).length;
+    }
+    return {
+      gapPx: gapPx, map: mapa, totalBeats: total, totalBars: total / bpb, bpb: bpb,
+      flexGrow: function (i) { return mapa[i] ? mapa[i].bars : 0; },
+      // El left/width de un bloque, en calc(), sobre la fila entera.
+      blockStyle: function (beat, beats) {
+        var util = '(100% - ' + Math.max(0, mapa.length - 1) * gapPx + 'px)';
+        return {
+          left: 'calc(' + util + ' * ' + (total ? beat / total : 0) + ' + ' + huecosAntes(beat) * gapPx + 'px)',
+          width: 'calc(' + util + ' * ' + (total ? beats / total : 0) + ' + ' +
+            huecosAdentro(beat, beat + beats) * gapPx + 'px)'
+        };
+      },
+      // Y la vuelta: en que beat cayo un click, descontando los huecos columna por columna.
+      beatAtX: function (x, width) {
+        var util = width - Math.max(0, mapa.length - 1) * gapPx;
+        if (!(util > 0) || !mapa.length) return null;
+        var d = x;
+        for (var i = 0; i < mapa.length; i += 1) {
+          var ancho = mapa[i].beats / total * util;
+          if (d <= ancho + 1e-9 || i === mapa.length - 1)
+            return Math.max(0, Math.min(mapa[i].ini + (d / ancho) * mapa[i].beats, total - 1e-6));
+          d -= ancho + gapPx;
+        }
+        return null;
+      },
+      // El COMPAS donde cayo el click, que es la unidad con la que se pintan los bloques.
+      barAtX: function (x, width) {
+        var beat = this.beatAtX(x, width);
+        if (beat === null) return null;
+        return Math.max(1, Math.min(Math.floor(beat / bpb) + 1, Math.round(total / bpb)));
+      }
+    };
+  }
+
+  // DE LOS PUNTOS A LOS TRAMOS. Un bloque no es un compas: son los compases seguidos que
+  // suenan. Ocho compases prendidos son UN bloque de ocho, no ocho celdas, que es como se
+  // ve en el arranger y como se lee de un vistazo cuanto dura.
+  function blocksToRuns(prendidos) {
+    var runs = [];
+    var desde = -1;
+    (prendidos || []).forEach(function (on, i) {
+      if (on && desde < 0) desde = i;
+      if (!on && desde >= 0) { runs.push({ desde: desde + 1, hasta: i }); desde = -1; }
+    });
+    if (desde >= 0) runs.push({ desde: desde + 1, hasta: (prendidos || []).length });
+    return runs;
+  }
+
+  function laneRuns(project, lane, rango) {
+    return blocksToRuns(laneBlocks(project, lane, rango));
   }
 
   // En que seccion cae un compas. Sirve para decir donde esta el cabezal y, mas adelante,
@@ -1574,6 +1655,9 @@
     normalizeStructure: normalizeStructure,
     structureTotalBars: structureTotalBars,
     sectionTimeline: sectionTimeline,
+    timelineGeometry: timelineGeometry,
+    laneRuns: laneRuns,
+    blocksToRuns: blocksToRuns,
     sectionAtBar: sectionAtBar,
     remapStructure: remapStructure,
     rescaleLanePoints: rescaleLanePoints,

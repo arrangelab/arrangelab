@@ -136,6 +136,10 @@
     /* separación entre la etiqueta del canal y sus celdas. La usan .mrow y .mhead, que
        TIENEN que coincidir o las columnas del encabezado no caen sobre las celdas. */
     --gapfila:14px;
+    /* EL ANCHO DE LA ETIQUETA DE CANAL. Lo comparten la barra de estructura y las filas
+       de la matriz: si no fuera el mismo, las columnas de arriba no caerian sobre las
+       celdas de abajo, que es todo el punto de que sea una sola grilla. */
+    --wlabel:150px;
     --gapsec:3px;    /* el hueco entre dos secciones. Lo usa el CSS Y el JS: ver GAPSEC */
     /* EL PISO DE ANCHO DE UNA COLUMNA. El ancho sale de flex-grow:bars, asi que un fill de
        1 compas dentro de un track de 128 daria seis pixeles: no se podria ni apuntar. Lo
@@ -467,24 +471,61 @@
     .autodot.vacia{background:transparent;border:1px solid var(--bad);box-shadow:none;opacity:.6}
     /* Apagada: el punto se ve gris, para saber que el dibujo esta pero no suena. */
     .autodot.apagada{background:var(--dim);box-shadow:none;opacity:.7}
-    /* LA FILA, COMO LA DE ARRANGELAB: una etiqueta angosta a la izquierda y la grilla a
-       la derecha. Sin campos ni titulos: el canal, su CC y sus puntos entran en una linea.
-       Los canales van en el MISMO ORDEN que las tiras de abajo: de izquierda a derecha
-       alla es de arriba hacia abajo aca. */
-    .lane-fila{display:flex;align-items:stretch;gap:8px;padding:3px 0}
-    .lane-fila .etiqueta{flex:0 0 132px;display:flex;align-items:center;gap:6px;max-height:34px;
-      padding:4px 8px;border:1px solid var(--line);border-left:3px solid var(--lanecol,#6fb7ff);
-      border-radius:var(--radio2);background:var(--campo);min-width:0}
-    .lane-fila .etiqueta b{font:11px/1 var(--fuentetit);letter-spacing:.06em;color:var(--lanecol,#6fb7ff);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
-    .lane-fila .etiqueta .cc{font:9px/1 var(--fuentetit);color:var(--dim);white-space:nowrap}
-    .lane-fila .etiqueta .cuelga{color:var(--dim);font-size:10px;line-height:1}
-    .lane-fila .cuerpo{flex:1;min-width:0;display:flex;align-items:center}
-    .lane-fila.apagada{opacity:.5}
-    .lane-fila .mini{width:20px;min-height:20px;padding:0;border:1px solid transparent;
+    /* ------------------------------------------------ LA MATRIZ, LA DE ARRANGELAB
+       No es una grilla nueva: son .mrow / .mlabel / .mcells / .mcell / .mlane, con los
+       mismos nombres, la misma geometria -flex-grow = compases, gap = --gapsec, piso
+       --minseg- y el mismo relieve. Una fila por CANAL, una columna por SECCION, y los
+       bloques encima en una capa aparte: un bloque de 8 compases es UN bloque que cruza
+       el limite de seccion, no ocho celdas.
+       El ancho de la etiqueta es --wlabel y lo comparten la barra de estructura de arriba
+       y las filas de abajo: por eso las columnas caen una sobre la otra. */
+    .mtx{user-select:none}
+    .mrow{display:flex;align-items:stretch;gap:var(--gapfila);margin-bottom:3px}
+    .mlabel{width:var(--wlabel);flex:none;display:flex;align-items:center;gap:6px;
+      padding:0 8px 0 22px;border-radius:5px;position:relative;min-width:0;
+      background:linear-gradient(180deg, color-mix(in srgb, var(--campo) 72%, var(--eleva) 28%), var(--campo));
+      border:1px solid color-mix(in srgb, var(--line) 72%, black 28%);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.045), inset 0 -1px 0 rgba(0,0,0,.38)}
+    /* la barra del color: dice de que canal es la fila sin ser un bloque mas */
+    .mlabel::before{content:'';position:absolute;left:9px;top:6px;bottom:6px;width:3px;
+      border-radius:2px;background:var(--cc,transparent)}
+    .mlabel b{font:11px/1 var(--fuentetit);letter-spacing:.06em;color:var(--cc,var(--txt));
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+    .mlabel .cc{font:9px/1 var(--fuentetit);color:var(--dim);white-space:nowrap}
+    .mlabel .cuelga{color:var(--dim);font-size:10px;line-height:1;margin-left:-8px}
+    .mrow.apagada{opacity:.5}
+    .mlabel .mini{width:18px;min-height:18px;padding:0;border:1px solid transparent;
       background:transparent;color:var(--dim);border-radius:4px;font-size:10px;line-height:1}
-    .lane-fila .mini:hover{border-color:currentColor;color:var(--txt)}
-    .lane-fila .mini.activo{color:var(--acc)}
+    .mlabel .mini:hover{border-color:currentColor;color:var(--txt)}
+    .mcells{display:flex;gap:var(--gapsec);min-width:0;position:relative;flex:1}
+    /* la celda: el fondo de una seccion, hundido, para que los bloques se lean encima */
+    .mcell{flex-basis:0;min-width:var(--minseg);height:30px;border-radius:4px;
+      border:1px solid var(--line);background:var(--campo);box-shadow:var(--hundido);
+      cursor:pointer;transition:border-color var(--motion-instant) ease}
+    .mcell:hover{border-color:var(--hw-label-green)}
+    .mcell.esfill{border-style:dashed}
+    /* el borde de la seccion elegida, para saber donde estas parado */
+    .mcell.sel{border-color:var(--secc,var(--hw-label-green))}
+    /* LA CAPA DE LOS BLOQUES. Ocupa la fila entera y no una celda: un bloque de 8 compases
+       arranca donde le toca y cruza el limite de una seccion sin partirse. */
+    .mlane{position:absolute;inset:2px 0;pointer-events:none;z-index:2}
+    .bloque{position:absolute;top:0;bottom:0;border-radius:3px;opacity:.94;
+      background:var(--cc);background-clip:padding-box;border:1px solid transparent;
+      box-sizing:border-box;box-shadow:inset 1px 0 0 var(--vtaseam),inset -1px 0 0 var(--vtaluz)}
+    /* lo que se esta pintando ahora mismo, antes de soltar */
+    .bloque.previo{opacity:.6;border-color:var(--txt);border-style:dashed}
+    /* la fila de una envolvente: la curva vive adentro de las mismas columnas */
+    .mcells.env{height:110px}
+    .mcells.env .mcell{height:100%}
+    .mcells .lane-svg{position:absolute;inset:0;width:100%;height:100%;z-index:2;
+      background:transparent;border:0;border-radius:0}
+    /* la caja que scrollea cuando hay zoom: la matriz se hace mas ancha adentro */
+    .lane-scroll{flex:1;min-width:0;overflow-x:auto;overflow-y:hidden;display:flex}
+    /* Adentro del scroll la matriz manda su propio ancho -es el zoom-, asi que NO se
+       estira para entrar: si fuera flex:1 el zoom no ensancharia nada. */
+    .lane-scroll > .mcells{flex:0 0 auto}
+    .lane-scroll::-webkit-scrollbar{height:7px}
+    .lane-scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
     .lane-head{display:flex;align-items:center;gap:10px}
     .lane-head b{font:12px/1 var(--fuentetit);letter-spacing:.06em}
     .lane-head .lane-cc{font:11px/1 var(--fuentetit);letter-spacing:.06em;color:var(--dim)}
@@ -496,7 +537,8 @@
     /* Las tres filas comparten columnas: tiempos, secciones y duracion. Es la mhead de
        ArrangeLab, con el mismo flex-grow y el mismo piso de ancho. */
     /* El hueco de arriba es para la barra flotante: sin el, tapa el titulo del panel. */
-    .estructura{display:grid;gap:3px;margin-top:34px}
+    .estructura{display:grid;gap:3px;margin-top:34px;
+      padding-left:calc(var(--wlabel) + var(--gapfila))}
     .sectimes,.secdurs{display:flex;gap:var(--gapsec);width:100%}
     .utime{flex-basis:0;min-width:var(--minseg);font:9px/1 var(--fuentetit);letter-spacing:.06em;
       color:var(--dim);padding-left:2px;white-space:nowrap;overflow:hidden}
@@ -919,6 +961,9 @@
         ultimoClickSec: null,
         paletaAbierta: false,
         zoomLanes: 1,
+        // Los FX globales que la version anterior habia metido como canales se limpian
+        // una sola vez, al arrancar: despues las envolventes de Delay o Reverb se quedan.
+        fxLimpiado: false,
         filasPlegadas: {},
         pasoLane: 1,
         historia: { atras: [], adelante: [] },
@@ -1113,9 +1158,36 @@
 
       function layoutForSvg(svg) {
         var width = svg.clientWidth || 900;
-        var height = svg.classList.contains('lane-svg') ? 160
-          : svg.classList.contains('structure-svg') ? 128 : 150;
+        // LA CURVA VIVE ADENTRO DE LAS COLUMNAS. Ya no es un grafico con sus margenes: es
+        // un carril de la matriz, del mismo ancho que las celdas de arriba y de abajo. Por
+        // eso no lleva margen a los costados -si lo llevara, el compas 1 de la curva no
+        // caeria sobre el compas 1 de los bloques- y el nombre no va adentro, va en la
+        // etiqueta de la fila.
+        if (svg.classList.contains('lane-svg')) {
+          return { width: width, height: svg.clientHeight || 110, padL: 0, padR: 0, padT: 10, padB: 10 };
+        }
+        var height = svg.classList.contains('structure-svg') ? 128 : 150;
         return { width: width, height: height, padL: 52, padR: 22, padT: 18, padB: 28 };
+      }
+
+      // EL PUNTO x DE UN COMPAS ADENTRO DE UNA FILA, con la geometria de la matriz: las
+      // columnas son secciones y entre una y otra hay un hueco. La curva y los bloques
+      // usan la MISMA cuenta, asi que el compas 33 esta en el mismo lugar en las dos.
+      function xEnLane(bar, ancho) {
+        var g = geometria();
+        var util = ancho - Math.max(0, g.map.length - 1) * g.gapPx;
+        var beat = (bar - 1) * g.bpb;
+        var huecos = g.map.filter(function (m) { return m.ini > 1e-9 && m.ini <= beat + 1e-9; }).length;
+        return (g.totalBeats ? beat / g.totalBeats : 0) * util + huecos * g.gapPx;
+      }
+
+      function barEnLane(x, ancho) {
+        var g = geometria();
+        var beat = g.beatAtX(x, ancho);
+        var bar = beat === null ? 1 : beat / g.bpb + 1;
+        var paso = state.pasoLane || 1;
+        var caido = Math.round((bar - 1) / paso) * paso + 1;
+        return Math.max(1, Math.min(state.project.totalBars, HPM.normalizeBar(caido)));
       }
 
       function xForBar(bar, totalBars, width, padL, padR) {
@@ -1559,7 +1631,8 @@
         // Sobre su seccion, sin salirse de la caja.
         var seg = el.structureStrip.querySelector('[data-secrow="' + actual.index + '"]');
         if (seg) {
-          var izq = seg.offsetLeft;
+          var izq = seg.getBoundingClientRect().left -
+            el.structureStrip.getBoundingClientRect().left;
           var tope = Math.max(0, el.structureStrip.clientWidth - el.secbar.offsetWidth);
           el.secbar.style.left = Math.max(0, Math.min(tope, izq)) + 'px';
         }
@@ -2360,22 +2433,46 @@
       //
       // El ORDEN es el de las tiras de abajo: de izquierda a derecha alla es de arriba
       // hacia abajo aca.
+      // UN CANAL ES UN INSTRUMENTO, NO UNA PERILLA DE FX. Los canales son los mismos que
+      // las tiras de abajo: los once de la TR-8S y los cinco de la MC-707, dieciseis. El
+      // Delay, el Reverb y el Master FX son FX globales -mandan a la mezcla entera, no a
+      // un instrumento-: no tienen bloques. Se automatizan como envolvente, desde
+      // AUTOMATION, que es lo que son.
+      function esCanalConBloques(control) {
+        return !!control && !control.hidden && !control.global && /-level$/.test(control.id);
+      }
+
       function asegurarLanesDeVolumen() {
         var registro = HPM.controlRegistry();
         var porId = {};
         registro.forEach(function (c) { porId[c.id] = c; });
+        // Las filas de FX globales que se habian creado solas y nunca se usaron se van:
+        // ocupaban un lugar en la matriz sin ser un canal. Una con puntos NO se toca -eso
+        // es trabajo de Tomas- y se queda como envolvente.
+        //
+        // Y se hace UNA SOLA VEZ, al arrancar: es limpiar lo que dejo la version anterior.
+        // Si se hiciera en cada dibujado, una envolvente de Delay recien agregada -que
+        // todavia no tiene puntos- desapareceria antes de poder dibujarla.
+        var limpias = state.project.automationLanes.filter(function (l) {
+          if (state.fxLimpiado) return true;
+          var c = l.controlId ? porId[l.controlId] : null;
+          if (!c || !c.global || !/-level$/.test(c.id)) return true;
+          return l.points.length > 0;
+        });
+        state.fxLimpiado = true;
+        var sobraban = limpias.length !== state.project.automationLanes.length;
         var yaEstan = {};
-        state.project.automationLanes.forEach(function (l) { if (l.controlId) yaEstan[l.controlId] = true; });
+        limpias.forEach(function (l) { if (l.controlId) yaEstan[l.controlId] = true; });
         var faltan = [];
         (state.project.liveControls.deviceOrder || []).forEach(function (deviceId) {
           var control = porId[deviceId + '-level'];
-          if (!control || control.hidden) return;
+          if (!esCanalConBloques(control)) return;
           if (yaEstan[control.id]) return;
           faltan.push({ controlId: control.id, points: [], modo: 'bloques' });
         });
-        if (!faltan.length) return false;
+        if (!faltan.length && !sobraban) return false;
         state.project = HPM.normalizeProject(Object.assign({}, state.project, {
-          automationLanes: state.project.automationLanes.concat(faltan)
+          automationLanes: limpias.concat(faltan)
         }));
         return true;
       }
@@ -2431,7 +2528,9 @@
         }).map(function (i) {
           return laneCard(i, cuantasPorDevice[deviceDeLane(state.project.automationLanes[i])] || 0);
         }).join('');
-        el.lanesHost.innerHTML = html || '<div class="muted">Sin lanes todavía.</div>';
+        el.lanesHost.innerHTML = html
+          ? '<div class="mtx">' + html + '</div>'
+          : '<div class="muted">Sin lanes todavía.</div>';
         renderLaneCharts();
       }
 
@@ -2448,49 +2547,98 @@
         return /^level$/i.test(param) ? corto : corto + ' ' + param;
       }
 
+      // LA GEOMETRIA ES LA DE ARRANGELAB, no una parecida: sale del core, que porto la
+      // cuenta de app_core.js. Ancho = compases, y los huecos entre columnas se descuentan
+      // para colocar un bloque encima.
+      function geometria() {
+        return HPM.timelineGeometry(state.project, { gapPx: 3 });
+      }
+
+      // EL FONDO: una celda por seccion. Es lo que se clickea para pintar y lo que da el
+      // color estructural. Los bloques NO van adentro: van en la capa de encima.
+      function celdasDeSeccion() {
+        return geometria().map.map(function (s, i) {
+          return '<div class="mcell' + (s.fill ? ' esfill' : '') +
+            (i === state.selectedSectionIndex ? ' sel' : '') +
+            '" style="flex-grow:' + s.bars + ';--secc:' + colorDeSeccion(i, s.color) +
+            '" data-sec="' + i + '" title="' + esc(s.name) + '"></div>';
+        }).join('');
+      }
+
+      // LA CAPA DE LOS BLOQUES. Compases seguidos prendidos son UN bloque: ocho compases
+      // se ven como un tramo de ocho y no como ocho celdas, que es lo que permite leer de
+      // un vistazo cuanto dura. Un bloque puede cruzar el limite de una seccion.
+      function capaDeBloques(prendidos, color) {
+        var g = geometria();
+        return HPM.blocksToRuns(prendidos).map(function (r) {
+          var st = g.blockStyle((r.desde - 1) * g.bpb, (r.hasta - r.desde + 1) * g.bpb);
+          return '<div class="bloque" data-desde="' + r.desde + '" data-hasta="' + r.hasta +
+            '" style="left:' + st.left + ';width:' + st.width + ';--cc:' + color +
+            '" title="compases ' + r.desde + '-' + r.hasta + '"></div>';
+        }).join('');
+      }
+
+      // Los compases prendidos de una lane, con el trazo que se este pintando aplicado
+      // encima: asi lo que se ve mientras arrastras es exactamente lo que se va a guardar.
+      function prendidosDeLane(laneIndex) {
+        var lane = state.project.automationLanes[laneIndex];
+        var prendidos = HPM.laneBlocks(state.project, lane, rangoDeLane(lane));
+        var trazo = state.pintando;
+        if (trazo && trazo.laneIndex === laneIndex) {
+          var a = Math.min(trazo.desde, trazo.hasta), b = Math.max(trazo.desde, trazo.hasta);
+          for (var bar = a; bar <= b; bar += 1) prendidos[bar - 1] = trazo.encender;
+        }
+        return prendidos;
+      }
+
       function laneCard(laneIndex, cuantasDebajo) {
         var lane = state.project.automationLanes[laneIndex];
         if (!lane) return '';
         var color = colorDeLane(lane);
         var suelta = !lane.controlId;
         var plegada = !!lane.collapsed;
-        var html = '<div class="lane-fila' + (lane.off ? ' apagada' : '') +
-          '" style="--lanecol:' + color + '">';
-        html += '<div class="etiqueta" title="' + esc(lane.name) + ' · CH' + lane.channel +
-          ' · CC' + lane.cc + ' · ' + lane.points.length + ' puntos' +
-          (lane.off ? ' · desactivada' : '') + '">';
+        var bloques = lane.modo === 'bloques';
+        var ancho = 'width:' + (state.zoomLanes * 100) + '%';
+
+        var html = '<div class="mrow' + (lane.off ? ' apagada' : '') + '">';
+        html += '<div class="mlabel" style="--cc:' + color + '" title="' + esc(lane.name) +
+          ' \u00b7 CH' + lane.channel + ' \u00b7 CC' + lane.cc + ' \u00b7 ' + lane.points.length + ' puntos' +
+          (lane.off ? ' \u00b7 desactivada' : '') + '">';
         // El canal con automatizaciones colgando trae su chevron para plegarlas.
         var dev = deviceDeLane(lane);
         if (esLevel(lane) && cuantasDebajo) {
           var plegadoDev = !!state.filasPlegadas[dev];
           html += '<button class="mini" data-fila-fold="' + esc(dev) + '" title="' +
             (plegadoDev ? 'Mostrar sus automatizaciones' : 'Plegar sus automatizaciones') + '">' +
-            (plegadoDev ? '▸' : '▾') + '</button>';
+            (plegadoDev ? '\u25b8' : '\u25be') + '</button>';
         } else if (!esLevel(lane) && lane.controlId) {
-          html += '<span class="cuelga" aria-hidden="true">└</span>';
+          html += '<span class="cuelga" aria-hidden="true">\u2514</span>';
         }
         html += '<b>' + esc(nombreCortoDeLane(lane)) + '</b>';
         html += '<span class="cc">CC' + lane.cc +
           (esLevel(lane) && cuantasDebajo ? ' +' + cuantasDebajo : '') + '</span>';
         if (suelta) {
           html += '<button class="mini" data-lane-fold="' + laneIndex + '" title="' +
-            (plegada ? 'Desplegar' : 'Plegar') + '">' + (plegada ? '▸' : '▾') + '</button>';
-          html += '<button class="mini" data-remove-lane="' + laneIndex + '" title="Sacar esta lane">✕</button>';
+            (plegada ? 'Desplegar' : 'Plegar') + '">' + (plegada ? '\u25b8' : '\u25be') + '</button>';
+          html += '<button class="mini" data-remove-lane="' + laneIndex + '" title="Sacar esta lane">\u2715</button>';
         }
         html += '</div>';
-        html += '<div class="cuerpo">';
+
         if (suelta && plegada) {
-          html += '<span class="muted" style="font-size:11px">plegada</span>';
-        } else if (lane.modo === 'bloques') {
-          html += '<div class="lane-scroll"><div class="bloques" data-lane-blocks="' + laneIndex +
-            '" style="width:' + (state.zoomLanes * 100) + '%;--lanecol:' + color + '">' +
-            celdasDeBloques(lane, laneIndex) + '</div></div>';
+          html += '<div class="lane-scroll"><div class="mcells" style="' + ancho + '">' +
+            celdasDeSeccion() + '</div></div>';
+        } else if (bloques) {
+          html += '<div class="lane-scroll"><div class="mcells" data-lane-blocks="' + laneIndex +
+            '" style="' + ancho + '">' + celdasDeSeccion() +
+            '<div class="mlane">' + capaDeBloques(prendidosDeLane(laneIndex), color) +
+            '</div></div></div>';
         } else {
-          html += '<div class="lane-scroll"><svg class="lane-svg" data-lane-svg="' + laneIndex +
-            '" viewBox="0 0 1200 110" preserveAspectRatio="none" style="width:' +
-            (state.zoomLanes * 100) + '%"></svg></div>';
+          html += '<div class="lane-scroll"><div class="mcells env" style="' + ancho + '">' +
+            celdasDeSeccion() + '<svg class="lane-svg" data-lane-svg="' + laneIndex +
+            '" viewBox="0 0 1200 110" preserveAspectRatio="none"></svg></div></div>';
         }
-        html += '</div></div>';
+        html += '</div>';
+
         if (suelta && !plegada) {
           html += '<div class="lane-meta">';
           html += '<label>Name<input type="text" value="' + esc(lane.name) + '" data-lane-name="' + laneIndex + '"></label>';
@@ -2502,49 +2650,29 @@
         return html;
       }
 
-      // UNA CELDA POR COMPAS. Los bordes de seccion se marcan encima para saber donde
-      // estas, pero el bloque NO se ata a la seccion: dura lo que uno pinte.
-      function celdasDeBloques(lane, laneIndex) {
-        var rango = rangoDeLane(lane);
-        var prendidos = HPM.laneBlocks(state.project, lane, rango);
-        var inicios = {};
-        HPM.sectionTimeline(state.project).forEach(function (sec) {
-          inicios[Math.round(sec.startBar)] = colorDeSeccion(sec.index, sec.color);
-        });
-        var html = '';
-        for (var bar = 1; bar <= state.project.totalBars; bar += 1) {
-          var clases = 'celda' + (prendidos[bar - 1] ? ' on' : '') +
-            (inicios[bar] ? ' seccion' : ((bar - 1) % 16 === 0 ? ' compas16' : ''));
-          html += '<span class="' + clases + '" data-bar="' + bar + '"' +
-            (inicios[bar] ? ' style="--secc:' + inicios[bar] + '"' : '') +
-            ' title="Compás ' + bar + '"></span>';
-        }
-        return html;
+      // EN QUE COMPAS CAYO EL CURSOR. Se mide la fila de verdad -su rectangulo- y se le
+      // pregunta a la geometria, que sabe de los huecos entre columnas. Medir a ojo con
+      // una regla lineal deja el bloque corrido unos pixeles por columna.
+      function barBajoElCursor(caja, clientX) {
+        var r = caja.getBoundingClientRect();
+        if (!(r.width > 0)) return null;
+        return geometria().barAtX(clientX - r.left, r.width);
       }
 
-      // PINTAR ES ARRASTRAR. El primer compas decide: si estaba apagado se prende y el
-      // arrastre prende; si estaba prendido, borra. Es el gesto de la matriz de alla.
-      function pintarBloques(laneIndex, desdeBar, hastaBar, encender) {
-        var caja = document.querySelector('[data-lane-blocks="' + laneIndex + '"]');
+      // Repintar SOLO la capa de bloques de una fila. Mientras se arrastra se llama en
+      // cada compas: rehacer la matriz entera ahi seria tirar el layout a cada paso.
+      function repintarBloques(laneIndex) {
+        var caja = document.querySelector('[data-lane-blocks="' + laneIndex + '"] .mlane');
         if (!caja) return;
-        var a = Math.min(desdeBar, hastaBar), b = Math.max(desdeBar, hastaBar);
-        for (var bar = a; bar <= b; bar += 1) {
-          var celda = caja.querySelector('[data-bar="' + bar + '"]');
-          if (celda) celda.classList.toggle('on', encender);
-        }
+        caja.innerHTML = capaDeBloques(prendidosDeLane(laneIndex),
+          colorDeLane(state.project.automationLanes[laneIndex]));
       }
 
-      // Al soltar, las celdas prendidas se vuelven escalones: la grilla ES la lane.
+      // Al soltar, los compases prendidos se vuelven escalones secos: la matriz ES la lane.
       function guardarBloques(laneIndex) {
         var lane = state.project.automationLanes[laneIndex];
-        var caja = document.querySelector('[data-lane-blocks="' + laneIndex + '"]');
-        if (!lane || !caja) return;
-        var prendidos = [];
-        for (var bar = 1; bar <= state.project.totalBars; bar += 1) {
-          var celda = caja.querySelector('[data-bar="' + bar + '"]');
-          prendidos.push(!!(celda && celda.classList.contains('on')));
-        }
-        lane.points = HPM.blocksToLanePoints(state.project, prendidos, rangoDeLane(lane));
+        if (!lane) return;
+        lane.points = HPM.blocksToLanePoints(state.project, prendidosDeLane(laneIndex), rangoDeLane(lane));
         state.project = HPM.normalizeProject(state.project);
         refreshLivePlan();
         saveProject();
@@ -2565,17 +2693,18 @@
           var rg = rangoDeLane(lane);
           [0, .25, .5, .75, 1].map(function (t) { return Math.round(rg.min + t * (rg.max - rg.min)); }).forEach(function (value) {
             var y = yForValue(value, h, box.padT, box.padB, rg.min, rg.max);
-            parts.push('<line x1="' + box.padL + '" y1="' + y + '" x2="' + (w - box.padR) + '" y2="' + y + '" stroke="#22373d" stroke-width="1"></line>');
-            parts.push('<text x="10" y="' + (y + 4) + '" fill="#89a7a2" font-size="11">' + value + '</text>');
+            parts.push('<line x1="0" y1="' + y + '" x2="' + w + '" y2="' + y + '" stroke="#22373d" stroke-width="1"></line>');
+            // El numero va pegado al borde y tenue: el ancho es de la curva, no del eje.
+            parts.push('<text x="3" y="' + (y - 2) + '" fill="#89a7a2" fill-opacity=".5" font-size="9">' + value + '</text>');
           });
 
           // LA GRILLA MUESTRA EL PASO. Las lineas finas solo se dibujan si entran: por
           // debajo de tres pixeles entre una y otra son una mancha, no una grilla.
           var paso = state.pasoLane || 1;
-          var pxPaso = (w - box.padL - box.padR) / Math.max(1, totalBars - 1) * paso;
+          var pxPaso = w / Math.max(1, totalBars) * paso;
           var pasoDibujado = pxPaso >= 3 ? paso : 1;
           for (var bar = 1; bar <= totalBars; bar += pasoDibujado) {
-            var x = xForBar(bar, totalBars, w, box.padL, box.padR);
+            var x = xEnLane(bar, w);
             var enCompas = Math.abs(bar - Math.round(bar)) < 1e-6;
             var strong = enCompas && ((Math.round(bar) - 1) % 16 === 0);
             parts.push('<line x1="' + x + '" y1="' + box.padT + '" x2="' + x + '" y2="' + (h - box.padB) +
@@ -2583,18 +2712,16 @@
               '" stroke-width="' + (strong ? '2' : '1') + '"></line>');
           }
 
-          // LOS BORDES DE SECCION, ENCIMA DE LA GRILLA. La curva se dibuja contra el
-          // arreglo de verdad: donde entra el break se ve, no se cuenta. Es la misma
-          // geometria que la timeline de arriba, asi que las lineas coinciden.
+          // LOS BORDES DE SECCION, ENCIMA DE LA GRILLA. Caen justo en el hueco entre dos
+          // columnas: la curva se lee contra el arreglo de verdad.
           HPM.sectionTimeline(state.project).forEach(function (seccion) {
-            var xs = xForBar(seccion.startBar, totalBars, w, box.padL, box.padR);
+            var xs = xEnLane(seccion.startBar, w);
             var color = colorDeSeccion(seccion.index);
             if (seccion.index === state.selectedSectionIndex) {
-              var xe = Math.min(w - box.padR, xForBar(seccion.endBar, totalBars, w, box.padL, box.padR));
+              var xe = Math.min(w, xEnLane(seccion.endBar, w));
               parts.push('<rect x="' + xs + '" y="' + box.padT + '" width="' + Math.max(0, xe - xs) +
                 '" height="' + (h - box.padT - box.padB) + '" style="fill:' + color + ';fill-opacity:.16"></rect>');
             }
-            // El borde de la primera seccion es el marco del grafico: dibujarlo tapa el eje.
             if (seccion.index === 0) return;
             parts.push('<line x1="' + xs + '" y1="' + box.padT + '" x2="' + xs + '" y2="' + (h - box.padB) +
               '" style="stroke:' + color + ';stroke-opacity:.55" stroke-width="2" stroke-dasharray="5 4"></line>');
@@ -2602,7 +2729,7 @@
 
           if (lane.points.length) {
             var path = lane.points.map(function (point, idx) {
-              var x = xForBar(point.bar, totalBars, w, box.padL, box.padR);
+              var x = xEnLane(point.bar, w);
               var y = yForValue(point.value, h, box.padT, box.padB, rg.min, rg.max);
               return (idx === 0 ? 'M' : 'L') + x + ' ' + y;
             }).join(' ');
@@ -2610,13 +2737,13 @@
               '" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>');
 
             lane.points.forEach(function (point, pointIndex) {
-              var x = xForBar(point.bar, totalBars, w, box.padL, box.padR);
+              var x = xEnLane(point.bar, w);
               var y = yForValue(point.value, h, box.padT, box.padB, rg.min, rg.max);
               var selected = state.selectedLanePoint && state.selectedLanePoint.laneIndex === laneIndex && state.selectedLanePoint.pointIndex === pointIndex;
               parts.push('<g data-point-grab="' + laneIndex + ':' + pointIndex + '" style="cursor:grab">');
-              parts.push('<circle cx="' + x + '" cy="' + y + '" r="' + (selected ? '9' : '7') + '" fill="' +
+              parts.push('<circle cx="' + x + '" cy="' + y + '" r="' + (selected ? '7' : '5') + '" fill="' +
                 (selected ? '#ff4f4f' : colorDeLane(lane)) + '" stroke="#051012" stroke-width="2"></circle>');
-              parts.push('<text x="' + x + '" y="' + (y - 12) + '" text-anchor="middle" fill="#e5f0ef" font-size="11">' + point.value + '</text>');
+              parts.push('<text x="' + x + '" y="' + (y - 9) + '" text-anchor="middle" fill="#e5f0ef" fill-opacity=".8" font-size="9">' + point.value + '</text>');
               parts.push('</g>');
             });
           }
@@ -2624,12 +2751,12 @@
           if (state.playing && state.transport) {
             var beat = state.transport.getCurrentBeat(performance.now());
             var playBar = HPM.beatToBarFloat(state.project, beat);
-            var xh = xForBar(playBar, totalBars, w, box.padL, box.padR);
+            var xh = xEnLane(playBar, w);
             parts.push('<line x1="' + xh + '" y1="' + box.padT + '" x2="' + xh + '" y2="' + (h - box.padB) + '" stroke="#ffd166" stroke-width="3"></line>');
           }
 
-          parts.push('<text x="' + box.padL + '" y="14" fill="' + colorDeLane(lane) + '" font-size="12">' +
-            esc(lane.name) + ' · ' + lane.destination.toUpperCase() + ' · MIDI CH' + lane.channel + ' · CC' + lane.cc + '</text>');
+          // El nombre NO va adentro del carril: va en la etiqueta de la fila, como en la
+          // matriz del arranger. Adentro solo tapaba la curva.
           svg.innerHTML = parts.join('');
         });
       }
@@ -3677,7 +3804,7 @@
         var y = ((clientY - rect.top) / rect.height) * box.height;
         var rango = rangoDeLane(lane);
         var punto = {
-          bar: freeBarForLane(lane, barForX(x, state.project.totalBars, box.width, box.padL, box.padR)),
+          bar: freeBarForLane(lane, barEnLane(x, box.width)),
           value: valueForY(y, box.height, box.padT, box.padB, rango.min, rango.max)
         };
         // Estable y con el nuevo al final de su compas: si cae sobre otro, el que ya
@@ -3798,16 +3925,20 @@
           event.preventDefault();
           return;
         }
-        // PINTAR BLOQUES. El primer compas decide si el trazo prende o borra.
-        var celdaBloque = event.target.closest ? event.target.closest('.bloques [data-bar]') : null;
-        if (celdaBloque) {
-          var cajaBloques = celdaBloque.closest('[data-lane-blocks]');
+        // PINTAR BLOQUES. El compas sale de la GEOMETRIA, no de una celda por compas: las
+        // columnas son secciones, asi que donde cayo el click se calcula descontando los
+        // huecos, con la misma cuenta que coloca los bloques. El primer compas decide si
+        // el trazo prende o borra: si arranca sobre un bloque, borra.
+        var cajaBloques = event.target.closest ? event.target.closest('[data-lane-blocks]') : null;
+        if (cajaBloques) {
           var iLane = Number(cajaBloques.dataset.laneBlocks);
-          var barInicio = Number(celdaBloque.dataset.bar);
-          var encender = !celdaBloque.classList.contains('on');
+          var barInicio = barBajoElCursor(cajaBloques, event.clientX);
+          if (barInicio === null) return;
+          var yaPrendido = HPM.laneBlocks(state.project, state.project.automationLanes[iLane],
+            rangoDeLane(state.project.automationLanes[iLane]))[barInicio - 1];
           anotarPaso();
-          state.pintando = { laneIndex: iLane, encender: encender, desde: barInicio, ultimo: barInicio };
-          pintarBloques(iLane, barInicio, barInicio, encender);
+          state.pintando = { laneIndex: iLane, encender: !yaPrendido, desde: barInicio, hasta: barInicio };
+          repintarBloques(iLane);
           event.preventDefault();
           return;
         }
@@ -3895,21 +4026,14 @@
 
       document.addEventListener('pointermove', function (event) {
         if (state.pintando) {
-          // Primero el target del evento y despues el punto: con el puntero capturado el
-          // target sigue siendo la celda donde empezo, y al reves, en un arrastre normal el
-          // target es la celda de abajo. Los dos caminos hacen falta.
-          var celda = event.target && event.target.closest ? event.target.closest('.bloques [data-bar]') : null;
-          if (!celda) {
-            var sobre = document.elementFromPoint(event.clientX, event.clientY);
-            celda = sobre && sobre.closest ? sobre.closest('.bloques [data-bar]') : null;
-          }
-          if (!celda) return;
-          var caja = celda.closest('[data-lane-blocks]');
-          if (!caja || Number(caja.dataset.laneBlocks) !== state.pintando.laneIndex) return;
-          var bar = Number(celda.dataset.bar);
-          if (bar === state.pintando.ultimo) return;
-          pintarBloques(state.pintando.laneIndex, state.pintando.ultimo, bar, state.pintando.encender);
-          state.pintando.ultimo = bar;
+          // La fila es la del trazo y no la de abajo del cursor: si al arrastrar se sale
+          // de la fila, el bloque sigue siendo de la lane donde empezo.
+          var caja = document.querySelector('[data-lane-blocks="' + state.pintando.laneIndex + '"]');
+          if (!caja) return;
+          var bar = barBajoElCursor(caja, event.clientX);
+          if (bar === null || bar === state.pintando.hasta) return;
+          state.pintando.hasta = bar;
+          repintarBloques(state.pintando.laneIndex);
           return;
         }
         if (state.bpmDrag) {
@@ -3997,7 +4121,7 @@
         var lane = state.project.automationLanes[state.drag.laneIndex];
         var rgDrag = rangoDeLane(lane);
         lane.points[state.drag.pointIndex] = {
-          bar: constrainedBarForPoint(lane, state.drag.pointIndex, barForX(x, state.project.totalBars, box.width, box.padL, box.padR)),
+          bar: constrainedBarForPoint(lane, state.drag.pointIndex, barEnLane(x, box.width)),
           value: valueForY(y, box.height, box.padT, box.padB, rgDrag.min, rgDrag.max)
         };
         refreshLanePlanDuringDrag();
@@ -4006,9 +4130,13 @@
 
       document.addEventListener('pointerup', function () {
         if (state.pintando) {
+          // Guardar ANTES de soltar el trazo: los compases que se escriben salen de la
+          // lane MAS el trazo, asi que borrarlo primero guardaria como si no hubiera
+          // pasado nada.
           var pintado = state.pintando;
-          state.pintando = null;
           guardarBloques(pintado.laneIndex);
+          state.pintando = null;
+          renderLanes();
           return;
         }
         if (state.bpmDrag) {
