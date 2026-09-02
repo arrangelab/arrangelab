@@ -3223,20 +3223,26 @@
       document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape' && !el.ctlMenu.hidden) { cerrarCtlMenu(); return; }
         var focused = document.activeElement;
-        // Ctrl+N: una seccion nueva a la derecha de donde estas, con el campo del nombre
-        // abierto. Ojo que algunos navegadores se quedan con Ctrl+N para abrir una ventana.
-        if ((event.ctrlKey || event.metaKey) && (event.key === 'n' || event.key === 'N') &&
-            state.selectedSectionIndex >= 0) {
+        // LOS ATAJOS DE UNA LETRA, con una seccion elegida:
+        //   N  seccion nueva a la derecha, con el nombre abierto para escribirlo
+        //   D  duplicar
+        //   R  renombrar
+        // Sin Ctrl -que se lo queda el navegador para sus cosas- aunque con Ctrl tambien
+        // funcionan, por si te quedo el dedo. Escribiendo en un campo, la letra es del
+        // campo: ahi no pasa nada.
+        if (!event.altKey && state.selectedSectionIndex >= 0 &&
+            !(focused && focused.matches('input, select, textarea')) &&
+            /^[ndrNDR]$/.test(event.key)) {
           event.preventDefault();
-          opSeccion('add');
-          abrirRenombrar(state.selectedSectionIndex);
-          return;
-        }
-        // Ctrl+D duplica la seccion elegida, como alla.
-        if ((event.ctrlKey || event.metaKey) && (event.key === 'd' || event.key === 'D') &&
-            state.selectedSectionIndex >= 0) {
-          event.preventDefault();
-          opSeccion('dup');
+          var letra = event.key.toLowerCase();
+          if (letra === 'n') {
+            opSeccion('add');
+            abrirRenombrar(state.selectedSectionIndex);
+          } else if (letra === 'd') {
+            opSeccion('dup');
+          } else {
+            abrirRenombrar(state.selectedSectionIndex);
+          }
           return;
         }
         // CON UNA SECCION ELEGIDA, LAS TECLAS SON DE LA SECCION, como en ArrangeLab:
