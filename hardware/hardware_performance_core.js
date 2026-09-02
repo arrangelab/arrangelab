@@ -244,6 +244,12 @@
         // APAGADA NO ES BORRADA. El dibujo queda, pero no manda un solo CC: sirve para
         // probar el tema sin esa automatizacion y volver a prenderla sin rehacerla.
         off: !!safe.off,
+        // COMO SE MIRA: bloques -prendido/apagado, un compas por celda- o la curva. Un
+        // Level es prendido y apagado la mayor parte del tiempo, asi que arranca en
+        // bloques; un filtro es una curva y arranca como curva.
+        modo: safe.modo === 'bloques' || safe.modo === 'linea'
+          ? safe.modo
+          : (/-level$/.test(control.id) ? 'bloques' : 'linea'),
         controlId: control.id,
         mcTrack: track,
         channel: channel,
@@ -263,6 +269,7 @@
       cc: clampInt(safe.cc, 0, 127, 74),
       collapsed: !!safe.collapsed,
       off: !!safe.off,
+      modo: safe.modo === 'bloques' ? 'bloques' : 'linea',
       points: dedupePoints(points)
     };
   }
@@ -1005,6 +1012,40 @@
     });
   }
 
+  // ------------------------------------------------------------------- bloques de sonido
+  //
+  // UN BLOQUE ES UN COMPAS PRENDIDO. La celda no se ata a la seccion: un bloque dura lo
+  // que uno quiera y la unidad es el compas, como las vueltas de la matriz de ArrangeLab.
+  //
+  // No hay un modelo nuevo detras: los bloques SON la lane. Se leen interpolando su valor
+  // al empezar cada compas -encendido es cualquier cosa por encima del minimo del rango- y
+  // se escriben como escalones, la misma forma que deja `CLIPS → CC`. Por eso lo que se
+  // pinta se puede seguir tocando como curva, y al reves.
+  function laneBlocks(project, lane, rango) {
+    var min = Number.isFinite(rango && rango.min) ? rango.min : 0;
+    var total = project.totalBars;
+    var out = [];
+    for (var bar = 1; bar <= total; bar += 1) {
+      var v = interpolateLaneValue(lane, barToBeat(project, bar), project);
+      out.push(v !== null && v > min);
+    }
+    return out;
+  }
+
+  // De la fila de compases prendidos a los puntos. Los compases seguidos son UN tramo, asi
+  // que un bloque de ocho compases son cuatro puntos y no dieciseis.
+  function blocksToLanePoints(project, encendidos, rango) {
+    var bpb = beatsPerBar(project);
+    var regiones = [];
+    var desde = -1;
+    (encendidos || []).forEach(function (on, i) {
+      if (on && desde < 0) desde = i;
+      if (!on && desde >= 0) { regiones.push({ startBeat: desde * bpb, endBeat: i * bpb }); desde = -1; }
+    });
+    if (desde >= 0) regiones.push({ startBeat: desde * bpb, endBeat: (encendidos || []).length * bpb });
+    return clipsToLanePoints(project, regiones, rango);
+  }
+
   // ------------------------------------------------- los clips: donde suena cada canal
   //
   // El .als no dice solo la estructura: dice DONDE SUENA CADA PISTA, que es la mitad del
@@ -1541,6 +1582,8 @@
     pairFromTarget: pairFromTarget,
     hardwareProfile: hardwareProfile,
     readArrangementClips: readArrangementClips,
+    laneBlocks: laneBlocks,
+    blocksToLanePoints: blocksToLanePoints,
     clipsToLanePoints: clipsToLanePoints,
     suggestDeviceChannels: suggestDeviceChannels,
     triggerBeats: triggerBeats,
