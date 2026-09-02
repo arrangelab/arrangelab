@@ -1,0 +1,1995 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ArrangeLab Hardware</title>
+  <link rel="icon" href="icono.svg" type="image/svg+xml">
+  <style>
+  :root{
+    /* ---------- LAB DARK. Workstation moderna: azul de sistema, naranja de edición. --- */
+    /* superficies: cuatro niveles, del exterior al hundido */
+    --bg:#050606;         /* carcasa exterior */
+    --panel:#0B0D0E;      /* el canvas y los paneles */
+    --eleva:#101314;      /* lo que se levanta un escalón sobre el panel */
+    --campo:#050707;      /* el fondo hundido de un input, un select, una celda */
+    --flota:#111415;      /* lo que flota por encima de todo: un menú, una opción */
+    --line:#202627;
+
+    --txt:#D9E0DF; --dim:#657170;
+
+    /* Dos acentos con roles distintos. La acción deja de ir en naranja dominante y pasa
+       a un cyan/verde contenido: la lógica es MC-707, con luz chica y superficie oscura. */
+    --acc:#5FE4D2;        /* acción, edición, foco */
+    --marca:#1EA6E8;      /* marca, información, sistema */
+    --acc2:#53B8FF;       /* el acento secundario: automatizaciones y canales MIDI */
+    --ok:#41D991; --warn:#F2C94C; --bad:#FF5368;
+    --sobreacc:#07110F;   /* el texto que va ARRIBA del color de acento */
+    /* Los botones principales dejan de ser bloques naranjas: cuerpo negro grafito y
+       leyenda LED contenida, sin bañar toda la superficie. */
+    --btnbg:#0B0E0D; --btnfg:#8EF5E8; --btnbd:#2F3735; --btnhov:#111615;
+
+    /* celdas de la matriz */
+    --vacio:#050707;      /* una celda sin nada */
+    --vaciohov:#0A0D0D;   /* la misma, con el mouse encima */
+
+    /* Selección: rail de acento + fondo apenas levantado. El documento pide sacar el
+       lavado ancho —«el lavado marrón de fila seleccionada»—, no el resalte. */
+    --sel:color-mix(in srgb, var(--marca) 10%, transparent);
+    --hov:#1B2025;        /* el mismo elemento, sólo con el mouse encima */
+
+    /* Lo que se dibuja ENCIMA de un bloque de color de sección: ahí no manda el tema,
+       manda el color del bloque, así que el texto es claro en los tres. */
+    --sobrebloque:#FFFFFF;
+    --velo:rgba(0,0,0,.5);      /* velo para un botón apoyado sobre un bloque */
+    --grip:rgba(255,255,255,.35); /* manijas y bordes finos sobre bloques */
+    --rejilla:rgba(255,255,255,.16);  /* la trama diagonal del loop repetido */
+    --tramaalt:rgba(0,0,0,.34);       /* la trama del loop ALTERNATIVO, sobre el color del canal */
+    --vtaseam:rgba(0,0,0,.5);       /* el borde donde ARRANCA una vuelta */
+    --vtaluz:rgba(255,255,255,.16);     /* y el borde donde termina: juntos las separan */
+    --tramabd:rgba(255,255,255,.25);
+
+    /* la celda cuyo loop no entra en la sección */
+    --noentra1:#3A2A2A; --noentra2:#241A1A; --noentrabd:#5A3535;
+    /* la etiqueta MIDI, que va del color del acento secundario */
+    --midibg:#12283A; --midibd:#1F4A66;
+    --chasis-luz:rgba(255,255,255,.022);
+    --chasis-sombra:rgba(0,0,0,.8);
+    --chasis-textura:rgba(255,255,255,.014);
+    --panel-borde:rgba(0,0,0,.86);
+    --panel-junta:rgba(255,255,255,.03);
+    --panel-hondo:rgba(0,0,0,.22);
+    --display-bg:#071017;
+    --display-line:#16354A;
+    --display-fg:#83D8FF;
+    --display-dim:#5E9AB8;
+    --display-glow:rgba(45,165,228,.18);
+    --serigrafia:color-mix(in srgb, var(--marca) 44%, var(--dim) 56%);
+    --modfg:color-mix(in srgb, var(--txt) 90%, var(--marca) 10%);
+    --modbd:color-mix(in srgb, var(--line) 65%, black 35%);
+    --modglass:rgba(255,255,255,.09);
+    --modglasshov:rgba(255,255,255,.15);
+    --hw-btn-bg:#090B0B;
+    --hw-btn-bg-hover:#0D1110;
+    --hw-btn-border-top:#252B2A;
+    --hw-btn-border-side:#161A19;
+    --hw-btn-border-bottom:#020303;
+    --hw-label-green:#29E38B;
+    --hw-label-green-dim:#5A9E7C;
+    --hw-label-green-glow:rgba(41,227,139,.10);
+    --hw-label-red:#FF6675;
+    --hw-label-red-dim:#A74450;
+    --hw-label-red-glow:rgba(255,82,102,.18);
+    --hw-label-neutral:#AEB8B6;
+    --hw-label-neutral-dim:#596362;
+    --hw-btn-shadow:
+      inset 0 1px 0 rgba(255,255,255,.055),
+      inset 0 -1px 0 rgba(0,0,0,.9),
+      inset 1px 0 0 rgba(22,26,25,.72),
+      inset -1px 0 0 rgba(22,26,25,.72);
+    --hw-btn-shadow-hover:
+      inset 0 1px 0 rgba(255,255,255,.07),
+      inset 0 -1px 0 rgba(0,0,0,.94),
+      inset 1px 0 0 rgba(22,26,25,.84),
+      inset -1px 0 0 rgba(22,26,25,.84),
+      0 1px 2px rgba(0,0,0,.3);
+    --hw-btn-shadow-pressed:
+      inset 0 2px 4px rgba(0,0,0,.9),
+      inset 0 -1px 0 rgba(255,255,255,.025);
+
+    /* MATERIAL. Es lo que separa un tema de otro, mas que el color.
+       Lab Dark es plano por decision de su documento: nada de glow, blur ni gradientes.
+       Acid es metal mecanizado y Retro plastico de 1997, y cada uno lo dice ahi abajo. */
+    /* Los tres colores que solo existen para el movimiento. El documento pide que cada
+       tema cambie variables y keyframes decorativos, no las duraciones ni la logica. */
+    --barrido:rgba(21,155,211,.16);   /* el brillo que recorre algo que esta trabajando */
+    --pulso-ok:rgba(65,217,145,.55);  /* el pulso unico de «salio bien» */
+    --pulso-sel:rgba(255,122,26,.22); /* el pulso al elegir una seccion */
+    --bisel:inset 0 1px 0 rgba(255,255,255,.08), inset 0 -1px 0 rgba(0,0,0,.55),
+      0 1px 0 rgba(0,0,0,.32);                /* los controles */
+    --biselin:inset 0 2px 3px rgba(0,0,0,.68), inset 0 -1px 0 rgba(255,255,255,.03);
+    --hundido:inset 0 2px 4px rgba(0,0,0,.76), inset 0 1px 0 rgba(255,255,255,.04);
+    --radio:11px;                 /* el radio de un panel */
+    --radio2:6px;                /* el de un control */
+    /* Los titulos son tecnicos en los tres documentos: mono, mayusculas, con aire. */
+    --fuentetit:ui-monospace,"Cascadia Mono",Consolas,"DejaVu Sans Mono",monospace;
+    --sombra:0 10px 22px rgba(0,0,0,.34), 0 1px 0 rgba(0,0,0,.28);
+    --menusom:0 14px 28px rgba(0,0,0,.44), 0 1px 0 rgba(0,0,0,.26);
+
+    /* ---------- MOVIMIENTO ----------
+       De ARRANGELAB_SISTEMA_DE_ANIMACIONES_V1.md. Los nombres son los del documento y no
+       los de la casa a proposito: son nuevos, y quien lea el documento los va a buscar
+       asi. Los de color siguen con sus nombres de siempre, que ya estaban cableados.
+
+       La regla que ordena la escala: la accion responde antes de los 100ms, lo frecuente
+       dura entre 100 y 220, el cambio de tema entre 250 y 400, y un momento especial
+       hasta 1,2s sin bloquear nada. */
+    --motion-instant:90ms;    /* la respuesta al apretar: tiene que sentirse inmediata */
+    --motion-fast:140ms;      /* hover, bordes, cosas que pasan todo el tiempo */
+    --motion-normal:200ms;    /* abrir y cerrar, reordenar */
+    --motion-theme:340ms;     /* cambiar de tema: hay que ver el cruce */
+    --motion-special:900ms;   /* la confirmacion de que algo salio bien */
+    --motion-barrido:1000ms;  /* el ciclo del brillo que recorre algo trabajando */
+    --ease-mechanical:cubic-bezier(.2,.8,.2,1);   /* arranca decidido y frena */
+    --ease-snap:cubic-bezier(.2,1,.3,1);          /* mas seco, para lo que encaja */
+
+    /* separación entre la etiqueta del canal y sus celdas. La usan .mrow y .mhead, que
+       TIENEN que coincidir o las columnas del encabezado no caen sobre las celdas. */
+    --gapfila:14px;
+    --gapsec:3px;    /* el hueco entre dos secciones. Lo usa el CSS Y el JS: ver GAPSEC */
+    /* EL PISO DE ANCHO DE UNA COLUMNA. El ancho sale de flex-grow:bars, asi que un fill de
+       1 compas dentro de un track de 128 daria seis pixeles: no se podria ni apuntar. Lo
+       usan las CUATRO filas que comparten columnas —.useg y .udur arriba, .mcell en el
+       medio, .ecell en las envolventes—. Si cambia, cambia aca o dejan de alinear. */
+    --minseg:34px;
+    /* los colores de sección son semánticos y no cambian entre temas, salvo que un tema
+       necesite apagarlos, como hace Retro por tener el fondo claro */
+    --roland-sec-orange:#ff8a2a;
+    --roland-sec-yellow:#ffd84a;
+    --roland-sec-green:#34f06e;
+    --roland-sec-blue:#4f8dff;
+    --roland-sec-purple:#b584ff;
+    --roland-sec-pink:#ff63c5;
+    --roland-sec-white:#f4f7fb;
+    --roland-sec-sky:#56e6ff;
+    --roland-sec-pastel-yellow:#f6f1a4;
+    --roland-sec-pastel-blue:#a8d9ff;
+    --roland-sec-pastel-pink:#ffb4df;
+    --roland-sec-pastel-green:#a8f1bf;
+    --roland-sec-light-red:#ff8b86;
+    --roland-sec-light-orange:#ffb067;
+    --roland-sec-light-yellow:#ffe68a;
+    --roland-sec-light-green:#6ff3a0;
+    --roland-sec-light-sky:#8af0ff;
+    --roland-sec-light-blue:#8cb6ff;
+    --roland-sec-light-purple:#ceb0ff;
+  }
+
+  /* ---------- LO PROPIO DE ESTA PAGINA ----------
+     Arriba esta el :root de ArrangeLab.html copiado VERBATIM: los 81 tokens, no una
+     seleccion. Copiar un subconjunto a mano fue el error de la primera pasada — faltaban
+     los verdes de etiqueta y los colores Roland de seccion, y la pagina no terminaba de
+     ser la misma herramienta.
+
+     Aca abajo, solo lo que esta pagina agrega: los nombres viejos como alias, para no
+     reescribir sus 72 KB de reglas. */
+  :root{
+    --panel-2:var(--eleva);
+    --text:var(--txt);
+    --muted:var(--dim);
+    --accent:var(--acc);
+    --accent-2:var(--acc2);
+    --danger:var(--bad);
+    --shadow:0 10px 22px rgba(0,0,0,.34), 0 1px 0 rgba(0,0,0,.28);
+    --lane-h:160px;
+  }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      /* La misma que ArrangeLab: sin fuente descargada, la del sistema. */
+      font:14px/1.5 system-ui,Segoe UI,Arial,sans-serif;
+      /* El chasis de ArrangeLab: una luz chica arriba al centro sobre superficie oscura,
+         en vez de los dos halos de color que tenia esta pagina. */
+      background:
+        radial-gradient(130% 85% at 50% -12%, var(--chasis-luz), transparent 54%),
+        linear-gradient(180deg, rgba(255,255,255,.012), transparent 18%),
+        linear-gradient(180deg, var(--bg), color-mix(in srgb, var(--bg) 88%, black 12%));
+      color:var(--txt);
+      min-height:100vh;
+    }
+    /* LA BARRA DE TRANSPORTE. Una tira fina, no un panel: es lo que se mira mientras se
+       toca. Los campos son chicos y etiquetados al lado, no arriba, para que entren en una
+       linea; PLAY y STOP quedan separados del resto por un filete. */
+    .transport-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+      padding:8px 24px;border-bottom:1px solid var(--line);background:var(--panel)}
+    .transport-bar .tfield{display:flex;align-items:center;gap:7px;margin:0;
+      font:11px/1 var(--fuentetit);letter-spacing:.09em;text-transform:uppercase;
+      color:var(--hw-label-green);text-shadow:0 0 3px var(--hw-label-green-glow)}
+    .transport-bar .tfield input{width:74px;padding:6px 8px}
+    .transport-bar .tout{flex:1;min-width:190px}
+    .transport-bar .tout select{flex:1;min-width:0;padding:6px 8px}
+    .transport-bar button{padding:7px 13px}
+    .transport-bar .tsep{width:1px;align-self:stretch;margin:0 4px;
+      background:color-mix(in srgb, var(--line) 75%, black 25%)}
+    .transport-bar .status{margin-left:auto}
+    @media (max-width:760px){ .transport-bar{padding:8px 14px} .transport-bar .tout{width:100%;flex-basis:100%} }
+
+    /* LA MARCA, como en ArrangeLab: el icono de bloques y el nombre en monoespaciada.
+       El modo va al lado, separado por una linea fina, para que se lea que es la MISMA
+       herramienta en otro modo y no otro producto. */
+    /* El boton que salta entre los extremos del rango. No dice nada: se lee por su
+       estado —lleno arriba, vacio abajo— y por el color del device. */
+    .swing-toggle{width:100%;height:12px;padding:0;margin-top:2px;border-radius:3px;
+      border:1px solid color-mix(in srgb,var(--control-color) 50%,var(--line));
+      background:transparent;cursor:pointer}
+    .swing-toggle.arriba{background:var(--control-color);
+      box-shadow:0 0 6px color-mix(in srgb,var(--control-color) 55%,transparent)}
+    .swing-toggle:hover{border-color:var(--control-color)}
+    .swing-toggle:disabled{opacity:.45;cursor:not-allowed}
+
+    /* La lista de buses: el par y el bus fijos a la izquierda, el nombre editable a la
+       derecha. Se lee como una patchera, que es lo que es. */
+    .bus-row{display:flex;align-items:center;gap:10px;padding:5px 0;border-top:1px solid var(--line)}
+    .bus-row:first-child{border-top:0}
+    .bus-pair{min-width:56px;font:11px/1 var(--fuentetit);letter-spacing:.06em;color:var(--acc2)}
+    .bus-name{flex:1;min-width:0;font:11px/1 var(--fuentetit);letter-spacing:.06em;
+      color:var(--hw-label-green);text-shadow:0 0 3px var(--hw-label-green-glow)}
+    .bus-track{min-width:70px;font:11px/1 var(--fuentetit);letter-spacing:.06em;color:var(--dim)}
+    .chips{display:flex;flex-wrap:wrap;gap:3px;flex:1}
+    .chip{padding:3px 6px;font:10px/1 var(--fuentetit);letter-spacing:.04em;
+      color:var(--dim);background:transparent;border-color:transparent;box-shadow:none}
+    .chip:hover{border-color:var(--line);color:var(--txt);background:var(--hov)}
+    .chip.on{color:var(--sobreacc);background:var(--acc);border-color:var(--acc)}
+
+    /* EL MENU DE UN CONTROL. Sale con click derecho sobre la perilla o el fader. Vive
+       pegado al puntero y por encima de todo, pero por debajo del menu de envolventes de
+       ArrangeLab (z-index 70) para no repetir el error que ya esta documentado ahi. */
+    .ctl-menu{position:fixed;z-index:65;min-width:186px;padding:6px;border-radius:10px;
+      border:1px solid var(--line);background:var(--flota);box-shadow:var(--menusom, 0 14px 28px rgba(0,0,0,.44))}
+    .ctl-menu[hidden]{display:none}
+    .ctl-menu-tit{padding:6px 8px 8px;font:11px/1.4 var(--fuentetit);letter-spacing:.06em;
+      text-transform:uppercase;color:var(--dim);border-bottom:1px solid var(--line);margin-bottom:6px}
+    .ctl-menu-tit b{display:block;color:var(--txt);margin-bottom:3px}
+    .ctl-menu button{display:block;width:100%;text-align:left;margin:0 0 3px;padding:7px 9px;
+      border-color:transparent;background:transparent;font:11px/1 var(--fuentetit);letter-spacing:.06em}
+    .ctl-menu button:hover{background:var(--hov);border-color:var(--line)}
+    .ctl-menu button:last-child{margin-bottom:0}
+    .ctl-menu .ctl-auto{color:var(--acc2)}
+
+    /* EL HEADER ES EL DE ARRANGELAB, VALOR POR VALOR.
+       Al pasar de una pestaña a la otra la marca tiene que caer en el MISMO pixel: mismo
+       padding (12px 20px, no 18/24), mismo alto de logo, mismo translateY del icono y el
+       mismo fondo. Cualquier diferencia se ve como un salto al cambiar de pestaña. */
+    header{padding:12px 20px;border-bottom:1px solid color-mix(in srgb, var(--line) 72%, black 28%);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.018), transparent 28%),
+        linear-gradient(180deg, color-mix(in srgb, var(--panel) 88%, black 12%), color-mix(in srgb, var(--panel) 96%, black 4%));
+      display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    h1{font-size:15px;margin:0;letter-spacing:.08em;text-transform:uppercase}
+    .marca{display:flex;align-items:center;line-height:0}
+    .marca{gap:7px;line-height:1}
+    /* El wordmark es una IMAGEN, no texto: el pixel-art con el Lab en degrade verde.
+       Escribirlo con una fuente del sistema no lo reproduce. */
+    .marca .logo{height:22px;width:auto;display:block}
+    .marca .logoicon{width:24px;height:24px;display:block;flex:none;image-rendering:pixelated;
+      transform:translateY(-3px);filter:drop-shadow(0 1px 0 rgba(0,0,0,.45))}
+    /* El modo, con el mismo tratamiento que el lema de ArrangeLab: verde de etiqueta,
+       separado por un filete y escondido en pantallas angostas. */
+    .marca .modo{color:var(--hw-label-green);border-left:1px solid color-mix(in srgb, var(--line) 75%, black 25%);
+      padding-left:12px;margin-left:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      font:11px/1 var(--fuentetit);letter-spacing:.08em;text-transform:uppercase}
+    .back-arranger{margin-left:auto}
+    @media (max-width:900px){ .marca .modo{display:none} }
+    main{padding:18px;display:grid;gap:18px}
+    .panel{
+      background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)) , var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radio);
+      box-shadow:var(--sombra);
+      overflow:hidden;
+    }
+    .panel-head{
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    /* Los titulos son tecnicos, como en los tres documentos de ArrangeLab: mono,
+       mayusculas y con aire. El color es el de marca, no el de accion. */
+    .panel-head h2{
+      margin:0;
+      font:11px/1 var(--fuentetit);
+      letter-spacing:.11em;
+      text-transform:uppercase;
+      color:var(--marca);
+    }
+    .panel-body{padding:16px}
+    .toolbar,.row,.actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .grid{
+      display:grid;
+      gap:14px;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    }
+    /* EL PRESET ES UNA TIRA, NO UN FORMULARIO. Se toca dos veces por sesion: guardar al
+       terminar y cargar al empezar. Ocupaba media pantalla con las etiquetas arriba de
+       cada campo; ahora van al lado y entra todo en una linea. */
+    .preset-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .preset-bar label{display:flex;align-items:center;gap:7px;min-width:0;flex:1}
+    .preset-bar label select,.preset-bar label input{flex:1;min-width:0;padding:6px 8px}
+    .preset-bar button{white-space:nowrap;padding:7px 12px}
+    /* El panel del preset va apretado: cabecera fina y cuerpo sin aire de sobra. */
+    #presetPanel .panel-head{padding:8px 14px}
+    #presetPanel .panel-body{padding:10px 14px}
+    #presetPanel h2{font-size:11px}
+    #presetPanel .help{margin-top:10px !important;font-size:11px}
+    /* LA ETIQUETA VERDE es la firma visual de ArrangeLab: mono chica, mayusculas, muy
+       espaciada, con un resplandor apenas. Es lo que hace que se lea como panel de
+       maquina y no como formulario web. */
+    label{display:grid;gap:6px;color:var(--hw-label-green);font:11px/1 var(--fuentetit);
+      letter-spacing:.09em;text-transform:uppercase;text-shadow:0 0 3px var(--hw-label-green-glow)}
+    /* ---------- LOS CONTROLES, CON EL LENGUAJE DE ARRANGELAB ----------
+       El campo es HUNDIDO (--campo), no levantado: en ArrangeLab un input es un hueco en
+       el panel, no una tarjeta encima. Radio y bisel salen de los tokens del producto. */
+    input,select,button,textarea{background:var(--campo);color:var(--txt);border:1px solid var(--line);
+      border-radius:var(--radio2);padding:6px 8px;font:inherit;box-shadow:var(--bisel);
+      transition:background-color .12s ease,border-color .12s ease,box-shadow .12s ease}
+    textarea{width:100%;min-height:110px;resize:vertical}
+    /* Un boton es una LEYENDA LED sobre grafito: mono, mayusculas y espaciada. El color
+       no baña la superficie, vive en el texto. Es lo que hace que se lea como maquina. */
+    button{cursor:pointer;padding:7px 10px;font:11px/1 var(--fuentetit);
+      letter-spacing:.08em;text-transform:uppercase;color:var(--btnfg);background:var(--btnbg);
+      border-color:var(--btnbd)}
+    button:hover{background:var(--btnhov);border-color:currentColor}
+    /* Un pixel es poco a la vista y mucho al dedo: es lo que hace que se sienta un boton. */
+    button:active{transform:translateY(1px)}
+    button:disabled{cursor:default;opacity:.5;transform:none}
+    /* El primario es el de ArrangeLab: cuerpo de grafito con bordes distintos por lado y
+       la leyenda en verde con su resplandor. */
+    button.primary{position:relative;background:
+        linear-gradient(180deg, rgba(255,255,255,.028), rgba(255,255,255,0) 34%),
+        linear-gradient(180deg, var(--hw-btn-bg-hover), var(--hw-btn-bg));
+      border-top-color:var(--hw-btn-border-top);
+      border-right-color:var(--hw-btn-border-side);
+      border-bottom-color:var(--hw-btn-border-bottom);
+      border-left-color:var(--hw-btn-border-side);
+      color:var(--hw-label-green);font-weight:600;box-shadow:var(--hw-btn-shadow);
+      text-shadow:0 0 3px var(--hw-label-green-glow)}
+    button.primary::before{content:'';position:absolute;left:2px;right:2px;top:1px;height:1px;
+      border-radius:999px;background:rgba(255,255,255,.055);pointer-events:none}
+    button.primary:hover{box-shadow:var(--hw-btn-shadow-hover)}
+    button.secondary{color:var(--acc2)}
+    button.danger{color:var(--bad)}
+    /* El estado es una pastilla LED: punto encendido y leyenda, como el livepill. */
+    .status{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;
+      border:1px solid var(--line);border-radius:var(--radio2);background:var(--campo);
+      font:11px/1 var(--fuentetit);letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;
+      color:var(--hw-label-green-dim);text-shadow:0 0 3px var(--hw-label-green-glow)}
+    .status::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor;
+      box-shadow:0 0 7px currentColor}
+    .status.ok{color:var(--hw-label-green)}
+    .status.warn{color:var(--warn)}
+    .timeline-wrap{display:grid;gap:14px}
+    .timeline-svg,.lane-svg{
+      width:100%;
+      display:block;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)),
+        var(--eleva);
+      border:1px solid var(--line);
+      border-radius:14px;
+    }
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 8px;border-bottom:1px solid rgba(137,167,162,.18);text-align:left;vertical-align:top}
+    th{font:11px/1 var(--fuentetit);color:var(--hw-label-green);text-transform:uppercase;
+      letter-spacing:.09em;text-align:left;padding:4px 6px}
+    .lane-card{padding:14px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.02);display:grid;gap:12px}
+    .lane-meta{display:grid;gap:10px;grid-template-columns:2fr repeat(3,minmax(110px,1fr))}
+    .lane-points td input{width:100%}
+    .muted{color:var(--muted)}
+    .debug{
+      min-height:180px;
+      max-height:320px;
+      overflow:auto;
+      padding:14px;
+      background:var(--campo);
+      border:1px solid var(--line);
+      border-radius:12px;
+      font-family:var(--fuentetit);
+      font-size:12px;
+      line-height:1.55;
+      white-space:pre-wrap;
+    }
+    .performance-matrix{border:1px solid var(--line);border-radius:12px;overflow:auto;background:var(--campo)}
+    .performance-matrix table{min-width:980px}.performance-matrix th{background:var(--eleva);position:sticky;top:0}
+    .stem-label{min-width:190px;border-left:4px solid var(--accent);background:var(--eleva);cursor:pointer}.stem-label:hover{background:var(--hov)}.stem-label b{display:block}.stem-label .muted{font-size:11px}
+    .stem-cell{min-width:114px;background:rgba(255,255,255,.015)}.stem-cell select{min-width:105px;padding:7px;font-size:12px}.stem-cell:has(select[value="mute"]){background:rgba(255,107,107,.045)}
+    .stem-editor{border-top:1px solid var(--line);padding:14px 0 0;margin-top:14px}.stem-editor h3{margin:0 0 10px;color:var(--accent);font-size:14px}.block-editor{padding:10px;border:1px solid var(--line);border-radius:10px;margin:8px 0;background:var(--campo)}
+    .cc-switch{min-width:94px;padding:8px 10px;font-size:12px}.cc-switch.on{background:var(--accent);color:var(--sobreacc);border-color:var(--accent);font-weight:700}.cc-switch.off{color:var(--muted)}
+    .control-board{display:flex;gap:6px;align-items:stretch;overflow-x:auto;padding-bottom:6px}.control-board::-webkit-scrollbar{height:8px}.control-board::-webkit-scrollbar-thumb{background:var(--line);border-radius:9px}
+    .device-groups{display:grid;gap:14px}.device-group{background:transparent;overflow:hidden}.device-group-head{display:flex;align-items:center;gap:8px;padding:5px 2px}.device-group-head b{flex:1;color:var(--text);font:700 11px/1 var(--fuentetit);letter-spacing:.08em}.device-group-head .muted{font-size:10px}.device-group-head button{padding:4px 7px;font-size:9px;background:transparent;border-color:transparent;color:var(--muted)}.device-group-head button:hover{border-color:var(--line);color:var(--text)}.device-group-body{padding:4px 0}
+    .control-order{display:flex;gap:8px;align-items:center;margin-bottom:14px}.control-order b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--accent);font:700 12px/1 var(--fuentetit)}.control-order input{width:130px;padding:8px;font:700 10px/1 var(--fuentetit)}.control-order button{min-width:46px;font-size:18px;padding:8px}
+    /* BORDE DE COLOR POR DEVICE. Es lo que hace ArrangeLab con las secciones de la
+       matriz: cada una lleva su color en el borde y no en un relleno que tape el fondo.
+       Aca el color es el Roland del device, asi las dos paginas se leen igual. El fondo
+       queda hundido, como un hueco en el panel. */
+    .device-card{flex:0 0 109px;min-height:318px;padding:7px;display:flex;flex-direction:column;gap:5px;cursor:pointer;user-select:none;border:1px solid color-mix(in srgb,var(--control-color) 34%,var(--line));border-radius:var(--radio2);background:var(--campo);box-shadow:var(--bisel)}
+    .device-card:hover{border-color:color-mix(in srgb,var(--control-color) 62%,var(--line))}.device-card.tr8s{background:rgba(255,255,255,.028)}.device-card.selected{background:color-mix(in srgb,var(--control-color) 13%,var(--eleva));box-shadow:inset 0 2px 0 var(--control-color)}
+    .device-card.linked{box-shadow:inset 0 3px 0 #52E6FF}.device-card.linked.selected{box-shadow:inset 0 3px 0 #52E6FF,0 0 0 1px color-mix(in srgb,var(--control-color) 42%,transparent)}.device-head{width:100%;display:flex;align-items:center;gap:3px}.device-name{min-width:0;width:100%;padding:4px 2px;border:0;border-radius:0;background:transparent;color:var(--text);font:700 10px/1.2 var(--fuentetit);text-align:center;user-select:text}.device-name:focus{outline:none;background:rgba(255,255,255,.06)}.control-color-select{width:18px;height:18px;padding:0;border:0;border-radius:50%;background:var(--control-color);color:transparent;font-size:0;cursor:pointer}
+    .device-params{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px}.device-param{width:100%;display:flex;flex-direction:column;align-items:center;gap:2px}.device-param .muted{font-size:8px;text-align:center;min-height:10px}.parameter-name{width:100%;min-height:14px;padding:1px;border:0;border-radius:0;background:transparent;color:var(--text);font:700 8px/1 var(--fuentetit);text-align:center;user-select:text}.parameter-name:focus{outline:none;background:rgba(255,255,255,.06)}.device-param strong{font:700 12px/1 var(--fuentetit);color:var(--control-color,var(--accent))}
+    .vertical-fader{appearance:slider-vertical;-webkit-appearance:slider-vertical;width:22px;height:102px;padding:0;accent-color:var(--control-color,var(--accent));cursor:pointer}.vertical-fader:disabled{cursor:not-allowed}
+    .rotary-knob{position:relative;width:30px;height:30px;margin:2px 0;border:1px solid color-mix(in srgb,var(--control-color) 58%,var(--line));border-radius:50%;background:radial-gradient(circle at 35% 28%,color-mix(in srgb,var(--txt) 12%,var(--eleva)) 0 5%,var(--eleva) 38%,var(--campo) 70%);box-shadow:inset 0 0 0 3px var(--campo),0 3px 6px rgba(0,0,0,.35);cursor:ns-resize}.rotary-knob::after{content:"";position:absolute;left:50%;top:3px;width:2px;height:10px;border-radius:2px;background:var(--control-color);box-shadow:0 0 4px var(--control-color);transform-origin:50% 12px;transform:translateX(-50%) rotate(var(--knob-angle));}.rotary-knob:focus-visible{outline:2px solid var(--control-color);outline-offset:3px}.rotary-knob:disabled{opacity:.45;cursor:not-allowed}
+    .level-toggle{width:100%;padding:5px 3px;font:700 9px/1 var(--fuentetit);letter-spacing:.06em;border-color:transparent;background:rgba(255,255,255,.05);color:var(--control-color)}.level-toggle:hover{border-color:var(--control-color)}.level-toggle.off{color:var(--muted)}
+    .device-actions{display:flex;gap:4px}.device-actions button{flex:1;padding:4px 3px;font:700 8px/1 var(--fuentetit);letter-spacing:.06em;color:var(--control-color);border-color:transparent;background:rgba(255,255,255,.045)}.device-actions button:hover,.device-actions button.active{border-color:var(--control-color);background:color-mix(in srgb,var(--control-color) 16%,var(--eleva))}.mute-all{color:#FF4F4F!important}
+    @media(max-width:760px){.panel-body{padding:12px}.device-card{flex-basis:100px;min-height:300px}.preset-bar label{flex-basis:100%}}
+    .help{font-size:13px;color:var(--muted);max-width:80ch}
+    @media (max-width:900px){
+      .lane-meta{grid-template-columns:1fr 1fr}
+    }
+    @media (max-width:640px){
+      header,main{padding:14px}
+      .lane-meta,.grid{grid-template-columns:1fr}
+      th:nth-child(4),td:nth-child(4){display:none}
+    }
+  </style>
+</head>
+<body>
+  <!-- El h1 es hijo DIRECTO del header, como en ArrangeLab, y no hay nada mas adentro.
+       Lo que define el alto es el icono de 24px, en las dos paginas. Cualquier cosa mas
+       alta que eso —el pill de CC-only medía unos 33px— vuelve a desalinear la marca al
+       cambiar de pestaña. -->
+  <header>
+    <h1 class="marca">
+      <img class="logoicon" src="icono.svg" alt="" aria-hidden="true">
+      <img class="logo" src="logos/logo-arrangelab.png" alt="ArrangeLab">
+      <span class="modo">Hardware</span>
+    </h1>
+    <button id="backToArrangeLab" class="secondary back-arranger">ARRANGER</button>
+  </header>
+
+  <main>
+    <!-- LA BARRA DE TRANSPORTE. Sin titulo y sin panel: es lo que se mira todo el tiempo
+         mientras se toca, asi que ocupa una tira fina y no un bloque. El estado del MIDI
+         queda a la vista siempre: es contexto de seguridad, no decoracion. -->
+    <div class="transport-bar">
+      <button id="loadAlsBtn" class="secondary">CARGAR .ALS</button>
+      <input id="alsFile" type="file" accept=".als" hidden>
+      <label class="tfield">BPM<input id="bpmInput" type="number" min="20" max="300" step="1"></label>
+      <label class="tfield">BARS<input id="barsInput" type="number" min="1" max="9999" step="1"></label>
+      <label class="tfield tout">OUT<select id="midiOutputSelect"></select></label>
+      <button id="refreshMidiBtn" class="secondary">CONNECT</button>
+      <span class="tsep" aria-hidden="true"></span>
+      <button id="playBtn" class="primary">PLAY</button>
+      <button id="stopBtn" class="danger" disabled>STOP</button>
+      <div id="midiStatus" class="status warn">MIDI NOT READY</div>
+    </div>
+
+    <!-- Los canales que vinieron en el .als. Los nombres son los de ArrangeLab y no se
+         tocan aca: lo que se elige es QUE INSTRUMENTOS suenan por cada canal, que es el
+         dato que el Set no tiene y que hace falta para bajar los bloques a CC.
+
+         El renombrar y el GENERAR .ALS se sacaron por pedido de Tomas. Las funciones
+         siguen en el core con sus tests: no se borro nada, solo dejo de estar a la vista. -->
+    <section class="panel" id="setPanel" hidden>
+      <div class="panel-head">
+        <h2>Instrumentos por canal</h2>
+        <button id="sugerirCanalesBtn" class="secondary">SUGERIR</button>
+      </div>
+      <div class="panel-body">
+        <div id="busList"></div>
+        <p class="help" style="margin:12px 0 0">Cada instrumento suena por un solo canal:
+        tocarlo en otra fila lo mueve. El Set dice que por 9/10 entra «HHs», pero no cuál
+        de los once instrumentos de la TR-8S es — eso lo decidís acá una vez y queda
+        guardado con el preset.</p>
+      </div>
+    </section>
+
+    <section class="panel" id="presetPanel">
+      <div class="panel-head">
+        <h2>Preset</h2>
+        <div class="actions">
+          <button id="exportBtn" class="secondary">EXPORT JSON</button>
+          <button id="importBtn" class="secondary">IMPORT JSON</button>
+          <input id="importFile" type="file" accept="application/json" hidden>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="preset-bar">
+          <label>Saved Preset<select id="presetSelect"></select></label>
+          <label>Preset Name<input id="presetNameInput" maxlength="48" placeholder="My hardware setup"></label>
+          <button id="savePresetBtn" class="secondary">SAVE PRESET</button>
+          <button id="loadPresetBtn">LOAD PRESET</button>
+          <button id="deletePresetBtn" class="danger">DELETE</button>
+        </div>
+        <p class="help" style="margin:14px 0 0">El preset se guarda en este navegador. `EXPORT JSON` baja el mismo proyecto como archivo, para moverlo de maquina o respaldarlo; `IMPORT JSON` lo vuelve a cargar.</p>
+      </div>
+    </section>
+
+    <section class="panel" hidden>
+      <div class="panel-head">
+        <h2>Arrangement Overview</h2>
+        <div class="actions">
+          <button id="addSceneBtn">+ Scene Change</button>
+          <button id="addLaneBtn">+ CC Lane</button>
+        </div>
+      </div>
+      <div class="panel-body timeline-wrap">
+        <svg id="sceneTimeline" class="timeline-svg" viewBox="0 0 1200 150" preserveAspectRatio="none"></svg>
+        <div class="help">Las escenas entran en compases 8, 16, 24… El marcador indica cuándo entra la escena; el Program Change se envía un compás antes para que la MC-707 lo cuantice. Click en la tira superior agrega una escena al múltiplo de 8 más cercano.</div>
+      </div>
+    </section>
+
+    <section class="panel" hidden>
+      <div class="panel-head">
+        <h2>Scene Changes</h2>
+        <div class="muted">Program Change 0–127 por Control Channel. Las escenas entran cada 8 compases; el envío ocurre un compás antes.</div>
+      </div>
+      <div class="panel-body">
+        <table id="sceneTable"></table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Automation Lanes</h2>
+        <div class="muted">MVP inicial: CC7 Volume, CC74 Cutoff o cualquier CC custom.</div>
+      </div>
+      <div class="panel-body" id="lanesHost"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>Live CC Control</h2>
+        <div class="muted">Faders 0–127. Tocá una tira para seleccionarla; usá ←/→ o los botones para ordenarla.</div>
+      </div>
+      <div class="panel-body"><div class="control-order"><span class="muted">SELECTED</span><b id="selectedControlName">Tap a device</b><button id="moveControlLeftBtn" title="Move left">←</button><button id="moveControlRightBtn" title="Move right">→</button><span class="muted">SHIFT + CLICK TO LINK</span><button id="unlinkDevicesBtn">UNLINK</button><button id="muteAllLevelsBtn" class="mute-all">MUTE ALL</button></div><div id="liveControlsHost"></div></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>MIDI Debug</h2>
+        <div class="actions">
+          <!-- DRY RUN vive aca y no en el transporte: es el modo de prueba —cambia la
+               salida MIDI real por una traza en memoria—, no un control de performance. -->
+          <button id="dryRunBtn" class="secondary">DRY RUN: OFF</button>
+          <button id="clearLogBtn">CLEAR</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="debugLog" class="debug"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- El menu de un control. Uno solo para todos: se reposiciona y se rellena al abrirlo. -->
+  <div id="ctlMenu" class="ctl-menu" hidden role="menu">
+    <div class="ctl-menu-tit" id="ctlMenuTit"></div>
+    <button type="button" data-ctl-action="min">SET MIN AQUI</button>
+    <button type="button" data-ctl-action="max">SET MAX AQUI</button>
+    <button type="button" data-ctl-action="reset">RANGO COMPLETO</button>
+    <button type="button" data-ctl-action="automation" class="ctl-auto">AUTOMATION</button>
+  </div>
+
+  <script src="als.js"></script>
+  <script src="hardware_performance_core.js"></script>
+  <script>
+    (function () {
+      'use strict';
+
+      var STORAGE_KEY = 'arrangelab.hardware.performance.mvp.v2';
+      var LEGACY_STORAGE_KEY = 'arrangelab.hardware.performance.mvp.v1';
+      var PRESET_STORAGE_KEY = 'arrangelab.hardware.performance.presets.v1';
+      var state = {
+        project: loadProject(),
+        presets: loadPresets(),
+        selectedPresetId: '',
+        midiEngine: new HPM.MidiEngine(),
+        outputs: [],
+        connected: false,
+        dryRun: false,
+        alsXml: '',
+        alsName: '',
+        structure: null,
+        recordingTracks: [],
+        hardwareProfile: [],
+        playing: false,
+        transport: null,
+        scheduler: null,
+        midiClock: null,
+        plan: null,
+        playheadRaf: 0,
+        liveControlValues: {},
+        liveControlLastOnValues: {},
+        liveSoloDeviceId: '',
+        liveSoloRestoreValues: {},
+        drag: null,
+        knobDrag: null,
+        logLines: ['Hardware Performance Arranger listo.']
+      };
+
+      var el = {
+        bpm: document.getElementById('bpmInput'),
+        bars: document.getElementById('barsInput'),
+        midiOutput: document.getElementById('midiOutputSelect'),
+        refreshMidi: document.getElementById('refreshMidiBtn'),
+        dryRun: document.getElementById('dryRunBtn'),
+        play: document.getElementById('playBtn'),
+        stop: document.getElementById('stopBtn'),
+        exportBtn: document.getElementById('exportBtn'),
+        importBtn: document.getElementById('importBtn'),
+        importFile: document.getElementById('importFile'),
+        presetSelect: document.getElementById('presetSelect'),
+        presetName: document.getElementById('presetNameInput'),
+        savePreset: document.getElementById('savePresetBtn'),
+        loadPreset: document.getElementById('loadPresetBtn'),
+        deletePreset: document.getElementById('deletePresetBtn'),
+        midiStatus: document.getElementById('midiStatus'),
+        sceneTimeline: document.getElementById('sceneTimeline'),
+        sceneTable: document.getElementById('sceneTable'),
+        lanesHost: document.getElementById('lanesHost'),
+        loadAls: document.getElementById('loadAlsBtn'),
+        setPanel: document.getElementById('setPanel'),
+        busList: document.getElementById('busList'),
+        alsFile: document.getElementById('alsFile'),
+        ctlMenu: document.getElementById('ctlMenu'),
+        ctlMenuTit: document.getElementById('ctlMenuTit'),
+        selectedControlName: document.getElementById('selectedControlName'),
+        moveControlLeft: document.getElementById('moveControlLeftBtn'),
+        moveControlRight: document.getElementById('moveControlRightBtn'),
+        unlinkDevices: document.getElementById('unlinkDevicesBtn'),
+        liveControlsHost: document.getElementById('liveControlsHost'),
+        debugLog: document.getElementById('debugLog'),
+        addSceneBtn: document.getElementById('addSceneBtn'),
+        addLaneBtn: document.getElementById('addLaneBtn'),
+        clearLogBtn: document.getElementById('clearLogBtn')
+      };
+
+      function loadProject() {
+        try {
+          var raw = localStorage.getItem(STORAGE_KEY);
+          var isLegacyProject = !raw;
+          if (!raw) raw = localStorage.getItem(LEGACY_STORAGE_KEY);
+          if (!raw) return HPM.clone(HPM.DEFAULT_PROJECT);
+          var project = JSON.parse(raw);
+          // The first prototype shipped with CH1 as its implicit scene channel. This hardware uses CH16.
+          if (isLegacyProject && project.controlChannel === 1) project.controlChannel = 16;
+          return HPM.normalizeProject(project);
+        } catch (_err) {
+          return HPM.clone(HPM.DEFAULT_PROJECT);
+        }
+      }
+
+      function saveProject() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.project));
+      }
+
+      function loadPresets() {
+        try {
+          var items = JSON.parse(localStorage.getItem(PRESET_STORAGE_KEY) || '[]');
+          if (!Array.isArray(items)) return [];
+          return items.filter(function (item) { return item && item.id && item.name && item.project; }).map(function (item) {
+            return { id: String(item.id), name: String(item.name).slice(0, 48), project: HPM.normalizeProject(item.project), updatedAt: Number(item.updatedAt) || 0 };
+          }).sort(function (a, b) { return b.updatedAt - a.updatedAt; });
+        } catch (_err) { return []; }
+      }
+
+      function savePresets() {
+        localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(state.presets));
+      }
+
+      function renderPresets() {
+        var html = '<option value="">Select a preset</option>';
+        state.presets.forEach(function (preset) { html += '<option value="' + esc(preset.id) + '"' + (preset.id === state.selectedPresetId ? ' selected' : '') + '>' + esc(preset.name) + '</option>'; });
+        el.presetSelect.innerHTML = html;
+        el.loadPreset.disabled = !state.selectedPresetId;
+        el.deletePreset.disabled = !state.selectedPresetId;
+      }
+
+      function savePreset() {
+        var name = el.presetName.value.trim().slice(0, 48);
+        if (!name) { log('PRESET ERROR → escribí un nombre.'); renderAll(); return; }
+        var existing = state.presets.filter(function (preset) { return preset.name.toLowerCase() === name.toLowerCase(); })[0];
+        var preset = { id: existing ? existing.id : 'preset-' + Date.now(), name: name, project: HPM.clone(HPM.normalizeProject(state.project)), updatedAt: Date.now() };
+        if (existing) state.presets[state.presets.indexOf(existing)] = preset;
+        else state.presets.unshift(preset);
+        state.presets.sort(function (a, b) { return b.updatedAt - a.updatedAt; });
+        state.selectedPresetId = preset.id;
+        savePresets();
+        log('PRESET SAVED → ' + preset.name);
+        renderAll();
+      }
+
+      function loadPreset() {
+        var preset = state.presets.filter(function (item) { return item.id === state.selectedPresetId; })[0];
+        if (!preset) { log('PRESET ERROR → elegí un preset.'); renderAll(); return; }
+        state.project = HPM.clone(HPM.normalizeProject(preset.project));
+        state.liveControlValues = {};
+        state.liveSoloDeviceId = '';
+        state.liveSoloRestoreValues = {};
+        state.connected = false;
+        el.presetName.value = preset.name;
+        log('PRESET LOADED → ' + preset.name);
+        renderAll();
+      }
+
+      function deletePreset() {
+        var preset = state.presets.filter(function (item) { return item.id === state.selectedPresetId; })[0];
+        if (!preset) return;
+        state.presets.splice(state.presets.indexOf(preset), 1);
+        state.selectedPresetId = '';
+        savePresets();
+        log('PRESET DELETED → ' + preset.name);
+        renderAll();
+      }
+
+      function log(line) {
+        state.logLines.unshift(line);
+        state.logLines = state.logLines.slice(0, 120);
+        el.debugLog.textContent = state.logLines.join('\n\n');
+      }
+
+      function layoutForSvg(svg) {
+        var width = svg.clientWidth || 900;
+        var height = svg.classList.contains('lane-svg') ? 160 : 150;
+        return { width: width, height: height, padL: 52, padR: 22, padT: 18, padB: 28 };
+      }
+
+      function xForBar(bar, totalBars, width, padL, padR) {
+        var usable = Math.max(1, totalBars - 1);
+        return padL + ((bar - 1) / usable) * (width - padL - padR);
+      }
+
+      function barForX(x, totalBars, width, padL, padR) {
+        var usable = width - padL - padR;
+        var t = usable <= 0 ? 0 : (x - padL) / usable;
+        t = Math.max(0, Math.min(1, t));
+        return Math.round(1 + t * Math.max(1, totalBars - 1));
+      }
+
+      // EL CARRIL DE LA LANE ES EL RANGO UTIL DEL CONTROL, no 0..127.
+      //
+      // Dos cosas a la vez: no se puede dibujar fuera de los limites que se fijaron, y la
+      // curva usa TODA la altura para el tramo que sirve en vez de gastar dos tercios en
+      // valores que nunca se van a usar.
+      function yForValue(value, height, padT, padB, min, max) {
+        var lo = Number.isFinite(min) ? min : 0, hi = Number.isFinite(max) ? max : 127;
+        var usable = height - padT - padB;
+        var t = hi === lo ? 0 : (value - lo) / (hi - lo);
+        return padT + (1 - Math.max(0, Math.min(1, t))) * usable;
+      }
+
+      function valueForY(y, height, padT, padB, min, max) {
+        var lo = Number.isFinite(min) ? min : 0, hi = Number.isFinite(max) ? max : 127;
+        var usable = height - padT - padB;
+        var t = usable <= 0 ? 0 : 1 - ((y - padT) / usable);
+        return Math.max(lo, Math.min(hi, Math.round(lo + t * (hi - lo))));
+      }
+
+      // El rango de una lane sale de su control. Una lane vieja, sin controlId, no tiene
+      // control al que preguntarle: se queda con el limite duro.
+      function rangoDeLane(lane) {
+        if (!lane || !lane.controlId) return { min: 0, max: 127 };
+        return HPM.controlRange(lane.controlId, state.project.liveControls);
+      }
+
+      function sceneLabel(program) {
+        return 'Scene ' + (program + 1);
+      }
+
+      function renderAll() {
+        state.project = HPM.normalizeProject(state.project);
+        refreshLivePlan();
+        saveProject();
+
+        el.bpm.value = state.project.bpm;
+        el.bars.value = state.project.totalBars;
+        // Con un .als cargado los compases son la SUMA de las secciones, no un numero
+        // tipeado: el campo pasa a solo lectura y dice de donde sale.
+        el.bars.readOnly = !!state.structure;
+        el.bars.title = state.structure
+          ? state.structure.sections.length + ' secciones de ' + state.alsName
+          : 'Se deriva del .als cuando cargues uno';
+
+        renderSetPanel();
+        renderMidiOutputs();
+        renderMidiStatus();
+        renderPresets();
+        renderSceneTimeline();
+        renderSceneTable();
+        renderLanes();
+        renderLiveControls();
+        renderButtons();
+        el.debugLog.textContent = state.logLines.join('\n\n');
+      }
+
+      function renderButtons() {
+        el.play.disabled = state.playing;
+        el.stop.disabled = !state.playing;
+        el.dryRun.textContent = 'DRY RUN: ' + (state.dryRun ? 'ON' : 'OFF');
+      }
+
+      function renderLiveControls() {
+        var byId = {};
+        HPM.controlRegistry().forEach(function (control) { byId[control.id] = control; });
+        var controls = state.project.liveControls.order.map(function (id) { return byId[id]; }).filter(Boolean).filter(function (control) { return !control.hidden; });
+        var devices = {};
+        controls.forEach(function (control) {
+          if (!devices[control.deviceId]) devices[control.deviceId] = { id: control.deviceId, label: control.deviceLabel, controls: [] };
+          devices[control.deviceId].controls.push(control);
+        });
+        function colorOptions(selected) {
+          return HPM.rolandColors().map(function (entry) {
+            return '<option value="' + entry[0] + '"' + (entry[0] === selected ? ' selected' : '') + '>' + esc(entry[1]) + '</option>';
+          }).join('');
+        }
+        function parameterControl(control, color, deviceLabel) {
+          var value = state.liveControlValues && state.liveControlValues[control.id];
+          var shown = Number.isFinite(value) ? value : '--';
+          var parameterName = state.project.liveControls.labels[control.id] || control.name;
+          var enabled = midiReady() ? '' : 'disabled';
+          var currentValue = Number.isFinite(value) ? value : 0;
+          // El recorrido del control es su RANGO UTIL, no el limite duro: si el filtro de
+          // este patch vive entre 30 y 90, la perilla se mueve entre 30 y 90.
+          var rango = HPM.controlRange(control.id, state.project.liveControls);
+          var rangeMin = rango.min;
+          var rangeMax = rango.max;
+          var normalizedValue = (currentValue - rangeMin) / (rangeMax - rangeMin);
+          // EL BOTON QUE SALTA ENTRE LOS EXTREMOS. Sin texto: una vez que el rango esta
+          // definido, la accion es una sola —irse al otro extremo— y no necesita leerse.
+          // Va solo en las PERILLAS: el Level ya tiene su ON/OFF, que es otra cosa (apaga
+          // a cero de verdad, no al minimo del rango), y dos botones al lado del mismo
+          // fader haciendo cosas distintas se prestan a confusion.
+          // Encendido SOLO en el maximo, no en la mitad de arriba: el boton dice "estas
+          // arriba de todo", y en cualquier otro valor esta apagado.
+          var enMaximo = currentValue >= rangeMax;
+          var actions = control.name === 'Level'
+            ? '<button class="level-toggle' + (currentValue > 0 ? '' : ' off') + '" data-live-toggle="' + esc(control.id) + '" ' + enabled + '>' + (currentValue > 0 ? 'OFF' : 'ON') + '</button>'
+            : '<button type="button" class="swing-toggle' + (enMaximo ? ' arriba' : '') + '" data-live-swing="' + esc(control.id) + '" ' + enabled +
+              ' aria-label="' + esc(deviceLabel + ' ' + control.name) + ': ir a ' + (enMaximo ? rangeMin : rangeMax) + '"' +
+              ' title="' + rangeMin + ' / ' + rangeMax + '"></button>';
+          var performer = control.controlType === 'knob'
+            ? '<button type="button" class="rotary-knob" style="--knob-angle:' + (-135 + normalizedValue * 270) + 'deg" data-live-knob="' + esc(control.id) + '" aria-label="' + esc(deviceLabel + ' ' + control.name) + '" aria-valuemin="' + rangeMin + '" aria-valuemax="' + rangeMax + '" aria-valuenow="' + currentValue + '" ' + enabled + '></button>'
+            : '<input class="vertical-fader" type="range" min="' + rangeMin + '" max="' + rangeMax + '" value="' + currentValue + '" data-live-control="' + esc(control.id) + '" ' + enabled + '>';
+          var parameterLabel = control.renamable
+            ? '<input class="parameter-name" value="' + esc(parameterName) + '" data-live-param-label="' + esc(control.id) + '" aria-label="Ctrl parameter name">'
+            : '<span class="muted" title="' + esc(control.destination) + '">' + esc(parameterName) + '</span>';
+          // El data-ctl-id va en el CONTENEDOR, no en el control: los controles estan
+          // disabled hasta que conecte el MIDI, y sobre un control deshabilitado el
+          // navegador no dispara contextmenu. Definir un rango o revelar una lane no manda
+          // MIDI, asi que tiene que poder hacerse sin la maquina enchufada.
+          return '<div class="device-param" data-ctl-id="' + esc(control.id) + '">' + parameterLabel + '<strong data-live-value="' + esc(control.id) + '">' + shown + '</strong>' + performer + actions + '</div>';
+        }
+        var orderedDevices = state.project.liveControls.deviceOrder.map(function (id) { return devices[id]; }).filter(Boolean);
+        var linkedSelectedIds = linkedDeviceIdsFor(state.selectedLiveControlId);
+        function deviceCard(device) {
+          var color = state.project.liveControls.deviceColors[device.id] || (device.controls[0].id.indexOf('tr8s-') === 0 ? '#4F8DFF' : '#B584FF');
+          var label = state.project.liveControls.deviceLabels[device.id] || device.label;
+          var parameterOrder = { Tune: 0, Decay: 1, Ctrl: 2, Filter: 0, Mod: 1, FX: 2, Level: 3 };
+          var deviceControls = device.controls.slice().sort(function (a, b) { return parameterOrder[a.name] - parameterOrder[b.name]; });
+          var checkbox = '';
+          var soloActive = state.liveSoloDeviceId === device.id;
+          var soloSafe = state.project.liveControls.soloSafeDeviceIds.indexOf(device.id) >= 0;
+          var linkIndex = state.project.liveControls.linkedDeviceGroups.findIndex(function (group) { return group.deviceIds.indexOf(device.id) >= 0; });
+          return '<article class="device-card ' + (device.controls[0].id.indexOf('tr8s-') === 0 ? 'tr8s' : 'mc707') + (linkIndex >= 0 ? ' linked' : '') + (linkedSelectedIds.indexOf(device.id) >= 0 ? ' selected' : '') + '" style="--control-color:' + color + '" data-live-device-item="' + esc(device.id) + '"><div class="device-head">' + checkbox + '<input class="device-name" value="' + esc(label) + '" data-live-device-label="' + esc(device.id) + '" aria-label="Device name"><select class="control-color-select" style="--control-color:' + color + '" data-live-device-color="' + esc(device.id) + '" aria-label="Roland color">' + colorOptions(color) + '</select></div><div class="device-params">' + deviceControls.map(function (control) { return parameterControl(control, color, label); }).join('') + '</div><div class="device-actions"><button class="' + (soloActive ? 'active' : '') + '" data-live-solo="' + esc(device.id) + '" ' + (midiReady() ? '' : 'disabled') + '>' + (soloActive ? 'UNSOLO' : 'SOLO') + '</button><button class="' + (soloSafe ? 'active' : '') + '" data-live-solo-safe="' + esc(device.id) + '">' + (soloSafe ? 'SAFE' : 'SAFE') + '</button></div></article>';
+        }
+        function drumsMasterCard() {
+          var control = byId['mc4-drums-level'];
+          if (!control) return '';
+          return '<article class="device-card mc707" style="--control-color:#FF4F4F"><div class="device-head"><span class="device-name">DRUMS MASTER</span></div><div class="device-params">' + parameterControl(control, '#FF4F4F', 'DRUMS MASTER') + '</div></article>';
+        }
+        var assigned = {};
+        state.project.liveControls.groups.forEach(function (group) { group.deviceIds.forEach(function (id) { assigned[id] = true; }); });
+        var ungrouped = orderedDevices.filter(function (device) { return !assigned[device.id]; });
+        var html = '<div class="device-groups">';
+        if (ungrouped.length) html += '<div class="control-board">' + ungrouped.map(deviceCard).join('') + '</div>';
+        state.project.liveControls.groups.forEach(function (group) {
+          var groupDevices = group.deviceIds.map(function (id) { return devices[id]; }).filter(Boolean);
+          if (!groupDevices.length) return;
+          html += '<section class="device-group"><div class="device-group-head"><b>' + esc(group.name) + '</b><span class="muted">' + groupDevices.length + ' devices</span><button data-toggle-device-group="' + esc(group.id) + '">' + (group.collapsed ? 'EXPAND' : 'MINIMIZE') + '</button><button data-ungroup-devices="' + esc(group.id) + '">UNGROUP</button></div>' + (group.collapsed ? '' : '<div class="device-group-body"><div class="control-board">' + (group.id === 'drums' ? drumsMasterCard() : '') + groupDevices.map(deviceCard).join('') + '</div></div>') + '</section>';
+        });
+        el.liveControlsHost.innerHTML = html + '</div>';
+        renderControlSelection(orderedDevices);
+      }
+
+      function renderControlSelection(devices) {
+        if (!devices.some(function (device) { return device.id === state.selectedLiveControlId; })) state.selectedLiveControlId = devices[0] && devices[0].id;
+        var selected = devices.filter(function (device) { return device.id === state.selectedLiveControlId; })[0];
+        el.selectedControlName.textContent = selected ? (state.project.liveControls.deviceLabels[selected.id] || selected.label) : 'Tap a device';
+        var index = state.project.liveControls.deviceOrder.indexOf(state.selectedLiveControlId);
+        el.moveControlLeft.disabled = index <= 0;
+        el.moveControlRight.disabled = index < 0 || index >= state.project.liveControls.deviceOrder.length - 1;
+      }
+
+      function moveSelectedControl(direction) {
+        var order = state.project.liveControls.deviceOrder;
+        var from = order.indexOf(state.selectedLiveControlId);
+        var to = from + direction;
+        if (from < 0 || to < 0 || to >= order.length) return;
+        var item = order[from];
+        order[from] = order[to];
+        order[to] = item;
+        renderAll();
+      }
+
+      function selectLiveControl(id) {
+        if (!id || state.project.liveControls.deviceOrder.indexOf(id) < 0) return;
+        state.selectedLiveControlId = id;
+        renderLiveControls();
+      }
+
+      function linkedDeviceIdsFor(deviceId) {
+        var group = state.project.liveControls.linkedDeviceGroups.filter(function (item) {
+          return item.deviceIds.indexOf(deviceId) >= 0;
+        })[0];
+        return group ? group.deviceIds.slice() : (deviceId ? [deviceId] : []);
+      }
+
+      function linkLiveDeviceToSelection(deviceId) {
+        var selectedId = state.selectedLiveControlId;
+        var selectedGroup = state.project.liveControls.linkedDeviceGroups.filter(function (group) {
+          return group.deviceIds.indexOf(selectedId) >= 0;
+        })[0];
+        if (selectedGroup && selectedGroup.deviceIds.indexOf(deviceId) >= 0) {
+          state.project.liveControls.linkedDeviceGroups.splice(state.project.liveControls.linkedDeviceGroups.indexOf(selectedGroup), 1);
+          state.selectedLiveControlId = deviceId;
+          log('UNLINKED → devices separated.');
+          renderLiveControls();
+          return;
+        }
+        if (!selectedId || selectedId === deviceId) { selectLiveControl(deviceId); return; }
+        var deviceIds = linkedDeviceIdsFor(selectedId).concat(linkedDeviceIdsFor(deviceId)).filter(function (id, index, list) {
+          return list.indexOf(id) === index;
+        });
+        state.project.liveControls.linkedDeviceGroups = state.project.liveControls.linkedDeviceGroups.filter(function (group) {
+          return group.deviceIds.indexOf(selectedId) < 0 && group.deviceIds.indexOf(deviceId) < 0;
+        });
+        state.project.liveControls.linkedDeviceGroups.push({ id: 'link-' + Date.now(), deviceIds: deviceIds });
+        state.selectedLiveControlId = deviceId;
+        log('LINKED → ' + deviceIds.length + ' devices.');
+        renderLiveControls();
+      }
+
+      function unlinkSelectedDevices() {
+        var selectedId = state.selectedLiveControlId;
+        if (!selectedId) return;
+        var before = state.project.liveControls.linkedDeviceGroups.length;
+        state.project.liveControls.linkedDeviceGroups = state.project.liveControls.linkedDeviceGroups.filter(function (group) {
+          return group.deviceIds.indexOf(selectedId) < 0;
+        });
+        if (before !== state.project.liveControls.linkedDeviceGroups.length) log('UNLINKED → devices separated.');
+        renderLiveControls();
+      }
+
+      function toggleDeviceGroup(id) {
+        var group = state.project.liveControls.groups.filter(function (item) { return item.id === id; })[0];
+        if (!group) return;
+        group.collapsed = !group.collapsed;
+        renderAll();
+      }
+
+      function ungroupDevices(id) {
+        var groups = state.project.liveControls.groups;
+        var group = groups.filter(function (item) { return item.id === id; })[0];
+        if (!group) return;
+        groups.splice(groups.indexOf(group), 1);
+        renderAll();
+      }
+
+      function sendLiveControl(id, value) {
+        var control = HPM.controlRegistry().filter(function (item) { return item.id === id; })[0];
+        if (!control || !midiReady()) return;
+        // SE CLAMPEA AL RANGO UTIL, no al limite duro: una vez fijados el min y el max, el
+        // control se mueve SOLO entre esos dos, arrastrando o con las flechas.
+        //
+        // El 0 explicito pasa igual porque es el MUTE: si el rango del Level arranca en 40,
+        // clampear ahi dejaria el instrumento sonando. Es la misma excepcion que ya hace el
+        // engine con los bloques.
+        var rango = HPM.controlRange(id, state.project.liveControls);
+        var pedido = Math.round(Number(value) || 0);
+        var safeValue = pedido === 0 ? 0 : Math.max(rango.min, Math.min(rango.max, pedido));
+        var midiValue = Math.round(((safeValue - control.min) / (control.max - control.min)) * 127);
+        control.targets.forEach(function (target) {
+          var trace = state.midiEngine.sendCC(target[0], target[1], midiValue, performance.now(), {
+            source: 'live',
+            logicalDestination: control.logicalDestination,
+            physicalOutput: control.physicalOutput
+          });
+          logTrace(trace);
+        });
+        state.liveControlValues[id] = safeValue;
+        if (safeValue > 0) state.liveControlLastOnValues[id] = safeValue;
+        updateLiveControlView(id, safeValue);
+        log('LIVE ' + control.label + ' · ' + control.name.toUpperCase() + ' → ' + safeValue + ' (' + control.targets.length + ' CC)');
+      }
+
+      // ESTA FUNCION ACTUALIZA LA TARJETA SIN REDIBUJARLA. Todo lo que dependa del valor
+      // tiene que actualizarse ACA: si no, se recalcula recien en el proximo render
+      // completo y queda un paso atras. Le paso al boton del rango: mostraba el estado
+      // anterior, o sea encendido justo cuando el control estaba en el minimo.
+      function updateLiveControlView(id, value) {
+        var readout = el.liveControlsHost.querySelector('[data-live-value="' + CSS.escape(id) + '"]');
+        if (readout) readout.textContent = String(value);
+        // El recorrido visible es el RANGO UTIL, no el limite duro: con el filtro entre 30
+        // y 90, un 90 tiene que dejar la aguja al fondo y no a dos tercios.
+        var rango = HPM.controlRange(id, state.project.liveControls);
+        var t = rango.max === rango.min ? 0 : (value - rango.min) / (rango.max - rango.min);
+        t = Math.max(0, Math.min(1, t));
+        var knob = el.liveControlsHost.querySelector('[data-live-knob="' + CSS.escape(id) + '"]');
+        if (knob) {
+          knob.style.setProperty('--knob-angle', (-135 + t * 270) + 'deg');
+          knob.setAttribute('aria-valuenow', String(value));
+        }
+        var swing = el.liveControlsHost.querySelector('[data-live-swing="' + CSS.escape(id) + '"]');
+        if (swing) {
+          var enMax = value >= rango.max;
+          swing.classList.toggle('arriba', enMax);
+          swing.setAttribute('aria-label', 'ir a ' + (enMax ? rango.min : rango.max));
+        }
+      }
+
+      function toggleLiveLevel(id) {
+        var control = HPM.controlRegistry().filter(function (item) { return item.id === id; })[0];
+        if (!control) return;
+        var controls = linkedDeviceIdsFor(control.deviceId).map(function (deviceId) {
+          return HPM.controlRegistry().filter(function (item) { return item.id === deviceId + '-level'; })[0];
+        }).filter(Boolean);
+        var allOn = controls.every(function (item) { return Number(state.liveControlValues[item.id]) > 0; });
+        controls.forEach(function (item) {
+          var current = state.liveControlValues[item.id];
+          if (allOn) {
+            if (Number.isFinite(current) && current > 0) state.liveControlLastOnValues[item.id] = current;
+            sendLiveControl(item.id, 0);
+          } else sendLiveControl(item.id, state.liveControlLastOnValues[item.id] || 127);
+        });
+        renderLiveControls();
+      }
+
+      function liveLevelControls() {
+        return HPM.controlRegistry().filter(function (control) { return control.name === 'Level'; });
+      }
+
+      function instrumentLevelControls() {
+        return liveLevelControls().filter(function (control) { return !control.hidden; });
+      }
+
+      function restoreLiveLevel(control) {
+        return state.liveControlLastOnValues[control.id] || state.liveControlValues[control.id] || 127;
+      }
+
+      function muteAllLiveLevels() {
+        if (!midiReady()) return;
+        state.liveSoloDeviceId = '';
+        state.liveSoloRestoreValues = {};
+        instrumentLevelControls().forEach(function (control) {
+          var current = state.liveControlValues[control.id];
+          if (Number.isFinite(current) && current > 0) state.liveControlLastOnValues[control.id] = current;
+          sendLiveControl(control.id, 0);
+        });
+        log('LIVE MUTE ALL → all level controls set to 0.');
+        renderLiveControls();
+      }
+
+      function restoreLiveSolo(muteSoloDevice) {
+        Object.keys(state.liveSoloRestoreValues).forEach(function (id) {
+          sendLiveControl(id, state.liveSoloRestoreValues[id]);
+        });
+        if (muteSoloDevice && state.liveSoloDeviceId) sendLiveControl(state.liveSoloDeviceId + '-level', 0);
+        state.liveSoloDeviceId = '';
+        state.liveSoloRestoreValues = {};
+      }
+
+      function isSoloSafeControl(control) {
+        return state.project.liveControls.soloSafeDeviceIds.indexOf(control.deviceId) >= 0;
+      }
+
+      function toggleLiveSoloSafe(deviceId) {
+        var safeIds = state.project.liveControls.soloSafeDeviceIds;
+        var index = safeIds.indexOf(deviceId);
+        if (index >= 0) safeIds.splice(index, 1);
+        else safeIds.push(deviceId);
+        renderLiveControls();
+      }
+
+      function soloLiveDevice(deviceId) {
+        if (!midiReady()) return;
+        var muteSoloDeviceOnRestore = state.project.liveControls.soloSafeDeviceIds.indexOf(deviceId) >= 0;
+        if (state.liveSoloDeviceId === deviceId) {
+          restoreLiveSolo(muteSoloDeviceOnRestore);
+          log('LIVE SOLO OFF → restored mix' + (muteSoloDeviceOnRestore ? ' and muted ' + deviceId : '') + '.');
+          renderLiveControls();
+          return;
+        }
+        if (state.liveSoloDeviceId) {
+          restoreLiveSolo(state.project.liveControls.soloSafeDeviceIds.indexOf(state.liveSoloDeviceId) >= 0);
+        }
+        var activeLevelIds = [deviceId + '-level'];
+        state.liveSoloRestoreValues = {};
+        instrumentLevelControls().forEach(function (control) {
+          var current = state.liveControlValues[control.id];
+          if (activeLevelIds.indexOf(control.id) < 0 && !isSoloSafeControl(control)) {
+            state.liveSoloRestoreValues[control.id] = Number.isFinite(current) ? current : 127;
+          }
+        });
+        state.liveSoloDeviceId = deviceId;
+        Object.keys(state.liveSoloRestoreValues).forEach(function (id) {
+          var current = state.liveControlValues[id];
+          if (Number.isFinite(current) && current > 0) state.liveControlLastOnValues[id] = current;
+          sendLiveControl(id, 0);
+        });
+        instrumentLevelControls().forEach(function (control) {
+          if (activeLevelIds.indexOf(control.id) >= 0) sendLiveControl(control.id, restoreLiveLevel(control));
+        });
+        log('LIVE SOLO → ' + deviceId + '.');
+        renderLiveControls();
+      }
+
+      function refreshLivePlan() {
+        if (!state.playing || !state.scheduler || !state.transport) return;
+        state.plan = HPM.buildPlaybackPlan(state.project, { ccStepBeats: 0.25 });
+        state.scheduler.replacePlan(state.plan, performance.now());
+      }
+
+      function renderMidiOutputs() {
+        var html = '';
+        if (!state.outputs.length) html = '<option value="">No outputs detected</option>';
+        else {
+          state.outputs.forEach(function (output) {
+            var selected = output.id === state.project.midiOutputId ? ' selected' : '';
+            html += '<option value="' + esc(output.id) + '"' + selected + '>' + esc(output.name) + '</option>';
+          });
+        }
+        el.midiOutput.innerHTML = html;
+      }
+
+      function renderMidiStatus() {
+        var text = 'MIDI NOT READY';
+        var cls = 'status warn';
+        if (state.dryRun) {
+          text = 'DRY RUN';
+          cls = 'status ok';
+        } else if (state.connected && state.project.midiOutputId) {
+          text = 'MIDI READY';
+          cls = 'status ok';
+        } else if (state.outputs.length) {
+          text = 'OUTPUT FOUND';
+          cls = 'status warn';
+        }
+        el.midiStatus.className = cls;
+        el.midiStatus.textContent = text;
+      }
+
+      function midiReady() {
+        return state.connected || state.dryRun;
+      }
+
+      function logTrace(trace) {
+        if (!trace || !state.dryRun) return;
+        log('DRY RUN → ' + trace.source + ' · ' + trace.logicalDestination + ' · ' + trace.physicalOutput + ' · [' + trace.message.join(', ') + ']');
+      }
+
+      function toggleDryRun() {
+        state.dryRun = !state.dryRun;
+        state.midiEngine.setDryRun(state.dryRun);
+        log('DRY RUN ' + (state.dryRun ? 'ON → no MIDI is sent to hardware.' : 'OFF → hardware output mode.'));
+        renderAll();
+      }
+
+      function renderSceneTimeline() {
+        var svg = el.sceneTimeline;
+        var box = layoutForSvg(svg);
+        var totalBars = state.project.totalBars;
+        var w = box.width, h = box.height;
+        svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+
+        var parts = [];
+        parts.push('<rect x="0" y="0" width="' + w + '" height="' + h + '" rx="14" fill="transparent"></rect>');
+        for (var bar = 1; bar <= totalBars; bar += 1) {
+          var x = xForBar(bar, totalBars, w, box.padL, box.padR);
+          var strong = ((bar - 1) % 16 === 0);
+          parts.push('<line x1="' + x + '" y1="' + box.padT + '" x2="' + x + '" y2="' + (h - box.padB) + '" stroke="' + (strong ? '#3f6068' : '#23353b') + '" stroke-width="' + (strong ? '2' : '1') + '"></line>');
+          if (strong || bar === 1 || bar === totalBars) {
+            parts.push('<text x="' + x + '" y="142" text-anchor="middle" fill="#89a7a2" font-size="12">' + bar + '</text>');
+          }
+        }
+
+        parts.push('<text x="12" y="28" fill="#6af7d3" font-size="12" text-transform="uppercase">Scenes</text>');
+
+        state.project.programChanges.forEach(function (pc, idx) {
+          // The marker labels the scene's target block. MIDI is sent one bar early only in the scheduler.
+          var x = xForBar(Math.min(totalBars, pc.bar + 1), totalBars, w, box.padL, box.padR);
+          parts.push('<g data-scene-marker="' + idx + '" style="cursor:pointer">');
+          parts.push('<line x1="' + x + '" y1="38" x2="' + x + '" y2="98" stroke="#6af7d3" stroke-width="2"></line>');
+          parts.push('<polygon points="' + (x - 8) + ',38 ' + (x + 8) + ',38 ' + x + ',24" fill="#6af7d3"></polygon>');
+          parts.push('<rect x="' + (x - 44) + '" y="102" width="88" height="28" rx="9" fill="rgba(106,247,211,.12)" stroke="rgba(106,247,211,.28)"></rect>');
+          parts.push('<text x="' + x + '" y="120" text-anchor="middle" fill="#e5f0ef" font-size="12">' + sceneLabel(pc.program) + '</text>');
+          parts.push('</g>');
+        });
+
+        if (state.playing && state.transport) {
+          var beat = state.transport.getCurrentBeat(performance.now());
+          var playBar = HPM.beatToBarFloat(state.project, beat);
+          var xh = xForBar(playBar, totalBars, w, box.padL, box.padR);
+          parts.push('<line x1="' + xh + '" y1="' + box.padT + '" x2="' + xh + '" y2="' + (h - box.padB) + '" stroke="#ffd166" stroke-width="3"></line>');
+        }
+
+        svg.innerHTML = parts.join('');
+      }
+
+      function renderSceneTable() {
+        var html = '<thead><tr><th>Bar</th><th>Scene</th><th>MIDI Program</th><th></th></tr></thead><tbody>';
+        state.project.programChanges.forEach(function (pc, idx) {
+          html += '<tr>';
+          html += '<td><input type="number" min="8" max="' + state.project.totalBars + '" step="8" value="' + pc.bar + '" data-scene-bar="' + idx + '"></td>';
+          html += '<td>' + sceneLabel(pc.program) + '</td>';
+          html += '<td><input type="number" min="0" max="127" value="' + pc.program + '" data-scene-program="' + idx + '"></td>';
+          html += '<td><button class="danger" data-remove-scene="' + idx + '">Remove</button></td>';
+          html += '</tr>';
+        });
+        html += '</tbody>';
+        el.sceneTable.innerHTML = html;
+      }
+
+      function renderLanes() {
+        var html = '';
+        state.project.automationLanes.forEach(function (lane, laneIndex) {
+          html += '<article class="lane-card">';
+          html += '<div class="lane-meta">';
+          html += '<label>Name<input type="text" value="' + esc(lane.name) + '" data-lane-name="' + laneIndex + '"></label>';
+          html += '<label>MC-707 Track<select data-lane-mc-track="' + laneIndex + '">' + mcTrackOptions(lane.mcTrack) + '</select></label>';
+          html += '<label>MIDI Channel<input type="number" value="' + lane.channel + '" readonly></label>';
+          html += '<label>CC Parameter<select data-lane-cc="' + laneIndex + '">' + ccOptions(lane.mcTrack, lane.cc) + '</select></label>';
+          html += '<label>&nbsp;<button class="danger" data-remove-lane="' + laneIndex + '">Remove Lane</button></label>';
+          html += '</div>';
+          html += '<svg class="lane-svg" data-lane-svg="' + laneIndex + '" viewBox="0 0 1200 160" preserveAspectRatio="none"></svg>';
+          html += '<table class="lane-points"><thead><tr><th>Bar</th><th>Value</th><th>Lane</th><th></th></tr></thead><tbody>';
+          lane.points.forEach(function (point, pointIndex) {
+            html += '<tr>';
+            html += '<td><input type="number" min="1" max="' + state.project.totalBars + '" value="' + point.bar + '" data-point-bar="' + laneIndex + ':' + pointIndex + '"></td>';
+            html += '<td><input type="number" min="' + rangoDeLane(lane).min + '" max="' + rangoDeLane(lane).max + '" value="' + point.value + '" data-point-value="' + laneIndex + ':' + pointIndex + '"></td>';
+            html += '<td class="muted">' + lane.destination.toUpperCase() + ' · MC ' + lane.mcTrack + ' → MIDI CH' + lane.channel + ' · CC' + lane.cc + '</td>';
+            html += '<td><button class="danger" data-remove-point="' + laneIndex + ':' + pointIndex + '">Remove</button></td>';
+            html += '</tr>';
+          });
+          html += '</tbody></table>';
+          html += '<div class="actions"><button data-add-point="' + laneIndex + '">+ Point</button><span class="muted">Click en el gráfico para agregar, arrastrar para mover. Interpolación lineal y envío discretizado a 1/4 beat.</span></div>';
+          html += '</article>';
+        });
+        el.lanesHost.innerHTML = html || '<div class="muted">Sin lanes todavía.</div>';
+        renderLaneCharts();
+      }
+
+      function renderLaneCharts() {
+        Array.prototype.forEach.call(document.querySelectorAll('[data-lane-svg]'), function (svg) {
+          var laneIndex = Number(svg.dataset.laneSvg);
+          var lane = state.project.automationLanes[laneIndex];
+          var box = layoutForSvg(svg);
+          var w = box.width, h = box.height;
+          svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+          var totalBars = state.project.totalBars;
+          var parts = [];
+          parts.push('<rect x="0" y="0" width="' + w + '" height="' + h + '" rx="14" fill="transparent"></rect>');
+
+          var rg = rangoDeLane(lane);
+          [0, .25, .5, .75, 1].map(function (t) { return Math.round(rg.min + t * (rg.max - rg.min)); }).forEach(function (value) {
+            var y = yForValue(value, h, box.padT, box.padB, rg.min, rg.max);
+            parts.push('<line x1="' + box.padL + '" y1="' + y + '" x2="' + (w - box.padR) + '" y2="' + y + '" stroke="#22373d" stroke-width="1"></line>');
+            parts.push('<text x="10" y="' + (y + 4) + '" fill="#89a7a2" font-size="11">' + value + '</text>');
+          });
+
+          for (var bar = 1; bar <= totalBars; bar += 1) {
+            var x = xForBar(bar, totalBars, w, box.padL, box.padR);
+            var strong = ((bar - 1) % 16 === 0);
+            parts.push('<line x1="' + x + '" y1="' + box.padT + '" x2="' + x + '" y2="' + (h - box.padB) + '" stroke="' + (strong ? '#3f6068' : '#22373d') + '" stroke-width="' + (strong ? '2' : '1') + '"></line>');
+          }
+
+          if (lane.points.length) {
+            var path = lane.points.map(function (point, idx) {
+              var x = xForBar(point.bar, totalBars, w, box.padL, box.padR);
+              var y = yForValue(point.value, h, box.padT, box.padB, rg.min, rg.max);
+              return (idx === 0 ? 'M' : 'L') + x + ' ' + y;
+            }).join(' ');
+            parts.push('<path d="' + path + '" fill="none" stroke="#6fb7ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>');
+
+            lane.points.forEach(function (point, pointIndex) {
+              var x = xForBar(point.bar, totalBars, w, box.padL, box.padR);
+              var y = yForValue(point.value, h, box.padT, box.padB, rg.min, rg.max);
+              parts.push('<g data-point-grab="' + laneIndex + ':' + pointIndex + '" style="cursor:grab">');
+              parts.push('<circle cx="' + x + '" cy="' + y + '" r="7" fill="#6af7d3" stroke="#051012" stroke-width="2"></circle>');
+              parts.push('<text x="' + x + '" y="' + (y - 12) + '" text-anchor="middle" fill="#e5f0ef" font-size="11">' + point.value + '</text>');
+              parts.push('</g>');
+            });
+          }
+
+          if (state.playing && state.transport) {
+            var beat = state.transport.getCurrentBeat(performance.now());
+            var playBar = HPM.beatToBarFloat(state.project, beat);
+            var xh = xForBar(playBar, totalBars, w, box.padL, box.padR);
+            parts.push('<line x1="' + xh + '" y1="' + box.padT + '" x2="' + xh + '" y2="' + (h - box.padB) + '" stroke="#ffd166" stroke-width="3"></line>');
+          }
+
+          parts.push('<text x="' + box.padL + '" y="14" fill="#6fb7ff" font-size="12">' + esc(lane.name) + ' · ' + lane.destination.toUpperCase() + ' · MIDI CH' + lane.channel + ' · CC' + lane.cc + '</text>');
+          svg.innerHTML = parts.join('');
+        });
+      }
+
+      function addScene(bar, program) {
+        state.project.programChanges.push({ bar: Math.max(8, Math.round(bar / 8) * 8), program: program });
+        state.project = HPM.normalizeProject(state.project);
+        renderAll();
+      }
+
+      function addLane() {
+        var next = state.project.automationLanes.length + 1;
+        state.project.automationLanes.push({
+          id: 'lane-' + Date.now(),
+          name: 'Custom Lane ' + next,
+          mcTrack: 5,
+          channel: 5,
+          cc: 74,
+          points: [
+            { bar: 1, value: 0 },
+            { bar: state.project.totalBars, value: 127 }
+          ]
+        });
+        renderAll();
+      }
+
+      async function refreshMidi(autoconnect) {
+        try {
+          await state.midiEngine.requestAccess();
+          state.outputs = state.midiEngine.listOutputs();
+          if (!state.project.midiOutputId && state.outputs[0]) state.project.midiOutputId = state.outputs[0].id;
+          if (autoconnect && state.project.midiOutputId) {
+            state.midiEngine.connect(state.project.midiOutputId);
+            state.connected = true;
+            log('MIDI READY → ' + (state.midiEngine.output.name || state.project.midiOutputId));
+          } else {
+            state.connected = !!(state.project.midiOutputId && state.outputs.some(function (o) { return o.id === state.project.midiOutputId; }));
+          }
+        } catch (err) {
+          state.outputs = [];
+          state.connected = false;
+          log('MIDI ERROR → ' + err.message);
+        }
+        renderAll();
+      }
+
+      function exportJson() {
+        var blob = new Blob([JSON.stringify(state.project, null, 2)], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'hardware-performance-project.json';
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+      }
+
+      function importJson(file) {
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          try {
+            state.project = HPM.normalizeProject(JSON.parse(String(reader.result || '')));
+            state.liveSoloDeviceId = '';
+            state.liveSoloRestoreValues = {};
+            log('Proyecto importado.');
+            renderAll();
+          } catch (err) {
+            log('IMPORT ERROR → ' + err.message);
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      async function play() {
+        state.project = HPM.normalizeProject({
+          bpm: Number(el.bpm.value),
+          totalBars: Number(el.bars.value),
+          controlChannel: state.project.controlChannel,
+          midiOutputId: el.midiOutput.value,
+          timeSignature: state.project.timeSignature,
+          programChanges: state.project.programChanges,
+          automationLanes: state.project.automationLanes,
+          liveControls: state.project.liveControls
+        });
+
+        // Al abrir Hardware desde ArrangeLab es una instancia nueva: Play mismo debe
+        // conseguir el acceso MIDI, no exigir un CONNECT MIDI previo que no se ve.
+        if (!state.dryRun && !state.connected) await refreshMidi(true);
+
+        if (state.project.midiOutputId && state.midiEngine.access) {
+          try {
+            state.midiEngine.connect(state.project.midiOutputId);
+            state.connected = true;
+          } catch (err) {
+            log('CONNECT ERROR → ' + err.message);
+          }
+        }
+
+        state.plan = HPM.buildPlaybackPlan(state.project, { ccStepBeats: 0.25 });
+        state.transport = new HPM.Transport({ bpm: state.project.bpm });
+        var startNow = performance.now();
+        state.transport.start(startNow, 0);
+        state.scheduler = new HPM.Scheduler({
+          transport: state.transport,
+          lookAheadMs: 25,
+          scheduleAheadMs: 120,
+          onSchedule: function (event, timestamp) {
+            logTrace(state.midiEngine.sendEvent(event, timestamp));
+            log(HPM.formatEvent(state.project, event));
+          }
+        });
+        if (!midiReady()) {
+          log('MIDI NOT CONNECTED → elegí una salida y presioná CONNECT MIDI.');
+          renderAll();
+          return;
+        }
+        logTrace(state.midiEngine.sendStart(startNow, { source: 'transport', physicalOutput: 'MC-707 USB MIDI OUT' }));
+        log('MIDI START');
+        state.midiClock = new HPM.MidiClock({
+          midiEngine: state.midiEngine,
+          bpm: state.project.bpm,
+          lookAheadMs: 25,
+          scheduleAheadMs: 100
+        });
+        state.midiClock.start(startNow);
+        log('MIDI CLOCK → ' + state.project.bpm + ' BPM');
+        state.scheduler.start(state.plan, startNow);
+        state.scheduler.tick(startNow);
+        state.playing = true;
+        log('PLAY → BPM ' + state.project.bpm + ', events ' + state.plan.events.length);
+        tickPlayhead();
+        renderAll();
+      }
+
+      function stop() {
+        if (state.scheduler) state.scheduler.stop();
+        if (state.midiClock) state.midiClock.stop();
+        if (state.transport) state.transport.stop(performance.now());
+        if (midiReady()) {
+          logTrace(state.midiEngine.sendStop(performance.now(), { source: 'transport', physicalOutput: 'MC-707 USB MIDI OUT' }));
+          log('MIDI STOP');
+        }
+        state.playing = false;
+        cancelAnimationFrame(state.playheadRaf);
+        log('STOP');
+        renderAll();
+      }
+
+      function tickPlayhead() {
+        if (!state.playing || !state.transport || !state.plan) return;
+        if (state.transport.getCurrentBeat(performance.now()) >= state.plan.endBeat) {
+          stop();
+          return;
+        }
+        renderSceneTimeline();
+        renderLaneCharts();
+        state.playheadRaf = requestAnimationFrame(tickPlayhead);
+      }
+
+      function esc(value) {
+        return String(value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function mcTrackOptions(selected) {
+        var html = '';
+        Object.keys(HPM.MC_TRACK_MIDI_CHANNELS).forEach(function (track) {
+          var midiChannel = HPM.MC_TRACK_MIDI_CHANNELS[track];
+          html += '<option value="' + track + '"' + (Number(track) === Number(selected) ? ' selected' : '') + '>MC ' + track + ' → MIDI CH' + midiChannel + '</option>';
+        });
+        return html;
+      }
+
+      function ccOptions(mcTrack, selected) {
+        var options = HPM.ccOptionsForMcTrack(mcTrack);
+        var hasSelected = options.some(function (option) { return option[0] === Number(selected); });
+        var html = hasSelected ? '' : '<option value="' + selected + '" selected>Custom CC ' + selected + '</option>';
+        options.forEach(function (option) {
+          html += '<option value="' + option[0] + '"' + (option[0] === Number(selected) ? ' selected' : '') + '>CC ' + option[0] + ' · ' + esc(option[1]) + '</option>';
+        });
+        return html;
+      }
+
+      document.addEventListener('click', function (event) {
+        var target = event.target;
+        if (target.id === 'backToArrangeLab') {
+          window.location.href = window.location.protocol === 'file:' ? '../../ArrangeLab.html' : '../';
+          return;
+        }
+        var deviceItem = target.closest('[data-live-device-item]');
+        if (deviceItem && !target.closest('[data-live-solo],[data-live-solo-safe],[data-live-toggle]')) {
+          if (event.shiftKey) linkLiveDeviceToSelection(deviceItem.dataset.liveDeviceItem);
+          else selectLiveControl(deviceItem.dataset.liveDeviceItem);
+        }
+        if (target.id === 'addSceneBtn') {
+          var last = state.project.programChanges[state.project.programChanges.length - 1];
+          addScene(last ? Math.min(state.project.totalBars, last.bar + 16) : 8, last ? Math.min(127, last.program + 1) : 0);
+          return;
+        }
+        if (target.id === 'addLaneBtn') { addLane(); return; }
+        if (target.id === 'refreshMidiBtn') { refreshMidi(true); return; }
+        if (target.id === 'dryRunBtn') { toggleDryRun(); return; }
+        if (target.id === 'playBtn') { play(); return; }
+        if (target.id === 'stopBtn') { stop(); return; }
+        if (target.id === 'exportBtn') { exportJson(); return; }
+        if (target.id === 'importBtn') { el.importFile.click(); return; }
+        if (target.id === 'loadAlsBtn') { el.alsFile.click(); return; }
+        if (target.id === 'sugerirCanalesBtn') { sugerirCanales(); return; }
+        var chip = target.closest && target.closest('[data-asignar]');
+        if (chip) { asignarDevice(chip.dataset.asignar, chip.dataset.canal); return; }
+        if (target.id === 'savePresetBtn') { savePreset(); return; }
+        if (target.id === 'loadPresetBtn') { loadPreset(); return; }
+        if (target.id === 'deletePresetBtn') { deletePreset(); return; }
+        if (target.id === 'moveControlLeftBtn') { moveSelectedControl(-1); return; }
+        if (target.id === 'moveControlRightBtn') { moveSelectedControl(1); return; }
+        if (target.id === 'unlinkDevicesBtn') { unlinkSelectedDevices(); return; }
+        if (target.id === 'muteAllLevelsBtn') { muteAllLiveLevels(); return; }
+        if (target.id === 'clearLogBtn') { state.logLines = []; renderAll(); return; }
+        if (target.dataset.toggleDeviceGroup !== undefined) { toggleDeviceGroup(target.dataset.toggleDeviceGroup); return; }
+        if (target.dataset.ungroupDevices !== undefined) { ungroupDevices(target.dataset.ungroupDevices); return; }
+        var liveToggle = target.closest('[data-live-toggle]');
+        if (liveToggle) { toggleLiveLevel(liveToggle.dataset.liveToggle); return; }
+        var swing = target.closest('[data-live-swing]');
+        if (swing) { swingLiveControl(swing.dataset.liveSwing); return; }
+        var liveSolo = target.closest('[data-live-solo]');
+        if (liveSolo) { soloLiveDevice(liveSolo.dataset.liveSolo); return; }
+        var liveSoloSafe = target.closest('[data-live-solo-safe]');
+        if (liveSoloSafe) { toggleLiveSoloSafe(liveSoloSafe.dataset.liveSoloSafe); return; }
+        var liveSet = target.closest('[data-live-set]');
+        if (liveSet) {
+          var liveValue = liveSet.dataset.liveSet.split(':');
+          sendLiveControl(liveValue[0], Number(liveValue[1]));
+          renderLiveControls();
+          return;
+        }
+
+        if (target.dataset.removeScene !== undefined) {
+          state.project.programChanges.splice(Number(target.dataset.removeScene), 1);
+          renderAll();
+          return;
+        }
+        if (target.dataset.removeLane !== undefined) {
+          state.project.automationLanes.splice(Number(target.dataset.removeLane), 1);
+          renderAll();
+          return;
+        }
+        if (target.dataset.addPoint !== undefined) {
+          var lane = state.project.automationLanes[Number(target.dataset.addPoint)];
+          lane.points.push({ bar: state.project.totalBars, value: 127 });
+          renderAll();
+          return;
+        }
+        if (target.dataset.removePoint !== undefined) {
+          var ids = target.dataset.removePoint.split(':').map(Number);
+          state.project.automationLanes[ids[0]].points.splice(ids[1], 1);
+          renderAll();
+          return;
+        }
+      });
+
+      document.addEventListener('change', function (event) {
+        var target = event.target;
+        if (target === el.alsFile) { if (target.files[0]) cargarAls(target.files[0]); target.value = ''; return; }
+        if (target === el.importFile) { importJson(target.files[0]); target.value = ''; return; }
+        if (target === el.midiOutput) {
+          state.project.midiOutputId = target.value;
+          state.connected = false;
+          renderAll();
+          return;
+        }
+        if (target === el.presetSelect) {
+          state.selectedPresetId = target.value;
+          var selected = state.presets.filter(function (preset) { return preset.id === state.selectedPresetId; })[0];
+          if (selected) el.presetName.value = selected.name;
+          renderPresets();
+          return;
+        }
+
+        updateFromField(target);
+      });
+
+      document.addEventListener('input', function (event) {
+        if (event.target.dataset.liveControl !== undefined) {
+          sendLiveControl(event.target.dataset.liveControl, event.target.value);
+          return;
+        }
+        if (event.target.dataset.liveDeviceLabel !== undefined || event.target.dataset.liveParamLabel !== undefined) return;
+        updateFromField(event.target);
+      });
+
+      // ---------- LEER UN .ALS ----------
+      //
+      // La estructura y las pistas salen del Set, no de una tabla escrita a mano ni de un
+      // JSON que haya que exportar. als.js se usa como libreria: es del producto y no se
+      // toca. El gzip lo hace el navegador, sin librerias.
+      async function gunzip(buf) {
+        var ds = new DecompressionStream('gzip');
+        var stream = new Blob([buf]).stream().pipeThrough(ds);
+        return new Uint8Array(await new Response(stream).arrayBuffer());
+      }
+
+      async function cargarAls(file) {
+        if (typeof DecompressionStream === 'undefined') {
+          log('ALS → este navegador no soporta gzip nativo'); return;
+        }
+        try {
+          var bytes = await gunzip(await file.arrayBuffer());
+          var xml = new TextDecoder('utf-8').decode(bytes);
+          var tempo = ALS.readTempo(xml);
+          var estructura = HPM.readStructure(xml, ALS, 4);
+          var pistas = HPM.readRecordingTracks(xml, ALS);
+          var grabadas = pistas.filter(function (t) { return t.recorded; });
+          if (!estructura.sections.length) log('ALS → ' + file.name + ' no tiene locators: no hay estructura que traer');
+          state.alsXml = xml;
+          state.alsName = file.name;
+          state.structure = estructura;
+          state.recordingTracks = pistas;
+          state.project = HPM.normalizeProject(Object.assign({}, state.project, {
+            bpm: Math.round(tempo) || state.project.bpm,
+            totalBars: Math.max(1, Math.round(estructura.totalBars) || state.project.totalBars)
+          }));
+          log('ALS → ' + file.name + ' · ' + Math.round(tempo) + ' BPM · ' +
+              estructura.sections.length + ' secciones · ' + Math.round(estructura.totalBars) + ' bars' +
+              (estructura.endName ? ' (fin: ' + estructura.endName + ')' : ''));
+          if (estructura.sections.length)
+            log('ALS → ' + estructura.sections.map(function (x) { return x.name + '(' + x.bars + ')'; }).join('  '));
+          // Se lista por BUS y no por nombre de pista: el nombre lo cambia Tomas, el bus
+          // de la MC-707 no. Cuando difieren se muestran los dos.
+          state.hardwareProfile = HPM.hardwareProfile(pistas);
+          log('ALS → ' + grabadas.length + ' pistas grabadas');
+          state.hardwareProfile.forEach(function (x) {
+            log('   ' + x.pair.padStart(6) + '  ' + (x.bus || '(sin bus)') +
+                (x.bus && x.trackName && x.bus !== x.trackName ? '  → pista "' + x.trackName + '"' : ''));
+          });
+          renderAll();
+        } catch (err) {
+          log('ALS ERROR → ' + err.message);
+        }
+      }
+
+      // ---------- ESCRIBIR EL .ALS DE GRABACION ----------
+      //
+      // Se parte del Set cargado y se devuelve uno NUEVO: devices, mezcla, returns y
+      // automatizaciones quedan como estaban. El original no se toca nunca.
+      function renderSetPanel() {
+        var hay = !!(state.alsXml && state.hardwareProfile.length);
+        el.setPanel.hidden = !hay;
+        if (!hay) return;
+        var asignado = state.project.liveControls.deviceChannel || {};
+        // Un chip por device en cada fila: encendido si ese instrumento suena por ese canal.
+        var devices = [];
+        HPM.controlRegistry().forEach(function (c) {
+          if (c.hidden) return;
+          if (devices.some(function (d) { return d.id === c.deviceId; })) return;
+          devices.push({ id: c.deviceId, label: state.project.liveControls.deviceLabels[c.deviceId] || c.deviceLabel });
+        });
+        el.busList.innerHTML = state.hardwareProfile.map(function (b) {
+          var chips = devices.map(function (d) {
+            var on = asignado[d.id] === b.key;
+            return '<button type="button" class="chip' + (on ? ' on' : '') + '" data-asignar="' +
+              esc(d.id) + '" data-canal="' + esc(b.key) + '">' + esc(corto(d.label)) + '</button>';
+          }).join('');
+          return '<div class="bus-row">' +
+            '<span class="bus-pair">' + esc(b.pair) + '</span>' +
+            '<span class="bus-name">' + esc(b.bus || '(sin bus)') + '</span>' +
+            '<span class="bus-track">' + esc(b.trackName) + '</span>' +
+            '<div class="chips">' + chips + '</div>' +
+          '</div>';
+        }).join('');
+      }
+
+      // "TR-8S · BD" -> "BD"; "MC 5 · Acid" -> "Acid". El prefijo es siempre el mismo y
+      // repetirlo dieciseis veces por fila no dice nada.
+      function corto(label) {
+        var partes = String(label || '').split('·');
+        return (partes[partes.length - 1] || label).trim();
+      }
+
+      function asignarDevice(deviceId, canal) {
+        var mapa = {};
+        Object.keys(state.project.liveControls.deviceChannel || {}).forEach(function (k) {
+          mapa[k] = state.project.liveControls.deviceChannel[k];
+        });
+        // Un device suena por UN canal: si ya estaba en este, se saca; si no, se mueve.
+        if (mapa[deviceId] === canal) delete mapa[deviceId];
+        else mapa[deviceId] = canal;
+        state.project = HPM.normalizeProject(Object.assign({}, state.project,
+          { liveControls: Object.assign({}, state.project.liveControls, { deviceChannel: mapa }) }));
+        renderAll();
+      }
+
+      function sugerirCanales() {
+        var sug = HPM.suggestDeviceChannels(state.recordingTracks);
+        state.project = HPM.normalizeProject(Object.assign({}, state.project,
+          { liveControls: Object.assign({}, state.project.liveControls, { deviceChannel: sug }) }));
+        log('CANALES → sugeridos ' + Object.keys(sug).length + ' instrumentos a partir del nombre de cada bus. Revisalos: el Set no tiene ese dato.');
+        renderAll();
+      }
+
+      async function gzip(bytes) {
+        var cs = new CompressionStream('gzip');
+        var stream = new Blob([bytes]).stream().pipeThrough(cs);
+        return new Uint8Array(await new Response(stream).arrayBuffer());
+      }
+
+      async function generarAls() {
+        if (!state.alsXml) { log('SET → primero cargá un .als'); return; }
+        try {
+          var nombres = {};
+          Array.prototype.forEach.call(el.busList.querySelectorAll('[data-bus-name]'), function (input) {
+            nombres[input.dataset.busName] = input.value;
+          });
+          var r = HPM.renameTracksByBus(state.alsXml, ALS, nombres);
+          if (!r.cambios.length) log('SET → no hay nombres nuevos; se genera igual, tal cual está');
+          r.cambios.forEach(function (c) {
+            log('SET → ' + c.pair + ' (' + c.bus + ') "' + c.de + '" → "' + c.a + '"');
+          });
+          var salida = (el.alsOutName.value || '').trim() || state.alsName.replace(/\.als$/i, '') + ' HW';
+          if (!/\.als$/i.test(salida)) salida += '.als';
+          var bytes = await gzip(new TextEncoder().encode(r.xml));
+          var url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
+          var a = document.createElement('a');
+          a.href = url; a.download = salida;
+          document.body.appendChild(a); a.click(); a.remove();
+          setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+          log('SET → generado ' + salida + ' (' + Math.round(bytes.length / 1024) + ' KB). El Set original quedó intacto.');
+        } catch (err) {
+          log('SET ERROR → ' + err.message);
+        }
+      }
+
+      // ---------- EL MENU DE UN CONTROL ----------
+      //
+      // Click derecho sobre una perilla o un fader. Los limites se setean CON EL CONTROL,
+      // no tipeando: se lo lleva a donde uno quiere y se marca ahi. Es lo que hace que
+      // definir el rango sea fluido y no un formulario.
+      var ctlMenuId = '';
+
+      function abrirCtlMenu(controlId, x, y) {
+        var control = null;
+        HPM.controlRegistry().forEach(function (c) { if (c.id === controlId) control = c; });
+        if (!control) return;
+        ctlMenuId = controlId;
+        var rango = HPM.controlRange(controlId, state.project.liveControls);
+        var propio = !!(state.project.liveControls.ranges && state.project.liveControls.ranges[controlId]);
+        var valor = state.liveControlValues[controlId];
+        var etiqueta = state.project.liveControls.labels[controlId] || control.name;
+        el.ctlMenuTit.innerHTML = '<b>' + esc(control.deviceLabel + ' · ' + etiqueta) + '</b>' +
+          'CH' + control.targets[0][0] + ' · CC' + control.targets[0][1] + '<br>' +
+          'rango ' + rango.min + '–' + rango.max + (propio ? '' : ' (completo)') +
+          (Number.isFinite(valor) ? ' · ahora ' + valor : '');
+        el.ctlMenu.hidden = false;
+        // Se ubica en el puntero y se corrige si se sale por el borde.
+        var caja = el.ctlMenu.getBoundingClientRect();
+        var ancho = caja.width || 190, alto = caja.height || 170;
+        el.ctlMenu.style.left = Math.max(6, Math.min(x, window.innerWidth - ancho - 6)) + 'px';
+        el.ctlMenu.style.top = Math.max(6, Math.min(y, window.innerHeight - alto - 6)) + 'px';
+      }
+
+      // Se va al extremo CONTRARIO al que esta. Con el valor justo en el medio arranca
+      // yendo al maximo, que es lo que se espera de un control que todavia nadie movio.
+      function swingLiveControl(controlId) {
+        var rango = HPM.controlRange(controlId, state.project.liveControls);
+        var actual = state.liveControlValues[controlId];
+        if (!Number.isFinite(actual)) actual = rango.min;
+        var destino = actual >= (rango.min + rango.max) / 2 ? rango.min : rango.max;
+        sendLiveControl(controlId, destino);
+      }
+
+      function cerrarCtlMenu() { el.ctlMenu.hidden = true; ctlMenuId = ''; }
+
+      function setRango(controlId, extremo) {
+        var valor = state.liveControlValues[controlId];
+        if (!Number.isFinite(valor)) { log('RANGO → tocá el control primero para fijar un límite'); return; }
+        var rango = HPM.controlRange(controlId, state.project.liveControls);
+        var min = extremo === 'min' ? valor : rango.min;
+        var max = extremo === 'max' ? valor : rango.max;
+        if (min >= max) { log('RANGO → el mínimo tiene que ser menor que el máximo (' + min + ' / ' + max + ')'); return; }
+        var ranges = {};
+        Object.keys(state.project.liveControls.ranges || {}).forEach(function (k) { ranges[k] = state.project.liveControls.ranges[k]; });
+        ranges[controlId] = { min: min, max: max };
+        state.project = HPM.normalizeProject(Object.assign({}, state.project,
+          { liveControls: Object.assign({}, state.project.liveControls, { ranges: ranges }) }));
+        log('RANGO → ' + controlId + ' ' + min + '–' + max);
+        renderAll();
+      }
+
+      function resetRango(controlId) {
+        var ranges = {};
+        Object.keys(state.project.liveControls.ranges || {}).forEach(function (k) {
+          if (k !== controlId) ranges[k] = state.project.liveControls.ranges[k];
+        });
+        state.project = HPM.normalizeProject(Object.assign({}, state.project,
+          { liveControls: Object.assign({}, state.project.liveControls, { ranges: ranges }) }));
+        log('RANGO → ' + controlId + ' vuelve al límite completo');
+        renderAll();
+      }
+
+      // REVELAR NO ES CREAR PUNTOS NI EMITIR. La lane aparece vacía: no manda un solo CC
+      // hasta que se dibuje algo. Por eso no se le meten los dos puntos que le metia
+      // "+ CC Lane".
+      function revelarLane(controlId) {
+        var ya = state.project.automationLanes.filter(function (l) { return l.controlId === controlId; })[0];
+        if (!ya) {
+          state.project = HPM.normalizeProject(Object.assign({}, state.project, {
+            automationLanes: state.project.automationLanes.concat([{ controlId: controlId, points: [] }])
+          }));
+          log('AUTOMATION → lane revelada para ' + controlId + ' (vacía: no envía nada)');
+        }
+        renderAll();
+        var panel = el.lanesHost.closest('.panel');
+        if (panel && panel.scrollIntoView) panel.scrollIntoView({ block: 'start' });
+      }
+
+      document.addEventListener('contextmenu', function (event) {
+        var control = event.target.closest && event.target.closest('[data-ctl-id]');
+        if (!control) return;
+        event.preventDefault();
+        abrirCtlMenu(control.dataset.ctlId, event.clientX, event.clientY);
+      });
+
+      document.addEventListener('click', function (event) {
+        var accion = event.target.closest && event.target.closest('[data-ctl-action]');
+        if (!accion) { if (!el.ctlMenu.hidden && !event.target.closest('#ctlMenu')) cerrarCtlMenu(); return; }
+        var id = ctlMenuId;
+        cerrarCtlMenu();
+        if (!id) return;
+        var que = accion.dataset.ctlAction;
+        if (que === 'min' || que === 'max') setRango(id, que);
+        else if (que === 'reset') resetRango(id);
+        else if (que === 'automation') revelarLane(id);
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && !el.ctlMenu.hidden) { cerrarCtlMenu(); return; }
+        var focused = document.activeElement;
+        if ((event.code === 'Space' || event.key === ' ') && !event.repeat && !(focused && focused.matches('input, select, textarea, button'))) {
+          event.preventDefault();
+          if (state.playing) stop();
+          else play();
+          return;
+        }
+        var knob = event.target.closest && event.target.closest('[data-live-knob]');
+        if (knob && (event.key === 'ArrowUp' || event.key === 'ArrowDown' || event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+          var current = state.liveControlValues[knob.dataset.liveKnob];
+          if (!Number.isFinite(current)) current = 0;
+          sendLiveControl(knob.dataset.liveKnob, current + ((event.key === 'ArrowUp' || event.key === 'ArrowRight') ? 1 : -1));
+          event.preventDefault();
+          return;
+        }
+        if (!state.selectedLiveControlId || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
+        if (focused && (focused.matches('input:not([type="range"]), select, textarea') || focused.classList.contains('control-name'))) return;
+        event.preventDefault();
+        moveSelectedControl(event.key === 'ArrowLeft' ? -1 : 1);
+      });
+
+      function updateFromField(target) {
+        if (target === el.bpm) state.project.bpm = Number(target.value);
+        else if (target === el.bars) state.project.totalBars = Number(target.value);
+        else if (target.dataset.liveDeviceLabel !== undefined) {
+          var device = target.dataset.liveDeviceLabel;
+          var label = target.value.trim();
+          var control = HPM.controlRegistry().filter(function (item) { return item.deviceId === device; })[0];
+          if (control && label && label !== control.deviceLabel) state.project.liveControls.deviceLabels[device] = label;
+          else if (control) delete state.project.liveControls.deviceLabels[device];
+        }
+        else if (target.dataset.liveParamLabel !== undefined) {
+          var parameter = HPM.controlRegistry().filter(function (item) { return item.id === target.dataset.liveParamLabel; })[0];
+          var parameterLabel = target.value.trim();
+          if (parameter && parameterLabel && parameterLabel !== parameter.name) state.project.liveControls.labels[parameter.id] = parameterLabel;
+          else if (parameter) delete state.project.liveControls.labels[parameter.id];
+        }
+        else if (target.dataset.liveDeviceColor !== undefined) state.project.liveControls.deviceColors[target.dataset.liveDeviceColor] = target.value;
+        else if (target.dataset.sceneBar !== undefined) state.project.programChanges[Number(target.dataset.sceneBar)].bar = Number(target.value);
+        else if (target.dataset.sceneProgram !== undefined) state.project.programChanges[Number(target.dataset.sceneProgram)].program = Number(target.value);
+        else if (target.dataset.laneName !== undefined) state.project.automationLanes[Number(target.dataset.laneName)].name = target.value;
+        else if (target.dataset.laneMcTrack !== undefined) state.project.automationLanes[Number(target.dataset.laneMcTrack)].mcTrack = Number(target.value);
+        else if (target.dataset.laneCc !== undefined) state.project.automationLanes[Number(target.dataset.laneCc)].cc = Number(target.value);
+        else if (target.dataset.pointBar) {
+          var partsBar = target.dataset.pointBar.split(':').map(Number);
+          state.project.automationLanes[partsBar[0]].points[partsBar[1]].bar = Number(target.value);
+        } else if (target.dataset.pointValue) {
+          var partsValue = target.dataset.pointValue.split(':').map(Number);
+          state.project.automationLanes[partsValue[0]].points[partsValue[1]].value = Number(target.value);
+        } else return;
+        renderAll();
+      }
+
+      el.sceneTimeline.addEventListener('click', function (event) {
+        if (event.target.closest('[data-scene-marker]')) return;
+        var rect = el.sceneTimeline.getBoundingClientRect();
+        var box = layoutForSvg(el.sceneTimeline);
+        var x = event.clientX - rect.left;
+        var bar = Math.max(8, Math.round(barForX((x / rect.width) * box.width, state.project.totalBars, box.width, box.padL, box.padR) / 8) * 8);
+        var lastProgram = state.project.programChanges.length ? state.project.programChanges[state.project.programChanges.length - 1].program : 0;
+        addScene(bar, Math.min(127, lastProgram + 1));
+      });
+
+      document.addEventListener('click', function (event) {
+        var marker = event.target.closest('[data-scene-marker]');
+        if (!marker) return;
+        var idx = Number(marker.dataset.sceneMarker);
+        var next = (state.project.programChanges[idx].program + 1) % 128;
+        state.project.programChanges[idx].program = next;
+        renderAll();
+      });
+
+      document.addEventListener('click', function (event) {
+        var svg = event.target.closest('[data-lane-svg]');
+        if (!svg) return;
+        if (event.target.closest('[data-point-grab]')) return;
+        var laneIndex = Number(svg.dataset.laneSvg);
+        var rect = svg.getBoundingClientRect();
+        var box = layoutForSvg(svg);
+        var x = ((event.clientX - rect.left) / rect.width) * box.width;
+        var y = ((event.clientY - rect.top) / rect.height) * box.height;
+        var rgAdd = rangoDeLane(state.project.automationLanes[laneIndex]);
+        state.project.automationLanes[laneIndex].points.push({
+          bar: barForX(x, state.project.totalBars, box.width, box.padL, box.padR),
+          value: valueForY(y, box.height, box.padT, box.padB, rgAdd.min, rgAdd.max)
+        });
+        renderAll();
+      });
+
+      document.addEventListener('pointerdown', function (event) {
+        var knob = event.target.closest('[data-live-knob]');
+        if (knob) {
+          if (knob.disabled || !midiReady()) return;
+          var current = state.liveControlValues[knob.dataset.liveKnob];
+          state.knobDrag = { id: knob.dataset.liveKnob, startY: event.clientY, startValue: Number.isFinite(current) ? current : 0 };
+          knob.setPointerCapture(event.pointerId);
+          event.preventDefault();
+          return;
+        }
+        var grip = event.target.closest('[data-point-grab]');
+        if (!grip) return;
+        var ids = grip.dataset.pointGrab.split(':').map(Number);
+        var svg = grip.closest('svg');
+        state.drag = { laneIndex: ids[0], pointIndex: ids[1], svg: svg };
+        grip.setPointerCapture(event.pointerId);
+      });
+
+      document.addEventListener('pointermove', function (event) {
+        if (state.knobDrag) {
+          sendLiveControl(state.knobDrag.id, state.knobDrag.startValue + (state.knobDrag.startY - event.clientY));
+          return;
+        }
+        if (!state.drag) return;
+        var rect = state.drag.svg.getBoundingClientRect();
+        var box = layoutForSvg(state.drag.svg);
+        var x = ((event.clientX - rect.left) / rect.width) * box.width;
+        var y = ((event.clientY - rect.top) / rect.height) * box.height;
+        var lane = state.project.automationLanes[state.drag.laneIndex];
+        var rgDrag = rangoDeLane(lane);
+        lane.points[state.drag.pointIndex] = {
+          bar: barForX(x, state.project.totalBars, box.width, box.padL, box.padR),
+          value: valueForY(y, box.height, box.padT, box.padB, rgDrag.min, rgDrag.max)
+        };
+        renderAll();
+      });
+
+      document.addEventListener('pointerup', function () {
+        if (state.knobDrag) {
+          state.knobDrag = null;
+          return;
+        }
+        if (!state.drag) return;
+        state.drag = null;
+      });
+
+      renderAll();
+    })();
+  </script>
+</body>
+</html>
