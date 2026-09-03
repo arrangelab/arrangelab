@@ -988,6 +988,30 @@
     return Object.assign({}, project, { automationLanes: lanes });
   }
 
+  function value01ToRange(value01, range, options) {
+    var t = Number(value01);
+    if (!Number.isFinite(t)) t = 0;
+    t = Math.max(0, Math.min(1, t));
+    var lo = Number(range && range.min), hi = Number(range && range.max);
+    if (!Number.isFinite(lo)) lo = 0;
+    if (!Number.isFinite(hi)) hi = 127;
+    if (options && options.zeroIsMute && t <= 1e-9) return 0;
+    return Math.round(lo + t * (hi - lo));
+  }
+
+  function replaceLanePointsInSection(points, startBar, endBar, incoming) {
+    var from = normalizeBar(startBar);
+    var to = normalizeBar(endBar);
+    var incomingBars = {};
+    (incoming || []).forEach(function (point) { incomingBars[normalizeBar(point && point.bar)] = true; });
+    var kept = (points || []).filter(function (point) {
+      if (incomingBars[normalizeBar(point && point.bar)]) return false;
+      return point.bar < from || point.bar >= to;
+    });
+    var merged = kept.concat((incoming || []).map(normalizePoint)).sort(sortByBar);
+    return dedupePoints(merged);
+  }
+
   // ------------------------------------------------------- editar la estructura
   //
   // UNA SOLA OPERACION PARA TODO. Estirar una seccion, renombrarla, agregar, borrar y
@@ -1699,6 +1723,8 @@
     sectionAtBar: sectionAtBar,
     remapStructure: remapStructure,
     rescaleLanePoints: rescaleLanePoints,
+    value01ToRange: value01ToRange,
+    replaceLanePointsInSection: replaceLanePointsInSection,
     editableSections: editableSections,
     readRecordingTracks: readRecordingTracks,
     pairFromTarget: pairFromTarget,

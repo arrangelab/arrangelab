@@ -560,12 +560,16 @@
     .lane-scroll > .mcells{flex:0 0 auto}
     .lane-scroll::-webkit-scrollbar{height:7px}
     .lane-scroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+    .lane-body{flex:1;min-width:0;display:grid;gap:6px}
+    .lane-step{display:flex;align-items:center;gap:5px;min-height:26px}
+    .lane-step .rotulo{font:10px/1 var(--fuentetit);letter-spacing:.09em;color:var(--dim);margin-right:3px}
+    .lane-step button{min-height:26px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;
+      background:var(--campo);color:var(--hw-label-green);font:10px/1 var(--fuentetit);letter-spacing:.06em}
+    .lane-step button.activo{border-color:var(--acc);color:var(--acc)}
     .lane-head{display:flex;align-items:center;gap:10px}
     .lane-head b{font:12px/1 var(--fuentetit);letter-spacing:.06em}
     .lane-head .lane-cc{font:11px/1 var(--fuentetit);letter-spacing:.06em;color:var(--dim)}
     .lane-head .crece{flex:1}
-    .lane-fold{width:26px;padding:0;line-height:1}
-    .lane-card.plegada{padding:8px 14px}
     .lane-card.apagada{opacity:.55}
     .lane-card.apagada .lane-cc{color:var(--bad)}
     /* Las tres filas comparten columnas: tiempos, secciones y duracion. Es la mhead de
@@ -590,6 +594,7 @@
     .estructura > .sectimes::-webkit-scrollbar,
     .estructura > .secstrip::-webkit-scrollbar,
     .estructura > .secdurs::-webkit-scrollbar{height:0}
+    .timeline-scale{display:flex;gap:var(--gapsec);flex:none;min-width:100%}
     /* y las filas van pegadas a la barra: la barra es su encabezado */
     #lanesHost{margin-top:6px}
     /* EL CABEZAL CRUZA TODO. En la barra de secciones va adentro de su segmento, pero la
@@ -639,6 +644,7 @@
     .secbar .sb:hover{border-color:var(--hw-label-green);color:var(--hw-label-green)}
     .secbar .sb.activo{border-color:var(--acc);color:var(--acc)}
     .secbar .sblarg{width:auto;min-width:28px;padding:0 8px}
+    .secbar .sbsel{width:184px;height:28px;padding:0 8px;font:11px/1 var(--fuentetit);letter-spacing:.05em}
     .secbar .sbdel{color:var(--bad)}
     .secbar .sbdel:hover{background:var(--bad);border-color:var(--bad);color:var(--sobreacc)}
     .secbar input[type=text]{width:150px;height:28px;padding:0 8px}
@@ -817,15 +823,6 @@
       <div class="panel-head">
         <div class="actions">
           <span class="muted" id="structureSource"></span>
-          <span class="zoom-lanes"><span class="rotulo" style="font:11px/1 var(--fuentetit);letter-spacing:.09em;color:var(--hw-label-green)">ZOOM</span>
-            <button id="zoomOutBtn" class="secondary" title="Alejar">−</button>
-            <span class="factor" id="zoomFactor">1×</span>
-            <button id="zoomInBtn" class="secondary" title="Acercar">+</button></span>
-          <span class="zoom-lanes"><span class="rotulo" style="font:11px/1 var(--fuentetit);letter-spacing:.09em;color:var(--hw-label-green)">PASO</span>
-            <button class="secondary" data-paso="1" title="Un compás: 16 steps">BAR</button>
-            <button class="secondary" data-paso="0.5" title="Medio compás: 8 steps">1/2</button>
-            <button class="secondary" data-paso="0.25" title="Un cuarto: 4 steps">1/4</button>
-            <button class="secondary" data-paso="0.0625" title="Un step">STEP</button></span>
           <button id="clipsToCcBtn" class="secondary">CLIPS → CC</button>
           <button id="addLaneBtn">+ CC Lane</button>
           <button id="foldLanesBtn" class="secondary">PLEGAR TODO</button>
@@ -914,7 +911,7 @@
     <button type="button" data-ctl-action="reset">RANGO COMPLETO</button>
     <button type="button" data-ctl-action="automation" class="ctl-auto">AUTOMATION</button>
     <button type="button" data-ctl-action="autotoggle" id="ctlAutoToggle" hidden>DESACTIVAR AUTOMATIZACIÓN</button>
-    <button type="button" data-ctl-action="autoborrar" id="ctlAutoBorrar" class="danger" hidden>VACIAR AUTOMATIZACIÓN</button>
+    <button type="button" data-ctl-action="autoborrar" id="ctlAutoBorrar" class="danger" hidden>BORRAR AUTOMATIZACIÓN</button>
   </div>
 
   <!-- LA GUIA. Mismo dialogo que el del arranger: los comandos que de verdad hay, no una
@@ -953,7 +950,7 @@
           <li>Con un punto elegido: <b>← ↑ → ↓</b> recorren los puntos y <b>Supr</b> borra.</li>
           <li><b>Dos puntos en el mismo compás</b> son un escalón: el valor salta en vez de subir en rampa.</li>
           <li><b>PASO</b> elige la grilla de dibujo: compás, medio, un cuarto o un step.</li>
-          <li><b>Shift + rueda</b> sobre una lane hace zoom; la rueda sola scrollea y todas van juntas.</li>
+          <li><b>Shift + rueda</b> sobre una envolvente hace zoom en esa lane; la rueda sola scrollea.</li>
           <li>Cambiar el <b>rango</b> de un control reescala lo dibujado en vez de recortarlo.</li>
         </ul>
       </section>
@@ -984,6 +981,11 @@
       var LEGACY_STORAGE_KEY = 'arrangelab.hardware.performance.mvp.v1';
       var PRESET_STORAGE_KEY = 'arrangelab.hardware.performance.presets.v1';
       var STRUCTURE_STORAGE_KEY = 'arrangelab.hardware.structures.v1';
+      var SECTION_ACTIONS = [
+        { id: 'acid-riser', label: 'Acid Riser', controlId: 'mc5-filter', shape: 'up:0-1' },
+        { id: 'kick-cut', label: 'Kick Cut', controlId: 'tr8s-bd-level', shape: 'flat:0', zeroIsMute: true },
+        { id: 'delay-pump', label: 'Delay Pump', controlId: 'tr8s-delay-level', shape: 'saw:0-1:4' }
+      ];
       var state = {
         project: loadProject(),
         presets: loadPresets(),
@@ -1016,7 +1018,8 @@
         bpmDrag: null,
         ultimoClickSec: null,
         paletaAbierta: false,
-        zoomLanes: 1,
+        selectedSectionActionId: 'acid-riser',
+        timelineZoom: 1,
         // Los FX globales que la version anterior habia metido como canales se limpian
         // una sola vez, al arrancar: despues las envolventes de Delay o Reverb se quedan.
         fxLimpiado: false,
@@ -1085,9 +1088,6 @@
         addSceneBtn: document.getElementById('addSceneBtn'),
         addLaneBtn: document.getElementById('addLaneBtn'),
         clipsToCcBtn: document.getElementById('clipsToCcBtn'),
-        zoomOutBtn: document.getElementById('zoomOutBtn'),
-        zoomInBtn: document.getElementById('zoomInBtn'),
-        zoomFactor: document.getElementById('zoomFactor'),
         foldLanesBtn: document.getElementById('foldLanesBtn'),
         clearLogBtn: document.getElementById('clearLogBtn')
       };
@@ -1320,6 +1320,20 @@
         return String(Math.round(bars * 100) / 100);
       }
 
+      function accionDeSeccion(id) {
+        for (var i = 0; i < SECTION_ACTIONS.length; i += 1)
+          if (SECTION_ACTIONS[i].id === id) return SECTION_ACTIONS[i];
+        return SECTION_ACTIONS[0] || null;
+      }
+
+      function opcionesAccionSeccion() {
+        return SECTION_ACTIONS.map(function (item) {
+          return '<option value="' + esc(item.id) + '"' +
+            (item.id === state.selectedSectionActionId ? ' selected' : '') + '>' +
+            esc(item.label) + '</option>';
+        }).join('');
+      }
+
       // CUANTO DURA ESO EN TIEMPO. Los compases no dicen si el tema entra en un set: los
       // segundos si. Sale del BPM del Set y del compas, no de un numero guardado.
       function mmss(bars) {
@@ -1393,13 +1407,14 @@
         }
 
         // Fila 1: en que minuto arranca cada seccion. El ultimo numero es el largo del tema.
-        el.structureTimes.innerHTML = secciones.map(function (seccion) {
+        var anchoTimeline = 'width:' + (state.timelineZoom * 100) + '%';
+        el.structureTimes.innerHTML = '<div class="timeline-scale" style="' + anchoTimeline + '">' + secciones.map(function (seccion) {
           return '<div class="utime" style="flex-grow:' + seccion.bars + '">' +
             mmss(seccion.startBar - 1) + '</div>';
-        }).join('') + '<div class="utime fin">' + mmss(state.project.totalBars) + '</div>';
+        }).join('') + '<div class="utime fin">' + mmss(state.project.totalBars) + '</div></div>';
 
         // Fila 2: las secciones.
-        el.structureStrip.innerHTML = secciones.map(function (seccion) {
+        el.structureStrip.innerHTML = '<div class="timeline-scale" style="' + anchoTimeline + '">' + secciones.map(function (seccion) {
           // Una seccion y su fill se resaltan juntos: son un grupo y se mueven juntos.
           var elegida = seccion.index === state.selectedSectionIndex ||
             (state.selectedSectionIndex >= 0 &&
@@ -1419,10 +1434,10 @@
             (activa ? '<span class="uplay" style="left:' + Math.max(0, Math.min(100, avance)) + '%"></span>' : '') +
             gripsDeSeccion(seccion.index, secciones) +
             '</div>';
-        }).join('');
+        }).join('') + '</div>';
 
         // Fila 3: el carril con los compases, como la mdurrow de ArrangeLab.
-        el.structureDurs.innerHTML = secciones.map(function (seccion) {
+        el.structureDurs.innerHTML = '<div class="timeline-scale" style="' + anchoTimeline + '">' + secciones.map(function (seccion) {
           var angosto = seccion.bars / state.project.totalBars < 0.045;
           var corto = seccion.bars <= 3;
           var texto = seccion.bars <= 4 ? barsLegibles(seccion.bars) : (barsLegibles(seccion.bars) + ' BAR');
@@ -1434,7 +1449,7 @@
             '" style="flex-grow:' + seccion.bars + ';--udurc:' + colorDeSeccion(seccion.index, seccion.color) + '"' +
             ' data-dursec="' + seccion.index + '"><i aria-hidden="true"></i><span class="udurtxt">' +
             texto + '</span></div>';
-        }).join('') + '<div class="utime fin"></div>';
+        }).join('') + '<div class="utime fin"></div></div>';
 
         renderSecBar(secciones);
       }
@@ -1672,6 +1687,9 @@
             : haySiguienteFill ? 'Ya tiene un fill atrás'
             : actual.bars > 1 ? 'Cortar el último compás como fill'
             : 'Mide un compás: no hay qué cortar') + '">FILL</button>';
+        html += '<select id="secActionSelect" class="sbsel" title="Bloque prefabricado">' +
+          opcionesAccionSeccion() + '</select>';
+        html += '<button class="sb sblarg" data-secop="accion" title="Aplicar bloque prefabricado">ACCION</button>';
         html += '<button class="sb sblarg" data-secop="add" title="Insertar una sección después">+</button>';
         html += '<span class="sbsep" aria-hidden="true"></span>';
         html += '<button class="sb" data-secop="left" title="Mover a la izquierda (←)">←</button>';
@@ -1788,6 +1806,39 @@
         });
       }
 
+      function aplicarAccionSeccion() {
+        var accion = accionDeSeccion(state.selectedSectionActionId);
+        var secciones = HPM.sectionTimeline(state.project);
+        var seccion = secciones[state.selectedSectionIndex];
+        if (!accion || !seccion) return;
+        var control = controlPorId(accion.controlId);
+        if (!control) { log('ACCION → no existe el control ' + accion.controlId); return; }
+        var rango = HPM.controlRange(control.id, state.project.liveControls);
+        var lanes = state.project.automationLanes.slice();
+        var idx = -1;
+        lanes.forEach(function (lane, i) { if (lane.controlId === control.id) idx = i; });
+        var lane = idx >= 0 ? lanes[idx] : { controlId: control.id, points: [] };
+        var valorPrevio = HPM.interpolateLaneValue(lane, Math.max(0, seccion.startBeat - 0.001), state.project);
+        var previo01 = Number.isFinite(valorPrevio) && rango.max !== rango.min
+          ? (valorPrevio - rango.min) / (rango.max - rango.min)
+          : 0;
+        var puntos = ALS.shapePoints(accion.shape, seccion.startBeat, seccion.endBeat, previo01)
+          .map(function (par) {
+            return {
+              bar: HPM.beatToBarFloat(state.project, par[0]),
+              value: HPM.value01ToRange(par[1], rango, { zeroIsMute: !!accion.zeroIsMute })
+            };
+          });
+        var nuevos = HPM.replaceLanePointsInSection(lane.points, seccion.startBar, seccion.endBar, puntos);
+        var actualizada = Object.assign({}, lane, { controlId: control.id, points: nuevos, off: false, collapsed: false });
+        if (idx >= 0) lanes[idx] = actualizada;
+        else lanes.push(actualizada);
+        anotarPaso();
+        state.project = HPM.normalizeProject(Object.assign({}, state.project, { automationLanes: lanes }));
+        log('ACCION → ' + accion.label + ' en ' + seccion.name + ' · ' + control.deviceLabel + ' · ' + control.name);
+        renderAll();
+      }
+
       function opSeccion(op, dato) {
         var lista = HPM.editableSections(state.project);
         var i = state.selectedSectionIndex;
@@ -1834,6 +1885,9 @@
           return;
         } else if (op === 'fill') {
           opFill(lista, i);
+          return;
+        } else if (op === 'accion') {
+          aplicarAccionSeccion();
           return;
         } else if (op === 'color') {
           state.paletaAbierta = !state.paletaAbierta;
@@ -2012,9 +2066,6 @@
         Array.prototype.forEach.call(document.querySelectorAll('[data-paso]'), function (b) {
           b.classList.toggle('activo', Number(b.dataset.paso) === state.pasoLane);
         });
-        el.zoomFactor.textContent = state.zoomLanes + '×';
-        el.zoomOutBtn.disabled = state.zoomLanes <= 1;
-        el.zoomInBtn.disabled = state.zoomLanes >= 8;
         if (el.foldLanesBtn) {
           var colgando = state.project.automationLanes.filter(function (l) {
             return deviceDeLane(l) && !esLevel(l);
@@ -2537,10 +2588,16 @@
       // sueltas al final.
       function esLevel(lane) { return /-level$/.test(lane && lane.controlId || ''); }
 
+      function controlPorId(controlId) {
+        var lista = HPM.controlRegistry();
+        for (var i = 0; i < lista.length; i += 1) if (lista[i].id === controlId) return lista[i];
+        return null;
+      }
+
       // El device de una lane, que es de quien cuelga en la lista.
       function deviceDeLane(lane) {
         if (!lane || !lane.controlId) return '';
-        var control = HPM.controlRegistry().filter(function (c) { return c.id === lane.controlId; })[0];
+        var control = controlPorId(lane.controlId);
         return control ? control.deviceId : '';
       }
 
@@ -2622,6 +2679,14 @@
         }).join('');
       }
 
+      function botonesDePaso() {
+        return '<div class="lane-step">' +
+          '<button type="button" data-paso="1" title="Un compás">BAR</button>' +
+          '<button type="button" data-paso="0.5" title="Medio compás">1/2</button>' +
+          '<button type="button" data-paso="0.25" title="Un cuarto de compás">1/4</button>' +
+          '<button type="button" data-paso="0.0625" title="Una semicorchea">STEP</button></div>';
+      }
+
       // LA GRILLA DE BLOQUES: celdas de CUATRO compases, que arrancan de nuevo en cada
       // seccion. La cuenta esta en el core, con su prueba: es la que hace que un fill de 1
       // parta la ultima vuelta de 4 en 3 + 1.
@@ -2687,9 +2752,8 @@
         if (!lane) return '';
         var color = colorDeLane(lane);
         var suelta = !lane.controlId;
-        var plegada = !!lane.collapsed;
         var bloques = lane.modo === 'bloques';
-        var ancho = 'width:' + (state.zoomLanes * 100) + '%';
+        var ancho = 'width:' + (state.timelineZoom * 100) + '%';
 
         var html = '<div class="mrow' + (lane.off ? ' apagada' : '') + '">';
         html += '<div class="mlabel' + (bloques ? ' conbotones' : '') +
@@ -2709,10 +2773,8 @@
         html += '<b>' + esc(nombreCortoDeLane(lane)) + '</b>';
         html += '<span class="cc">CC' + lane.cc +
           (esLevel(lane) && cuantasDebajo ? ' +' + cuantasDebajo : '') + '</span>';
-        if (suelta) {
-          html += '<button class="mini" data-lane-fold="' + laneIndex + '" title="' +
-            (plegada ? 'Desplegar' : 'Plegar') + '">' + (plegada ? '\u25b8' : '\u25be') + '</button>';
-          html += '<button class="mini" data-remove-lane="' + laneIndex + '" title="Sacar esta lane">\u2715</button>';
+        if (suelta || !bloques) {
+          html += '<button class="mini" data-remove-lane="' + laneIndex + '" title="Borrar esta automatización">\u2715</button>';
         }
         // LLENAR O VACIAR LA LINEA ENTERA, como en el arranger: el check llena, la cruz
         // vacia. La cruz es lo unico destructivo de la etiqueta, por eso va ultima, es
@@ -2730,23 +2792,21 @@
         }
         html += '</div>';
 
-        if (suelta && plegada) {
-          html += '<div class="lane-scroll"><div class="mcells" style="' + ancho + '">' +
-            celdasDeSeccion() + '</div></div>';
-        } else if (bloques) {
+        if (bloques) {
           html += '<div class="lane-scroll"><div class="mcells" data-lane-blocks="' + laneIndex +
             '" style="' + ancho + '">' + celdasDeSeccion() +
             '<div class="mlane rejilla">' + capaDeGrilla() + '</div>' +
             '<div class="mlane">' + capaDeBloques(prendidosDeLane(laneIndex), color) +
             '</div></div></div>';
         } else {
-          html += '<div class="lane-scroll"><div class="mcells env" style="' + ancho + '">' +
+          html += '<div class="lane-body"><div class="lane-scroll"><div class="mcells env" style="' + ancho + '">' +
             celdasDeSeccion() + '<svg class="lane-svg" data-lane-svg="' + laneIndex +
-            '" viewBox="0 0 1200 110" preserveAspectRatio="none"></svg></div></div>';
+            '" viewBox="0 0 1200 110" preserveAspectRatio="none"></svg></div></div>' +
+            botonesDePaso() + '</div>';
         }
         html += '</div>';
 
-        if (suelta && !plegada) {
+        if (suelta) {
           html += '<div class="lane-meta">';
           html += '<label>Name<input type="text" value="' + esc(lane.name) + '" data-lane-name="' + laneIndex + '"></label>';
           html += '<label>MC-707 Track<select data-lane-mc-track="' + laneIndex + '">' + mcTrackOptions(lane.mcTrack) + '</select></label>';
@@ -3254,14 +3314,6 @@
           renderAll();
           return;
         }
-        if (target.id === 'zoomInBtn' || target.id === 'zoomOutBtn') {
-          var pasos = [1, 2, 4, 8];
-          var i = pasos.indexOf(state.zoomLanes);
-          if (i < 0) i = 0;
-          state.zoomLanes = pasos[Math.max(0, Math.min(pasos.length - 1, i + (target.id === 'zoomInBtn' ? 1 : -1)))];
-          renderAll();
-          return;
-        }
         if (target.id === 'clipsToCcBtn') { lanesDesdeClips(); return; }
         if (target.id === 'addLaneBtn') { addLane(); return; }
         if (target.id === 'foldLanesBtn') {
@@ -3312,12 +3364,6 @@
         if (target.dataset && target.dataset.filaFold !== undefined) {
           var devFold = target.dataset.filaFold;
           state.filasPlegadas[devFold] = !state.filasPlegadas[devFold];
-          renderAll();
-          return;
-        }
-        if (target.dataset && target.dataset.laneFold !== undefined) {
-          var laneP = state.project.automationLanes[Number(target.dataset.laneFold)];
-          if (laneP) laneP.collapsed = !laneP.collapsed;
           renderAll();
           return;
         }
@@ -3706,13 +3752,9 @@
           if (idx < 0) return;
           var laneB = state.project.automationLanes[idx];
           anotarPaso();
-          // LA FILA NO SE VA, SE VACIA. Los canales tienen su fila siempre -es lo que hace
-          // que la pantalla se lea como una matriz-, asi que borrar la automatizacion es
-          // dejarla sin puntos, no sacar el canal de la lista.
-          laneB.points = [];
-          laneB.off = false;
+          state.project.automationLanes.splice(idx, 1);
           state.project = HPM.normalizeProject(state.project);
-          log('AUTOMATION → ' + laneB.name + ' vaciada');
+          log('AUTOMATION → ' + laneB.name + ' borrada');
           renderAll();
         }
       });
@@ -3914,6 +3956,8 @@
         if (i < 0 || !lista[i]) return;
         if (event.target.id === 'secBars') {
           if (!setBarsSeccion(i, event.target.value)) renderAll();
+        } else if (event.target.id === 'secActionSelect') {
+          state.selectedSectionActionId = event.target.value || state.selectedSectionActionId;
         }
       });
 
@@ -4032,16 +4076,16 @@
       // EL BPM SE ARRASTRA, como en el arranger: agarrarlo y mover el mouse arriba y
       // abajo. Cuatro pixeles por golpe, y hasta que no se mueve tres no cuenta como
       // arrastre, asi que un click sigue sirviendo para escribir el numero.
-      // ZOOM CON SHIFT + RUEDA ADENTRO DE LA LANE. La rueda sola scrollea, que es lo que
-      // uno espera de una caja que scrollea; con Shift hace zoom, y el punto que esta bajo
-      // el cursor se queda quieto: se guarda su posicion relativa antes de redibujar y se
-      // recolocan los scrolls despues.
+      // ZOOM CON SHIFT + RUEDA ADENTRO DE UNA ENVOLVENTE. Cambia todo el eje temporal
+      // para que secciones, bloques y curvas sigan alineados.
       document.addEventListener('wheel', function (event) {
         if (!event.shiftKey) return;
         var caja = event.target.closest ? event.target.closest('.lane-scroll') : null;
         if (!caja) return;
+        var svg = caja.querySelector('[data-lane-svg]');
+        if (!svg) return;
         var pasos = [1, 2, 4, 8];
-        var i = pasos.indexOf(state.zoomLanes);
+        var i = pasos.indexOf(state.timelineZoom);
         if (i < 0) i = 0;
         var j = Math.max(0, Math.min(pasos.length - 1, i + (event.deltaY < 0 ? 1 : -1)));
         event.preventDefault();
@@ -4049,22 +4093,30 @@
         var r = caja.getBoundingClientRect();
         var xEnCaja = event.clientX - r.left;
         var relativo = (caja.scrollLeft + xEnCaja) / Math.max(1, caja.scrollWidth);
-        state.zoomLanes = pasos[j];
+        state.timelineZoom = pasos[j];
         renderAll();
-        Array.prototype.forEach.call(document.querySelectorAll('.lane-scroll'), function (c) {
-          c.scrollLeft = Math.max(0, relativo * c.scrollWidth - xEnCaja);
-        });
+        var nuevaCaja = document.querySelector('[data-lane-svg]');
+        nuevaCaja = nuevaCaja && nuevaCaja.closest('.lane-scroll');
+        if (nuevaCaja) sincronizarScrollTimeline(Math.max(0, relativo * nuevaCaja.scrollWidth - xEnCaja));
       }, { passive: false });
 
-      // Todas las lanes scrollean juntas: si no, comparar dos es imposible.
+      function scrollsDelTimeline() {
+        return document.querySelectorAll('.lane-scroll, .sectimes, .secstrip, .secdurs');
+      }
+
+      function sincronizarScrollTimeline(scrollLeft, excepto) {
+        Array.prototype.forEach.call(scrollsDelTimeline(), function (c) {
+          if (c !== excepto) c.scrollLeft = scrollLeft;
+        });
+      }
+
+      // Todas las filas y la estructura scrollean juntas: son el mismo eje temporal.
       document.addEventListener('scroll', function (event) {
         var caja = event.target;
-        if (!caja || !caja.classList || !caja.classList.contains('lane-scroll')) return;
+        if (!caja || !caja.matches || !caja.matches('.lane-scroll, .sectimes, .secstrip, .secdurs')) return;
         if (state.sincronizando) return;
         state.sincronizando = true;
-        Array.prototype.forEach.call(document.querySelectorAll('.lane-scroll'), function (c) {
-          if (c !== caja) c.scrollLeft = caja.scrollLeft;
-        });
+        sincronizarScrollTimeline(caja.scrollLeft, caja);
         state.sincronizando = false;
       }, true);
 
